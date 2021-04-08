@@ -18,6 +18,8 @@ def test_hamming():
     assert 'C' in neighbors
     # correct length
     assert len(neighbors) == (len(aminoacids)-1)
+    neighbors = list(hamming_neighbors('AAA', variable_positions=[1]))
+    assert len(neighbors) == (len(aminoacids)-1)
 
 def test_find_neighbor_pairs():
     pairs = find_neighbor_pairs(['AA', 'AC'])

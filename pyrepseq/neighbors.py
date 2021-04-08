@@ -17,9 +17,16 @@ def levenshtein_neighbors(x, alphabet=aminoacids):
     for aa in alphabet:
         yield x+aa
 
-def hamming_neighbors(x, alphabet=aminoacids):
-    """Iterator over Hamming neighbors of a string x"""
-    for i in range(len(x)):
+def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
+    """Iterator over Hamming neighbors of a string x.
+
+    variable_positions: iterable of positions to be varied
+    (default: all)
+    """
+
+    if variable_positions is None:
+        variable_positions = range(len(x))
+    for i in variable_positions:
         for aa in alphabet:
             if aa == x[i]:
                 continue
