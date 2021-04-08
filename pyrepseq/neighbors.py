@@ -1,7 +1,7 @@
 from .main import aminoacids
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
-    """Iterator for Levenshtein neighbors of a sequence x"""
+    """Iterator over Levenshtein neighbors of a sequence x"""
     for i in range(len(x)):
         # deletion
         yield x[:i]+x[i+1:]
@@ -18,7 +18,7 @@ def levenshtein_neighbors(x, alphabet=aminoacids):
         yield x+aa
 
 def hamming_neighbors(x, alphabet=aminoacids):
-    """Iterator for Hamming neighbors of a sequence x"""
+    """Iterator over Hamming neighbors of a sequence x"""
     for i in range(len(x)):
         for aa in alphabet:
             if aa == x[i]:
