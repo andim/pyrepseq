@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.special
 
+aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
+
 def coincidence_probability(array):
     """
     Calculates probability that two distinct elements of a list are the same.
