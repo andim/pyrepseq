@@ -2,6 +2,11 @@ import numpy as np
 import scipy.special
 
 aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
+_aminoacids_set = set(aminoacids)
+
+def isvalidaa(string):
+    "returns true if string is composed only of characters from the standard amino acid alphabet"
+    return all(c in _aminoacids_set for c in string)
 
 def coincidence_probability(array):
     """
