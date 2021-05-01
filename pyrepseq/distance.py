@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial.distance import squareform
 
 
-def pdist(strings, metric=Levenshtein.distance, **kwargs):
+def pdist(strings, metric=None, **kwargs):
     """Pairwise distances between strings.
         (equivalent to scipy.spatial.distance.pdist)
 
@@ -13,7 +13,7 @@ def pdist(strings, metric=Levenshtein.distance, **kwargs):
     strings : iterable of strings
         An m-length iterable.
     metric : function, optional
-        The distance metric to use.
+        The distance metric to use. Default: Levenshtein distance.
 
     Returns
     -------
@@ -24,6 +24,8 @@ def pdist(strings, metric=Levenshtein.distance, **kwargs):
         is computed and stored in entry 
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
     """
+    if metric is None:
+        metric = Levenshtein.distance
     strings = list(strings)
     m = len(strings)
     dm = np.empty((m * (m - 1)) // 2, dtype=np.int32)
@@ -34,7 +36,7 @@ def pdist(strings, metric=Levenshtein.distance, **kwargs):
             k += 1
     return dm
 
-def cdist(stringsA, stringsB, metric=Levenshtein.distance, **kwargs):
+def cdist(stringsA, stringsB, metric=None, **kwargs):
     """Pairwise distances between strings in two sets.
         (equivalent to scipy.spatial.distance.cdist)
 
@@ -45,7 +47,7 @@ def cdist(stringsA, stringsB, metric=Levenshtein.distance, **kwargs):
     stringsB : iterable of strings
         An mB-length iterable.
     metric : function, optional
-        The distance metric to use.
+        The distance metric to use. Default: Levenshtein distance.
 
     Returns
     -------
@@ -55,7 +57,8 @@ def cdist(stringsA, stringsB, metric=Levenshtein.distance, **kwargs):
         ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
         :math:`ij` th entry.
     """
- 
+    if metric is None:
+        metric = Levenshtein.distance
     stringA = list(stringsA)
     stringB = list(stringsB)
     mA = len(stringA)

@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 
-from .config import *
-
 def powerlaw(size=1, xmin=1.0, alpha=2.0):
     """ Draw samples from a discrete power-law.
 
