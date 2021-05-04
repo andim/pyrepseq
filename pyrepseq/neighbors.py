@@ -1,4 +1,5 @@
 from .main import aminoacids
+import numpy as np
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""
