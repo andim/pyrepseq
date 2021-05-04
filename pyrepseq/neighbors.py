@@ -2,21 +2,24 @@ from .main import aminoacids
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""
+    # deletion
     for i in range(len(x)):
-        # deletion
-        # only delete first amino acid when repeated
+        # only delete first repeated amino acid
         if (i > 0) and (x[i] == x[i-1]):
             continue
         yield x[:i]+x[i+1:]
-        # replacement
+    # replacement
+    for i in range(len(x)):
         for aa in alphabet:
-            # do not replace same amino acid to avoid redundancy 
+            # do not replace with same amino acid
             if aa == x[i]:
                 continue
             yield x[:i]+aa+x[i+1:]
+    # insertion
     for i in range(len(x)+1):
         for aa in alphabet:
-            if aa == x[i-1]:
+            # only insert after first repeated amino acid
+            if (i>0) and (aa == x[i-1]):
                 continue
             # insertion
             yield x[:i]+aa+x[i:]

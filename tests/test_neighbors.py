@@ -9,6 +9,7 @@ def test_levenshtein():
     # insertions
     assert 'CA' in neighbors
     assert 'AC' in neighbors
+    assert 'AA' in neighbors
     # uniqueness
     assert len(neighbors) == len(set(neighbors))
 
