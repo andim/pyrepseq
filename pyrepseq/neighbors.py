@@ -20,9 +20,6 @@ def levenshtein_neighbors(x, alphabet=aminoacids):
                 continue
             # insertion
             yield x[:i]+aa+x[i:]
-    # insertion at end
-#    for aa in alphabet:
-#        yield x+aa
 
 def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
     """Iterator over Hamming neighbors of a string x.
@@ -52,3 +49,11 @@ def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
                 pairs.append((x, y))
         reference.remove(x)
     return pairs
+
+def calculate_neighbor_numbers(seqs, neighborhood=levenshtein_neighbors):
+    """Calculate the number of neighbors for each sequence in a list.
+
+    seqs: list of sequences
+    """
+    reference = set(seqs)
+    return np.array([len(set(neighborhood(seq)) & reference) for seq in seqs])
