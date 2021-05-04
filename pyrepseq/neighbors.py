@@ -4,18 +4,25 @@ def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""
     for i in range(len(x)):
         # deletion
+        # only delete first amino acid when repeated
+        if (i > 0) and (x[i] == x[i-1]):
+            continue
         yield x[:i]+x[i+1:]
+        # replacement
         for aa in alphabet:
+            # do not replace same amino acid to avoid redundancy 
             if aa == x[i]:
                 continue
-            # insertion
-            # do not insert same amino acid to avoid redundancy 
-            yield x[:i]+aa+x[i:]
-            # replacement
             yield x[:i]+aa+x[i+1:]
+    for i in range(len(x)+1):
+        for aa in alphabet:
+            if aa == x[i-1]:
+                continue
+            # insertion
+            yield x[:i]+aa+x[i:]
     # insertion at end
-    for aa in alphabet:
-        yield x+aa
+#    for aa in alphabet:
+#        yield x+aa
 
 def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
     """Iterator over Hamming neighbors of a string x.

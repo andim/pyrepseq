@@ -12,6 +12,9 @@ def test_levenshtein():
     # uniqueness
     assert len(neighbors) == len(set(neighbors))
 
+    neighbors = list(levenshtein_neighbors('ACC'))
+    assert len(neighbors) == len(set(neighbors))
+
 def test_hamming():
     neighbors = list(hamming_neighbors('A'))
     # replacement
