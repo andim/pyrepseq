@@ -1,7 +1,9 @@
-import Levenshtein
 import numpy as np
 
 from scipy.spatial.distance import squareform
+
+from Levenshtein import hamming as hamming_distance
+from Levenshtein import distance as levenshtein_distance
 
 
 def pdist(strings, metric=None, **kwargs):
@@ -25,7 +27,7 @@ def pdist(strings, metric=None, **kwargs):
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
     """
     if metric is None:
-        metric = Levenshtein.distance
+        metric = levenshtein_distance
     strings = list(strings)
     m = len(strings)
     dm = np.empty((m * (m - 1)) // 2, dtype=np.int32)
@@ -58,7 +60,7 @@ def cdist(stringsA, stringsB, metric=None, **kwargs):
         :math:`ij` th entry.
     """
     if metric is None:
-        metric = Levenshtein.distance
+        metric = levenshtein_distance
     stringA = list(stringsA)
     stringB = list(stringsB)
     mA = len(stringA)
