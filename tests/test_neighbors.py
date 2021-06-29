@@ -25,6 +25,11 @@ def test_hamming():
     neighbors = list(hamming_neighbors('AAA', variable_positions=[1]))
     assert len(neighbors) == (len(aminoacids)-1)
 
+def test_next_nearest_neighbors():
+    neighborhood = lambda x: hamming_neighbors(x, alphabet='ABC')
+    neighbors = next_nearest_neighbors('AAAA', neighborhood=neighborhood, maxdistance=2)
+    assert 'ABAC' in neighbors
+
 def test_find_neighbor_pairs():
     pairs = find_neighbor_pairs(['AA', 'AC'])
     assert (('AA', 'AC') in pairs) or (('AC', 'AA') in pairs)
