@@ -39,6 +39,26 @@ def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
             if aa == x[i]:
                 continue
             yield x[:i]+aa+x[i+1:]
+
+def _flatten_list(inlist):
+    return [item for sublist in inlist for item in sublist]
+
+def next_nearest_neighbors(x, neighborhood, maxdistance=2):
+    """Set of next nearest neighbors of a string x.
+
+    neighborhood: neighborhood iterator
+    maxdistance : go up to maxdistance nearest neighbor
+    """
+   
+    neighbors = [list(neighborhood(x))]
+    distance = 1
+    while distance < maxdistance:
+        neighbors_dist = []
+        for x in neighbors[-1]:
+            neighbors_dist.extend(neighborhood(x))
+        neighbors.append(set(neighbors_dist))
+        distance += 1
+    return set(_flatten_list(neighbors))
  
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
     """Find neighboring sequences in a list of unique sequences.
