@@ -41,17 +41,33 @@ def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
             yield x[:i]+aa+x[i+1:]
  
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
-    """Find neighboring sequences in a list.
+    """Find neighboring sequences in a list of unique sequences.
 
     neighborhood: callable returning an iterable of neighbors
+
+    returns: tuple (seq1, seq2)
     """
     reference = set(seqs)
     pairs = []
     for x in set(seqs):
-        for y in neighborhood(x):
-            if y in reference:
-                pairs.append((x, y))
+        for y in (set(neighborhood(x)) & reference):
+            pairs.append((x, y))
         reference.remove(x)
+    return pairs
+
+def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
+    """Find neighboring sequences in a list of unique sequences.
+
+    neighborhood: callable returning an iterable of neighbors
+
+    returns: tuple (index1, index2)
+    """
+    reference = set(seqs)
+    seqs_list = list(seqs)
+    pairs = []
+    for i, x in enumerate(seqs):
+        for y in (set(neighborhood(x)) & reference):
+            pairs.append((i, seqs_list.index(y)))
     return pairs
 
 def calculate_neighbor_numbers(seqs, neighborhood=levenshtein_neighbors):
