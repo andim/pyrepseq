@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.optimize
+import scipy.special
 
 def powerlaw(size=1, xmin=1.0, alpha=2.0):
     """ Draw samples from a discrete power-law.
@@ -43,4 +44,26 @@ def mle_alpha_discrete(c, cmin=1.0, **kwargs):
     if not result.success:
         raise Exception('fitting failed')
     return result.x
+
+def halfsample_sd(data, statistic, bootnum=1000):
+    """
+    Calculate an empirical estimate of the standard deviation of a statistic by sampling random halves of the data.
+    """
+    halfsampled = [statistic(np.random.choice(data,
+                                            size=int(len(data)//2),
+                                            replace=False))
+                    for i in range(bootnum)]
+    return np.std(halfsampled)/2**.5
+
+
+def coincidence_probability(array):
+    """
+    Calculates probability that two distinct elements of a list are the same.
+
+    Note: this is also known as the Simpson or Hunter-Gaston index
+    """
+    array = np.asarray(array)
+    _, counts = np.unique(array, return_counts=True)
+    # 2*(n choose 2) = n * (n-1)
+    return np.sum(counts*(counts-1))/(array.shape[0]*(array.shape[0]-1))
 
