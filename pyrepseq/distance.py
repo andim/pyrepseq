@@ -6,7 +6,7 @@ from Levenshtein import hamming as hamming_distance
 from Levenshtein import distance as levenshtein_distance
 
 
-def pdist(strings, metric=None, **kwargs):
+def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
     """Pairwise distances between strings.
         (equivalent to scipy.spatial.distance.pdist)
 
@@ -16,6 +16,8 @@ def pdist(strings, metric=None, **kwargs):
         An m-length iterable.
     metric : function, optional
         The distance metric to use. Default: Levenshtein distance.
+    dtype : np.dtype
+        data type of the distance matrix, default: np.uint8
 
     Returns
     -------
@@ -30,7 +32,7 @@ def pdist(strings, metric=None, **kwargs):
         metric = levenshtein_distance
     strings = list(strings)
     m = len(strings)
-    dm = np.empty((m * (m - 1)) // 2, dtype=np.int32)
+    dm = np.empty((m * (m - 1)) // 2, dtype=dtype)
     k = 0
     for i in range(0, m-1):
         for j in range(i+1, m):
@@ -38,7 +40,7 @@ def pdist(strings, metric=None, **kwargs):
             k += 1
     return dm
 
-def cdist(stringsA, stringsB, metric=None, **kwargs):
+def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
     """Pairwise distances between strings in two sets.
         (equivalent to scipy.spatial.distance.cdist)
 
@@ -50,6 +52,8 @@ def cdist(stringsA, stringsB, metric=None, **kwargs):
         An mB-length iterable.
     metric : function, optional
         The distance metric to use. Default: Levenshtein distance.
+    dtype : np.dtype
+        data type of the distance matrix, default: np.uint8
 
     Returns
     -------
@@ -66,7 +70,7 @@ def cdist(stringsA, stringsB, metric=None, **kwargs):
     mA = len(stringA)
     mB = len(stringB)
 
-    dm = np.empty((mA, mB), dtype=np.int32)
+    dm = np.empty((mA, mB), dtype=dtype)
     for i in range(0, mA):
         for j in range(0, mB):
             dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
