@@ -55,15 +55,18 @@ def halfsample_sd(data, statistic, bootnum=1000):
                     for i in range(bootnum)]
     return np.std(halfsampled)/2**.5
 
-
 def coincidence_probability(array):
     """
-    Calculates probability that two distinct elements of a list are the same.
+    Calculates probability that two distinct elements of an array are the same.
 
+    If n_i are the counts of the i-th element and N = \sum_i n_i the length of the array, then:
+
+    \hat{p_C} = \sum_i n_i (n_i-1)/(N(N-1))
+    
     Note: this is also known as the Simpson or Hunter-Gaston index
     """
     array = np.asarray(array)
+    N = array.shape[0]
     _, counts = np.unique(array, return_counts=True)
-    # 2*(n choose 2) = n * (n-1)
-    return np.sum(counts*(counts-1))/(array.shape[0]*(array.shape[0]-1))
+    return np.sum(counts*(counts-1))/(N*(N-1))
 
