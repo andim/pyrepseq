@@ -59,7 +59,8 @@ def coincidence_probability(array):
     """
     Calculates probability that two distinct elements of an array are the same.
 
-    If n_i are the counts of the i-th element and N = \sum_i n_i the length of the array, then:
+    If n_i are the counts of the i-th unique element and 
+    N = \sum_i n_i the length of the array, then:
 
     \hat{p_C} = \sum_i n_i (n_i-1)/(N(N-1))
     
@@ -70,3 +71,17 @@ def coincidence_probability(array):
     _, counts = np.unique(array, return_counts=True)
     return np.sum(counts*(counts-1))/(N*(N-1))
 
+def jaccard(A, B):
+    """
+    The Jaccard index is defined as 
+    J(A, B) = |A intersection B| / |A union B|
+    A, B: iterables (will be converted to sets)
+    If A, B are pd.Series na values will be dropped first
+    """
+    if type(A) == pd.Series:
+        A = rowa.dropna()
+    if type(B) == pd.Series:
+        B = rowb.dropna()
+    A = set(A)
+    B = set(B)
+    return len(A.intersection(B))/(len(A.union(B)))
