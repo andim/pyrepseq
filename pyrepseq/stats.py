@@ -79,9 +79,9 @@ def jaccard(A, B):
     If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
-        A = rowa.dropna()
+        A = A.dropna()
     if type(B) == pd.Series:
-        B = rowb.dropna()
+        B = B.dropna()
     A = set(A)
     B = set(B)
     return len(A.intersection(B))/(len(A.union(B)))
