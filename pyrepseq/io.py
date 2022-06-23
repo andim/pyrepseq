@@ -13,4 +13,4 @@ def isvalidcdr3(string):
     """
     return (isvalidaa(string)
             and (string[0] == 'C')
-            and (string[-1] in ['F', 'W', 'C'])
+            and (string[-1] in ['F', 'W', 'C']))
