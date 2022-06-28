@@ -57,14 +57,14 @@ def halfsample_sd(data, statistic, bootnum=1000):
 
 def coincidence_probability(array):
     """
-    Calculates probability that two distinct elements of an array are the same.
+    Estimates the coincidence probability p_C from a sample.
+    p_C is equal to the probability that two distinct sampled elements are the same.
 
     If n_i are the counts of the i-th unique element and 
     N = \sum_i n_i the length of the array, then:
-
-    \hat{p_C} = \sum_i n_i (n_i-1)/(N(N-1))
+    p_C = \sum_i n_i (n_i-1)/(N(N-1))
     
-    Note: this is also known as the Simpson or Hunter-Gaston index
+    Note: This measure is also known as the Simpson or Hunter-Gaston index
     """
     array = np.asarray(array)
     N = array.shape[0]
@@ -73,10 +73,13 @@ def coincidence_probability(array):
 
 def jaccard(A, B):
     """
-    The Jaccard index is defined as 
+    Calculate the Jaccard index for two sets.
+
+    This measure is defined  defined as 
+
     J(A, B) = |A intersection B| / |A union B|
     A, B: iterables (will be converted to sets)
-    If A, B are pd.Series na values will be dropped first
+          If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
         A = A.dropna()
@@ -88,10 +91,13 @@ def jaccard(A, B):
 
 def overlap_coefficient(A, B):
     """
-    The overlap coefficient is defined as 
+    Calculate the overlap coefficient for two sets.
+
+    This measure is defined  defined as 
     O(A, B) = |A intersection B| / min(|A|, |B|)
+
     A, B: iterables (will be converted to sets)
-    If A, B are pd.Series na values will be dropped first
+          If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
         A = A.dropna()
