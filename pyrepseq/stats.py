@@ -77,13 +77,11 @@ def mle_alpha_discrete(c, cmin=1.0, **kwargs):
     return result.x
 
 def coincidence_probability(array):
-    """
-    Estimates the coincidence probability p_C from a sample.
-    p_C is equal to the probability that two distinct sampled elements are the same.
-
-    If n_i are the counts of the i-th unique element and 
-    N = \sum_i n_i the length of the array, then:
-    p_C = \sum_i n_i (n_i-1)/(N(N-1))
+    r"""Estimate the coincidence probability :math:`p_C` from a sample.
+    :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
+    If :math:`n_i` are the counts of the i-th unique element and 
+    :math:`N = \sum_i n_i` the length of the array, then:
+    :math:`p_C = \sum_i n_i (n_i-1)/(N(N-1))`
     
     Note: This measure is also known as the Simpson or Hunter-Gaston index
     """
