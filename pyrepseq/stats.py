@@ -7,14 +7,35 @@ def powerlaw(size=1, xmin=1.0, alpha=2.0):
     """ Draw samples from a discrete power-law.
 
     Uses an approximate transformation technique, see Eq. D6 in Clauset et al. arXiv 0706.1062v2 for details.
+
+    Parameters
+    ----------
+    size: number of values to draw
+    xmin: minimal value
+    alpha: power-law exponent
+
+    Returns
+    -------
+    array of integer samples
     """
     r = np.random.rand(int(size))
     return np.floor((xmin - 0.5)*(1.0-r)**(-1.0/(alpha-1.0)) + 0.5)
 
 def mle_alpha(c, cmin=1.0, continuitycorrection=True):
     """Maximum likelihood estimate of the power-law exponent.
-    
-    see Eq. B17 in Clauset et al. arXiv 0706.1062v2
+
+    Uses a formula (Eq. B17 in Clauset et al. arXiv 0706.1062v2) that is approximate
+    for discrete counts.
+
+    Parameters
+    ----------
+    c : counts
+    cmin: only counts >= cmin are included in fit
+    continuitycorrection: use continuitycorrection (more accurate for integer counts)
+
+    Returns
+    -------
+    estimated power-law exponent
     """
     c = np.asarray(c)
     c = c[c>=cmin]
@@ -29,12 +50,22 @@ def _discrete_loglikelihood(x, alpha, xmin):
     return -n*np.log(scipy.special.zeta(alpha, xmin)) - alpha*np.sum(np.log(x))
 
 def mle_alpha_discrete(c, cmin=1.0, **kwargs):
-    """Maximum likelihood estimate of the power-law exponent for discrete data.
+    """Exact maximum likelihood estimate of the power-law exponent for discrete data.
 
     Numerically maximizes the discrete loglikelihood.
 
+    Parameters
+    ----------
+    c : counts
+    cmin: only counts >= cmin are included in fit
+
     kwargs are passed to scipy.optimize.minimize_scalar.
     Default kwargs: bounds=[1.5, 4.5], method='bounded'
+
+
+    Returns
+    -------
+    estimated power-law exponent
     """
     optkwargs = dict(bounds=[1.5, 4.5], method='bounded')
     optkwargs.update(kwargs)
@@ -44,16 +75,6 @@ def mle_alpha_discrete(c, cmin=1.0, **kwargs):
     if not result.success:
         raise Exception('fitting failed')
     return result.x
-
-def halfsample_sd(data, statistic, bootnum=1000):
-    """
-    Calculate an empirical estimate of the standard deviation of a statistic by sampling random halves of the data.
-    """
-    halfsampled = [statistic(np.random.choice(data,
-                                            size=int(len(data)//2),
-                                            replace=False))
-                    for i in range(bootnum)]
-    return np.std(halfsampled)/2**.5
 
 def coincidence_probability(array):
     """

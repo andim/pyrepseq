@@ -9,8 +9,8 @@ from Levenshtein import distance as levenshtein_distance
 
 
 def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
-    """Pairwise distances between strings.
-        (equivalent to scipy.spatial.distance.pdist)
+    """Pairwise distances between collection of strings.
+       (`scipy.spatial.distance.pdist` equivalent for strings)
 
     Parameters
     ----------
@@ -25,7 +25,7 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
     -------
     Y : ndarray
         Returns a condensed distance matrix Y.  For
-        each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
+        each :math:`i` and :math:`j` (where :math:`i<j<m`), where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
         is computed and stored in entry 
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
@@ -43,8 +43,8 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
     return dm
 
 def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
-    """Pairwise distances between strings in two sets.
-        (equivalent to scipy.spatial.distance.cdist)
+    """ Compute distance between each pair of the two collections of strings.
+        (`scipy.spatial.distance.cdist` equivalent for strings)
 
     Parameters
     ----------
@@ -106,8 +106,10 @@ def levenshtein_neighbors(x, alphabet=aminoacids):
 def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
     """Iterator over Hamming neighbors of a string x.
 
-    variable_positions: iterable of positions to be varied
-    (default: all)
+    Parameters
+    ----------
+    alphabet : iterable of characters
+    variable_positions: iterable of positions to be varied (default: all)
     """
 
     if variable_positions is None:
@@ -124,8 +126,15 @@ def _flatten_list(inlist):
 def next_nearest_neighbors(x, neighborhood, maxdistance=2):
     """Set of next nearest neighbors of a string x.
 
+    Parameters
+    ----------
+    alphabet : iterable of characters
     neighborhood: neighborhood iterator
     maxdistance : go up to maxdistance nearest neighbor
+
+    Returns
+    -------
+    set of neighboring sequences
     """
    
     neighbors = [list(neighborhood(x))]
@@ -141,9 +150,13 @@ def next_nearest_neighbors(x, neighborhood, maxdistance=2):
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
     """Find neighboring sequences in a list of unique sequences.
 
+    Parameters
+    ----------
     neighborhood: callable returning an iterable of neighbors
 
-    returns: tuple (seq1, seq2)
+    Returns
+    -------
+    list of tuples (seq1, seq2)
     """
     reference = set(seqs)
     pairs = []
@@ -156,9 +169,13 @@ def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
 def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
     """Find neighboring sequences in a list of unique sequences.
 
+    Parameters
+    ----------
     neighborhood: callable returning an iterable of neighbors
 
-    returns: tuple (index1, index2)
+    Returns
+    -------
+    list of tuples (index1, index2)
     """
     reference = set(seqs)
     seqs_list = list(seqs)
@@ -171,7 +188,14 @@ def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
 def calculate_neighbor_numbers(seqs, neighborhood=levenshtein_neighbors):
     """Calculate the number of neighbors for each sequence in a list.
 
+    Parameters
+    ----------
     seqs: list of sequences
+    neighborhood: function returning iterator over neighbors
+    
+    Returns
+    -------
+    integer array of number of neighboring sequences
     """
     reference = set(seqs)
     return np.array([len(set(neighborhood(seq)) & reference) for seq in seqs])
@@ -223,9 +247,17 @@ def _dist3(x, reference):
 
 def nndist_hamming(seq, reference, maxdist=4):
     """Calculate the nearest-neighbor distance by Hamming distance
+
+    Parameters
+    ----------
+    seqs: list of sequences
     seq: sequence instance
     reference: set of referencesequences
     maxdist: distance beyond which to cut off the calculation (currently needs to be <=4)
+
+    Returns
+    -------
+    distance of nearest neighbor 
 
     Note: This function does not check whether neighbors are of same length.
     """
