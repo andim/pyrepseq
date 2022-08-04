@@ -1,6 +1,7 @@
 [![License](https://img.shields.io/pypi/l/pyrepseq.svg)](https://github.com/andim/pyrepseq/blob/master/LICENSE)
 [![Latest release](https://img.shields.io/pypi/v/pyrepseq.svg)](https://pypi.python.org/pypi/pyrepseq)
 [![Build Status](https://app.travis-ci.com/andim/pyrepseq.svg?branch=main)](https://app.travis-ci.com/andim/pyrepseq)
+[![Documentation Status](https://readthedocs.org/projects/pyrepseq/badge/?version=latest)](https://pyrepseq.readthedocs.io/en/latest/?badge=latest)
 
 # Pyrepseq: A python library for immune repertoire analyses
 
