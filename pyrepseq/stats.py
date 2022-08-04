@@ -96,9 +96,8 @@ def jaccard(A, B):
 
     This measure is defined  defined as 
 
-    J(A, B) = |A intersection B| / |A union B|
-    A, B: iterables (will be converted to sets)
-          If A, B are pd.Series na values will be dropped first
+    math:`J(A, B) = |A intersection B| / |A union B|`
+    A, B: iterables (will be converted to sets). If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
         A = A.dropna()
@@ -113,10 +112,9 @@ def overlap_coefficient(A, B):
     Calculate the overlap coefficient for two sets.
 
     This measure is defined  defined as 
-    O(A, B) = |A intersection B| / min(|A|, |B|)
+    :math:`O(A, B) = |A intersection B| / min(|A|, |B|)`
 
-    A, B: iterables (will be converted to sets)
-          If A, B are pd.Series na values will be dropped first
+    A, B: iterables (will be converted to sets). If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
         A = A.dropna()

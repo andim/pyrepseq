@@ -18,7 +18,5 @@ You can install `noisyopt` using `pip`::
 For API documentation see below:
 
 .. toctree::
-   :maxdepth: 2
-
-.. currentmodule:: noisyopt
-
+    
+    api

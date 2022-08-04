@@ -8,6 +8,7 @@ def isvalidcdr3(string):
         - first amino acid is a cysteine (C)
         - last amino acid is either phenylalanine (F), tryptophan (W), or cysteine (C)
         - each amino acid is part of the standard amino acid alphabet
+
     See http://www.imgt.org/IMGTScientificChart/Numbering/IMGTIGVLsuperfamily.html
     and also https://doi.org/10.1093/nar/gkac190
     """
