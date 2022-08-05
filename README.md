@@ -9,10 +9,6 @@
 
 Pyrepseq can be installed by obtaining the source code from [Github](https://github.com/andim/pyrepseq) and running `python setup.py install` in the main directory. If you install from source, you first need to install `numpy` and `scipy` if these packages are not already installed.
 
-## Unit testing
-
-The module comes with a number of unit tests to increase robustness. This can be run by typing `py.test` in the top-level directory.
-
 ## Support and contributing
 
 For bug reports and enhancement requests use the [Github issue tool](http://github.com/andim/pyrepseq/issues/new), or (even better!) open a [pull request](http://github.com/andim/pyrepseq/pulls) with relevant changes. If you have any questions don't hesitate to contact me by email (andimscience@gmail.com) or Twitter ([@andimscience](http://twitter.com/andimscience)).
