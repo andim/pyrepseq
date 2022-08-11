@@ -49,4 +49,4 @@ MICRO = _version_micro
 VERSION = __version__
 PACKAGES = ['pyrepseq']
 PACKAGE_DATA = {}
-REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein"]
+REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein", "matplotlib", "seaborn"]
