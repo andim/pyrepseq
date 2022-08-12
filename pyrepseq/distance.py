@@ -1,4 +1,4 @@
-from .main import aminoacids
+from .io import aminoacids
 
 import numpy as np
 
@@ -78,6 +78,39 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
             dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
     return dm
 
+def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=np.arange(0, 25), normalize=True, **kwargs):
+    """
+    Calculates the near-coincidence probabilities :math:`p_C(Delta)` for sequence lists.
+
+    Parameters
+    ----------
+    seqs: tuple of string lists
+        (seqs_alpha, seqs_beta)
+    seqs2: tuple of string lists (optional)
+        second list of sequences for cross-comparisons
+    pseudocount : float
+       by default uses Jeffrey's prior value of 0.5 
+    normalize: bool
+        whether to return pc (normalized) or raw counts
+
+    Returns
+    -------
+    np.ndarray
+        (normalized) histogram of sequence distances
+    """
+    seqs_alpha, seqs_beta = seqs
+    if seqs2 is None:
+        hist, _ = np.histogram(pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins)
+    else:
+        seqs_alpha2, seqs_beta2 = seqs2
+        hist, _ = np.histogram(cdist(seqs_alpha, seqs_alpha2, **kwargs) + cdist(seqs_beta, seqs_beta2, **kwargs), bins=bins)
+    if not normalize:
+        return hist
+    if not pseudocount:
+        return hist/np.sum(hist)
+    hist_sum = np.sum(hist)+2*pseudocount
+    hist = hist.astype(np.float64)+pseudocount
+    return hist/hist_sum
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""
