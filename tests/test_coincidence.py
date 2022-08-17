@@ -1,9 +1,9 @@
-from pyrepseq import pC
+from pyrepseq import pc
 
 def test_coincidence():
-    p = pC(['AA', 'AA'])
+    p = pc(['AA', 'AA'])
     assert p == 1.0
-    p = pC(['AA', 'AB'])
+    p = pc(['AA', 'AB'])
     assert p == 0.0
-    p = pC(['AA', 'AA', 'AB'])
+    p = pc(['AA', 'AA', 'AB'])
     assert p == 1/3.
