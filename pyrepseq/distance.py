@@ -78,32 +78,44 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
             dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
     return dm
 
-def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=np.arange(0, 25), normalize=True, **kwargs):
+def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True, **kwargs):
     """
     Calculates the near-coincidence probabilities :math:`p_C(Delta)` for sequence lists.
 
     Parameters
     ----------
-    seqs: tuple of string lists
-        (seqs_alpha, seqs_beta)
-    seqs2: tuple of string lists (optional)
+    seqs: [list of strings | tuple of lists]
+        sequences, or (seqs_alpha, seqs_beta)
+    seqs2: [list of strings | tuple of lists] (optional)
         second list of sequences for cross-comparisons
+    bins: iterable
+        bins for the distances Delta. (Default: range(0, 25))
     pseudocount : float
        by default uses Jeffrey's prior value of 0.5 
     normalize: bool
         whether to return pc (normalized) or raw counts
+    **kwargs: dict
+        passed on to `pdist` or `cdist`
 
     Returns
     -------
     np.ndarray
         (normalized) histogram of sequence distances
     """
-    seqs_alpha, seqs_beta = seqs
-    if seqs2 is None:
-        hist, _ = np.histogram(pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins)
+    if bins is None:
+        bins = np.arange(0, 25)
+    if type(seqs) is tuple:
+        seqs_alpha, seqs_beta = seqs
+        if seqs2 is None:
+            hist, _ = np.histogram(pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins)
+        else:
+            seqs_alpha2, seqs_beta2 = seqs2
+            hist, _ = np.histogram(cdist(seqs_alpha, seqs_alpha2, **kwargs) + cdist(seqs_beta, seqs_beta2, **kwargs), bins=bins)
     else:
-        seqs_alpha2, seqs_beta2 = seqs2
-        hist, _ = np.histogram(cdist(seqs_alpha, seqs_alpha2, **kwargs) + cdist(seqs_beta, seqs_beta2, **kwargs), bins=bins)
+        if seqs2 is None:
+            hist, _ = np.histogram(pdist(seqs, **kwargs), bins=bins)
+        else:
+            hist, _ = np.histogram(cdist(seqs, seqs2, **kwargs), bins=bins)
     if not normalize:
         return hist
     if not pseudocount:
@@ -233,17 +245,14 @@ def calculate_neighbor_numbers(seqs, neighborhood=levenshtein_neighbors):
     reference = set(seqs)
     return np.array([len(set(neighborhood(seq)) & reference) for seq in seqs])
 
-def _dist1(x, reference):
-    """ Is the string x a Hamming distance 1 away from any of the kmers in the reference set"""
-    for i in range(len(x)):
-        for aa in aminoacids:
-            if aa == x[i]:
-                continue
-            if x[:i]+aa+x[i+1:] in reference:
-                return True
+def isdist1(x, reference, neighborhood=levenshtein_neighbors):
+    """ Is the string x distance 1 away from any of the strings in the reference set"""
+    for neighbor in neighborhood(x):
+        if neighbor in reference:
+            return True
     return False
 
-def _dist2(x, reference):
+def _isdist2(x, reference):
     """ Is the string x a Hamming distance 2 away from any of the kmers in the reference set"""
     for i in range(len(x)):
         for j in range(i+1, len(x)):
@@ -258,7 +267,7 @@ def _dist2(x, reference):
                         return True
     return False
 
-def _dist3(x, reference):
+def _isdist3(x, reference):
     """ Is the string x a Hamming distance 3 away from any of the kmers in the reference set"""
     for i in range(len(x)):
         for j in range(i+1, len(x)):
@@ -298,10 +307,10 @@ def nndist_hamming(seq, reference, maxdist=4):
         raise NotImplementedError
     if seq in reference:
         return 0
-    if (maxdist==1) or _dist1(seq, reference):
+    if (maxdist==1) or isdist1(seq, reference):
         return 1
-    if (maxdist==2) or _dist2(seq, reference):
+    if (maxdist==2) or _isdist2(seq, reference):
         return 2
-    if (maxdist==3) or _dist3(seq, reference):
+    if (maxdist==3) or _isdist3(seq, reference):
         return 3
     return 4
