@@ -190,7 +190,12 @@ def next_nearest_neighbors(x, neighborhood, maxdistance=2):
             neighbors_dist.extend(neighborhood(x))
         neighbors.append(set(neighbors_dist))
         distance += 1
-    return set(_flatten_list(neighbors))
+    neighbor_set = set(_flatten_list(neighbors))
+    try:
+        neighbor_set.remove(x)
+    except KeyError:
+        pass
+    return neighbor_set
  
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
     """Find neighboring sequences in a list of unique sequences.
@@ -205,7 +210,7 @@ def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
     """
     reference = set(seqs)
     pairs = []
-    for x in set(seqs):
+    for x in sorted(set(seqs)):
         for y in (set(neighborhood(x)) & reference):
             pairs.append((x, y))
         reference.remove(x)
