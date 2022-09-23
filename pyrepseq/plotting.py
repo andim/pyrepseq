@@ -1,3 +1,5 @@
+import string
+import itertools
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -274,3 +276,31 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     cg.ax_heatmap.set_ylabel(r'CDR3$\beta$ Sequence')
     cg.ax_col_dendrogram.set_visible(False)
     return cg, linkage, cluster
+
+def label_axes(fig_or_axes, labels=string.ascii_uppercase,
+               labelstyle=r'%s',
+               xy=(-0.1, 0.95), xycoords='axes fraction', **kwargs):
+    """
+    Walks through axes and labels each.
+    kwargs are collected and passed to `annotate`
+
+    Parameters
+    ----------
+    fig : Figure or Axes to work on
+    labels : iterable or None
+        iterable of strings to use to label the axes.
+        If None, lower case letters are used.
+
+    loc : Where to put the label units (len=2 tuple of floats)
+    xycoords : loc relative to axes, figure, etc.
+    kwargs : to be passed to annotate
+    """
+    # re-use labels rather than stop labeling
+    defkwargs = dict(fontweight='bold')
+    defkwargs.update(kwargs)
+    labels = itertools.cycle(labels)
+    axes = fig_or_axes.axes if isinstance(fig_or_axes, plt.Figure) else fig_or_axes
+    for ax, label in zip(axes, labels):
+        ax.annotate(labelstyle % label, xy=xy, xycoords=xycoords,
+                    **defkwargs)
+
