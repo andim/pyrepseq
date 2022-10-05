@@ -80,7 +80,8 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
 
 def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True, **kwargs):
     """
-    Calculates the near-coincidence probabilities :math:`p_C(Delta)` for sequence lists.
+    Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
+    among input sequences.
 
     Parameters
     ----------

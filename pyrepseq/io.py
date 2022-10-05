@@ -8,7 +8,11 @@ _aminoacids_set = set(aminoacids)
 
 def isvalidaa(string):
     "returns true if string is composed only of characters from the standard amino acid alphabet"
-    return all(c in _aminoacids_set for c in string)
+    try:
+        return all(c in _aminoacids_set for c in string)
+    except TypeError:
+        return False
+
 
 def isvalidcdr3(string):
     """
@@ -22,9 +26,13 @@ def isvalidcdr3(string):
     See http://www.imgt.org/IMGTScientificChart/Numbering/IMGTIGVLsuperfamily.html
     and also https://doi.org/10.1093/nar/gkac190
     """
-    return (isvalidaa(string)
+    try:
+        return (isvalidaa(string)
             and (string[0] == 'C')
             and (string[-1] in ['F', 'W', 'C']))
+    # if 'string' is not of string type (e.g. nan) it is not valid
+    except TypeError:
+        return False
 
 
 def multimerge(dfs, on, suffixes=None, **kwargs):

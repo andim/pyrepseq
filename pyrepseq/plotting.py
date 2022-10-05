@@ -97,7 +97,6 @@ def labels_to_colors_tableau(labels, min_count=None):
     lut = dict(zip(label, plt.cycler(c=plt.cm.tab10.colors)()))
     return [lut[n]['c'] if n in lut else [0, 0, 0] for n in labels]
 
-
 class ClusterGridSplit(sns.matrix.ClusterGrid):
     """
     ClusterGrid subclass that provides separate data for upper and lower diagonal.
