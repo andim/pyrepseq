@@ -78,7 +78,9 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
             dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
     return dm
 
-def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True, **kwargs):
+def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True,
+            maxseqs=1000,
+            **kwargs):
     """
     Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
     among input sequences.
@@ -95,6 +97,9 @@ def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True, **kwar
        by default uses Jeffrey's prior value of 0.5 
     normalize: bool
         whether to return pc (normalized) or raw counts
+    maxseqs: int
+        maximal number of sequences to keep by random subsampling
+        TODO not implemented yet
     **kwargs: dict
         passed on to `pdist` or `cdist`
 
@@ -124,6 +129,31 @@ def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True, **kwar
     hist_sum = np.sum(hist)+2*pseudocount
     hist = hist.astype(np.float64)+pseudocount
     return hist/hist_sum
+
+def pcDelta_grouped(df, by, seq_columns):
+    """Near-coincidence probabilities conditioned to within-group comparisons.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+    by : mapping, function, label, or list of labels
+      see pd.DataFrame.groupby
+    seq_columns : string
+       The data frame column on which we want to apply the pcDelta analysis
+       
+    Returns
+    -------
+    Y : ndarray
+        Returns the the mean of the pC deltas for each group average by delta value
+    
+    """
+    
+    
+    pcDeltas = []
+    for label, dfg in df.groupby(by):
+        pcDeltas.append(rsd.pcDelta(dfg[seq_columns], pseudocount=0.0, normalize=False))
+    pcDeltas = np.array(pcDeltas)
+    return np.sum(pcDeltas, axis=0)/np.sum(pcDeltas)
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""
