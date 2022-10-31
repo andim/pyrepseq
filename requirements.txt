@@ -4,3 +4,5 @@ pandas
 Levenshtein
 matplotlib
 seaborn
+logomaker
+biopython
