@@ -7,6 +7,13 @@ import matplotlib as mpl
 import seaborn as sns
 import scipy.cluster.hierarchy as hc
 
+import logomaker as lm
+
+import subprocess
+from io import StringIO
+from Bio import SeqIO
+
+
 from .distance import *
 
 def rankfrequency(data, ax=None,
@@ -193,7 +200,8 @@ def clustermap_split(data_lower, data_upper, *,
 def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
                            linkage_kws=dict(method='average', optimal_ordering=True),
                            cluster_kws=dict(t=6, criterion='distance'),
-                           cbar_kws=dict(label='Sequence Distance', format='%d', orientation='horizontal'),
+                           cbar_kws=dict(label='Sequence Distance',
+                               format='%d', orientation='horizontal'),
                            meta_columns=None,
                            meta_to_colors=None,
                            **kws):
@@ -210,12 +218,14 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     meta_columns: list-like
         metadata to plot alongside the cluster assignment 
     meta_to_colors: list-like
-        function mapping list of labels to colors
+        list of functions mapping metadata labels to colors
+        first element of list is for clusters
     kws: keyword arguments passed on to the clustermap.
 
     """
 
-    labels_to_colors = labels_to_colors_tableau
+    if meta_to_colors is None:
+        meta_to_colors = [labels_to_colors_hls]*(len(meta_columns)+1)
 
     sequences_alpha = df[alpha_column]
     sequences_beta = df[beta_column]
@@ -234,16 +244,12 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     linkage = hc.linkage(distances, **linkage_kws)
     
     cluster = hc.fcluster(linkage, **cluster_kws)
-    cluster_colors = pd.Series(labels_to_colors(cluster, min_count=2),
+    cluster_colors = pd.Series(meta_to_colors[0](cluster, min_count=2),
                                name='Cluster')
     if not meta_columns is None:
         colors_list = [cluster_colors]
-        if meta_to_colors:
-            meta_colors = [pd.Series(mapper(col), name=col)
-                            for col, mapper in zip(meta_columns, meta_to_colors)]
-        else:
-            meta_colors = [pd.Series(labels_to_colors(df[col]), name=col)
-                            for col in meta_columns]
+        meta_colors = [pd.Series(mapper(df[col]), name=col)
+                for col, mapper in zip(meta_columns, meta_to_colors[1:])]
         colors_list.extend(meta_colors)
         colors = pd.concat(colors_list, axis=1)
     else:
@@ -253,18 +259,18 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     cbar_kws.update(dict(ticks=bounds[:-1]+0.5))
     
     # default clustermap kws
-    clustermap_kws = dict( 
-                           cbar_kws=cbar_kws,
-                           dendrogram_ratio=0.12, colors_ratio=0.04,
-                           cbar_pos=(0.38, .99, .4, .02),
-                           rasterized=True, figsize=(4.2, 4.2),
-                           xticklabels=[], yticklabels=[],
-                           )
+    clustermap_kws = dict(cbar_kws=cbar_kws,
+                          dendrogram_ratio=0.12, colors_ratio=0.04,
+                          cbar_pos=(0.38, .99, .4, .02),
+                          rasterized=True, figsize=(4.2, 4.2),
+                          xticklabels=[], yticklabels=[],
+                          )
     clustermap_kws.update(kws)
     
     cg = clustermap_split(pd.DataFrame(squareform(distances_alpha)),
                           pd.DataFrame(squareform(distances_beta)),
-                          row_linkage=linkage, col_linkage=linkage, cmap=cmap, norm=norm,
+                          row_linkage=linkage, col_linkage=linkage,
+                          cmap=cmap, norm=norm,
                           row_colors=colors,
                           **clustermap_kws)
 
@@ -303,3 +309,55 @@ def label_axes(fig_or_axes, labels=string.ascii_uppercase,
         ax.annotate(labelstyle % label, xy=xy, xycoords=xycoords,
                     **defkwargs)
 
+
+def align_seqs(seqs):
+    """ Align multiple sequences using mafft-linsi with default parameters.
+
+    Parameters
+    ----------
+    seqs: iterable of strings
+
+    Returns
+    -------
+    list of strings
+        aligned sequences (with gaps)
+    """
+    seq_str = ''
+    for i, seq in enumerate(seqs):
+        seq_str += f'> seq {i}\n'
+        seq_str += f'{seq}\n'
+    child = subprocess.Popen(['mafft-linsi', '--quiet', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    child.stdin.write(seq_str.encode())
+    child_out = child.communicate()[0].decode('utf8')
+    seqs_aligned = list(SeqIO.parse(StringIO(child_out), 'fasta'))
+    child.stdin.close()
+    return [str(seq.seq) for seq in seqs_aligned]
+
+def seqlogos(seqs, ax=None, **kwargs):
+    """
+    Display a sequence logo.
+
+    Parameters
+    ----------
+    seqs: iterable of strings
+        sequences to be displayed
+    ax: matplotlib.axes
+        if None create new figure
+    **kwargs: dict
+        passed on to logomaker.Logo
+    """
+    lengths = np.array([len(s) for s in seqs])
+    if(len(np.unique(lengths))>1):
+        seqs = align_seqs(seqs)
+    counts_mat = lm.alignment_to_matrix(seqs)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(0.3*counts_mat.shape[0], 0.4))
+    lm_kwargs = dict(color_scheme='NajafabadiEtAl2017', show_spines=False)
+    lm_kwargs.update(kwargs)
+    lm.Logo(counts_mat, ax=ax, **lm_kwargs)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['bottom'].set_visible(False)
+    if ax is None:
+        fig.tight_layout()
+    return ax
