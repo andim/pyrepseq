@@ -99,9 +99,12 @@ def labels_to_colors_tableau(labels, min_count=None):
     label, count = np.unique(labels, return_counts=True)
     if not min_count is None:
         label = label[count>=min_count]
-    label = sorted(label)
+    #count, label = zip(*sorted(zip(count, label), reverse=True))
+    np.random.shuffle(label)
     # cycler generator instantiation allows infinite sampling
-    lut = dict(zip(label, plt.cycler(c=plt.cm.tab10.colors)()))
+    c = list(plt.cm.tab20.colors[::2])
+    c.extend(plt.cm.tab20.colors[1::2])
+    lut = dict(zip(label, plt.cycler(c=c)()))
     return [lut[n]['c'] if n in lut else [0, 0, 0] for n in labels]
 
 class ClusterGridSplit(sns.matrix.ClusterGrid):
@@ -225,7 +228,10 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     """
 
     if meta_to_colors is None:
-        meta_to_colors = [labels_to_colors_hls]*(len(meta_columns)+1)
+        if meta_columns is None:
+            meta_to_colors = [labels_to_colors_hls]
+        else:
+            meta_to_colors = [labels_to_colors_hls]*(len(meta_columns)+1)
 
     sequences_alpha = df[alpha_column]
     sequences_beta = df[beta_column]
@@ -248,8 +254,12 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
                                name='Cluster')
     if not meta_columns is None:
         colors_list = [cluster_colors]
-        meta_colors = [pd.Series(mapper(df[col]), name=col)
-                for col, mapper in zip(meta_columns, meta_to_colors[1:])]
+        if type(meta_columns) is dict:
+            meta_colors = [pd.Series(mapper(df[col]), name=meta_columns[col])
+                    for col, mapper in zip(meta_columns, meta_to_colors[1:])]
+        else:
+            meta_colors = [pd.Series(mapper(df[col]), name=col)
+                    for col, mapper in zip(meta_columns, meta_to_colors[1:])]
         colors_list.extend(meta_colors)
         colors = pd.concat(colors_list, axis=1)
     else:
@@ -309,7 +319,6 @@ def label_axes(fig_or_axes, labels=string.ascii_uppercase,
         ax.annotate(labelstyle % label, xy=xy, xycoords=xycoords,
                     **defkwargs)
 
-
 def align_seqs(seqs):
     """ Align multiple sequences using mafft-linsi with default parameters.
 
@@ -336,6 +345,8 @@ def align_seqs(seqs):
 def seqlogos(seqs, ax=None, **kwargs):
     """
     Display a sequence logo.
+    
+    Aligns sequences using `align_seqs` if they are are not of equal length.
 
     Parameters
     ----------
@@ -352,7 +363,8 @@ def seqlogos(seqs, ax=None, **kwargs):
     counts_mat = lm.alignment_to_matrix(seqs)
     if ax is None:
         fig, ax = plt.subplots(figsize=(0.3*counts_mat.shape[0], 0.4))
-    lm_kwargs = dict(color_scheme='NajafabadiEtAl2017', show_spines=False)
+    lm_kwargs = dict(color_scheme='chemistry',
+            show_spines=False, baseline_width=0.0)
     lm_kwargs.update(kwargs)
     lm.Logo(counts_mat, ax=ax, **lm_kwargs)
     ax.set_xticks([])
@@ -361,3 +373,42 @@ def seqlogos(seqs, ax=None, **kwargs):
     if ax is None:
         fig.tight_layout()
     return ax
+   
+def seqlogos_vj(df, cdr3_column, v_column, j_column, axes=None, **kwargs):
+    """
+    Display a sequence logo with V and J gene information.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        input data
+    cdr3_column: str
+        column name for cdr3 sequences
+    v_column: str
+        column name for v genes
+    j_column: str
+        column name for j genes
+    **kwargs: dict
+        passed on to `seqlogos`
+    """
+    seqs = df[cdr3_column]
+    max_length = max([len(s) for s in seqs])
+    counts_v = df[v_column].value_counts()
+    counts_j = df[j_column].value_counts()
+
+    if axes is None:
+        fig, axes = plt.subplots(figsize=(0.2*max_length+2.0, 0.4), ncols=3,
+                             gridspec_kw=dict(width_ratios=(1, 0.2*max_length, 1), wspace=0.1),
+                             sharey=True)
+    seqlogos(seqs, axes[1], **kwargs)
+    for ax, counts in zip([axes[0], axes[2]], [counts_v, counts_j]):
+        previous_count = 0
+        for gene_name, cum_count in counts.cumsum().items():
+            lm.Glyph(0.5, gene_name[3:], previous_count, cum_count, ax=ax)
+            previous_count = cum_count
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+    return axes
