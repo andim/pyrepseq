@@ -215,8 +215,8 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     ----------
     df : pandas DataFrame with data
     alpha_column, beta_column: column name with alpha and beta amino acid information
-    cluster_kws: keyword arguments for clustering algorithm
     linkage_kws: keyword arguments for linkage algorithm
+    cluster_kws: keyword arguments for clustering algorithm
     cbar_kws: keyword arguments for colorbar
     meta_columns: list-like
         metadata to plot alongside the cluster assignment 
@@ -240,6 +240,8 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     distances_alpha = pdist(sequences_alpha)
     distances_beta = pdist(sequences_beta)
     distances = distances_alpha + distances_beta
+    linkage = hc.linkage(distances, **linkage_kws)
+    cluster = hc.fcluster(linkage, **cluster_kws)
 
     cmap = plt.cm.viridis
     cmaplist = [cmap(i) for i in range(cmap.N)]
@@ -247,9 +249,7 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
         'Custom cmap', list(reversed(cmaplist)), cmap.N)
     bounds = np.arange(0, 7, 1) 
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-    linkage = hc.linkage(distances, **linkage_kws)
-    
-    cluster = hc.fcluster(linkage, **cluster_kws)
+
     cluster_colors = pd.Series(meta_to_colors[0](cluster, min_count=2),
                                name='Cluster')
     if not meta_columns is None:

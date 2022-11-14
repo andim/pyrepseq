@@ -3,6 +3,7 @@ from .io import aminoacids
 import numpy as np
 
 from scipy.spatial.distance import squareform
+import scipy.cluster.hierarchy as hc
 
 from Levenshtein import hamming as hamming_distance
 from Levenshtein import distance as levenshtein_distance
@@ -369,3 +370,25 @@ def nndist_hamming(seq, reference, maxdist=4):
     if (maxdist==3) or _isdist3(seq, reference):
         return 3
     return 4
+
+def hierarchical_clustering(seqs, 
+                            pdist_kws=dict(),
+                            linkage_kws=dict(method='average', optimal_ordering=True),
+                            cluster_kws=dict(t=6, criterion='distance')):
+    """
+    Hierarchical clustering by sequence similarity.
+
+    pdist_kws: keyword arguments for distance calculation
+    linkage_kws: keyword arguments for linkage algorithm
+    cluster_kws: keyword arguments for clustering algorithm
+    """
+    if type(seqs) is tuple:
+        seqs_alpha, seqs_beta = seqs
+        distances_alpha = pdist(seqs_alpha, **pdist_kws)
+        distances_beta = pdist(seqs_beta, **pdist_kws)
+        distances = distances_alpha + distances_beta
+    else:
+        raise NotImplementedError('seqs needs to be a tuple')
+    linkage = hc.linkage(distances, **linkage_kws)
+    cluster = hc.fcluster(linkage, **cluster_kws)
+    return linkage, cluster
