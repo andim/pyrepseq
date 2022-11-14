@@ -78,10 +78,29 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
             dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
     return dm
 
-def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True,
-            maxseqs=1000,
-            **kwargs):
+def downsample(seqs, maxseqs):
     """
+    Random downsampling of a list of sequences.
+
+    Also works for tuples (seqs_alpha, seqs_beta).
+    """
+    if maxseqs is None:
+        return seqs
+    if type(seqs) is tuple:
+        seqs_alpha, seqs_beta = seqs
+        if len(seqs_alpha) <= maxseqs:
+            return seqs
+        indices = np.random.choice(np.arange(len(seqs_alpha)), maxseqs, replace=False)
+        return np.asarray(seqs_alpha)[indices], np.asarray(seqs_beta)[indices]
+    if len(seqs) > maxseqs:
+        return np.random.choice(seqs, maxseqs, replace=False)
+    return seqs
+
+def pcDelta(seqs, seqs2=None, bins=None,
+            normalize=True, pseudocount=0.5, 
+            maxseqs=None,
+            **kwargs):
+    r"""
     Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
     among input sequences.
 
@@ -93,13 +112,12 @@ def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True,
         second list of sequences for cross-comparisons
     bins: iterable
         bins for the distances Delta. (Default: range(0, 25))
-    pseudocount : float
-       by default uses Jeffrey's prior value of 0.5 
     normalize: bool
         whether to return pc (normalized) or raw counts
+    pseudocount : float
+       by default uses Jeffrey's prior value of 0.5 
     maxseqs: int
-        maximal number of sequences to keep by random subsampling
-        TODO not implemented yet
+        maximal number of sequences to keep by random downsampling
     **kwargs: dict
         passed on to `pdist` or `cdist`
 
@@ -110,6 +128,7 @@ def pcDelta(seqs, seqs2=None, pseudocount=0.5, bins=None, normalize=True,
     """
     if bins is None:
         bins = np.arange(0, 25)
+    seqs = downsample(seqs, maxseqs)
     if type(seqs) is tuple:
         seqs_alpha, seqs_beta = seqs
         if seqs2 is None:
@@ -151,7 +170,7 @@ def pcDelta_grouped(df, by, seq_columns):
     
     pcDeltas = []
     for label, dfg in df.groupby(by):
-        pcDeltas.append(rsd.pcDelta(dfg[seq_columns], pseudocount=0.0, normalize=False))
+        pcDeltas.append(pcDelta(dfg[seq_columns], pseudocount=0.0, normalize=False))
     pcDeltas = np.array(pcDeltas)
     return np.sum(pcDeltas, axis=0)/np.sum(pcDeltas)
 
