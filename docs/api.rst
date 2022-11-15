@@ -35,5 +35,5 @@ plotting submodule
 ------------------
 
 .. automodule:: pyrepseq.plotting
-   :members: rankfrequency, similarity_clustermap
+   :members: rankfrequency, similarity_clustermap, seqlogos, seqlogos_vj, align_seqs, label_axes, labels_to_colors_hls, labels_to_colors_tableau
 
