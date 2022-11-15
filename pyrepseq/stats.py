@@ -69,7 +69,7 @@ def powerlaw_mle_alpha(c, cmin=1.0, method='exact', **kwargs):
 
 
 def pc(array):
-    """Estimate the coincidence probability :math:`p_C` from a sample.
+    r"""Estimate the coincidence probability :math:`p_C` from a sample.
     :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
     If :math:`n_i` are the counts of the i-th unique element and 
     :math:`N = \sum_i n_i` the length of the array, then:
