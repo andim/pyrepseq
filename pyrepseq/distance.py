@@ -1,6 +1,8 @@
 from .io import aminoacids
+import os.path
 
 import numpy as np
+import pandas as pd
 
 from scipy.spatial.distance import squareform
 import scipy.cluster.hierarchy as hc
@@ -150,7 +152,7 @@ def pcDelta(seqs, seqs2=None, bins=None,
     hist = hist.astype(np.float64)+pseudocount
     return hist/hist_sum
 
-def pcDelta_grouped(df, by, seq_columns):
+def pcDelta_grouped(df, by, seq_columns, normalize=True):
     """Near-coincidence probabilities conditioned to within-group comparisons.
     
     Parameters
@@ -173,7 +175,33 @@ def pcDelta_grouped(df, by, seq_columns):
     for label, dfg in df.groupby(by):
         pcDeltas.append(pcDelta(dfg[seq_columns], pseudocount=0.0, normalize=False))
     pcDeltas = np.array(pcDeltas)
-    return np.sum(pcDeltas, axis=0)/np.sum(pcDeltas)
+    if normalize:
+        return np.sum(pcDeltas, axis=0)/np.sum(pcDeltas)
+    return np.sum(pcDeltas, axis=0)
+
+def load_pcDelta_background(return_bins=True):
+    """
+    Loads pre-computed background pcDelta distributions calculated for PBMC TCRs.
+
+    Data: Sample W_F1_2018 from Minervina et al. https://zenodo.org/record/4065547/
+
+    Returns
+    -------
+    back : pd.DataFrame
+        DataFrame with coincidence probabilities
+    bins : ndarray [if return_bins = True]
+        Delta bins to be used as bins for other data
+    
+    """
+    folder = os.path.dirname(__file__)
+    path = os.path.join(folder, 'data', 'pcdelta_pbmc_minervina.csv')
+    back = pd.read_csv(path, index_col=0)
+    if not return_bins:
+        return back
+    bins = list(back.index)
+    bins.append(bins[-1]+1)
+    bins = np.array(bins)
+    return back, bins
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""

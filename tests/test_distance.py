@@ -59,3 +59,7 @@ def test_find_neighbor_pairs():
     pairs = find_neighbor_pairs(['AA', 'AC'])
     assert (('AA', 'AC') in pairs) or (('AC', 'AA') in pairs)
     assert len(pairs) == 1
+
+def test_load_pcDelta_background():
+    back, bins = load_pcDelta_background()
+
