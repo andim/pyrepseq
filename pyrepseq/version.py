@@ -29,7 +29,7 @@ CLASSIFIERS = ["Development Status :: 5 - Production/Stable",
 description = "Python library for immune repertoire analyses" 
 # Long description will go up on the pypi page
 long_description = """
-Pyrepseq is a library for facilitating high-level immune repertoire analyses.
+Pyrepseq = scipy & seaborn for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.
 """
 
 NAME = "pyrepseq"
