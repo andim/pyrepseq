@@ -311,13 +311,13 @@ def label_axes(fig_or_axes, labels=string.ascii_uppercase,
     kwargs : to be passed to annotate
     """
     # re-use labels rather than stop labeling
-    defkwargs = dict(fontweight='bold')
-    defkwargs.update(kwargs)
+    annotate_kwargs = dict(fontweight='bold', va='top')
+    annotate_kwargs.update(kwargs)
     labels = itertools.cycle(labels)
     axes = fig_or_axes.axes if isinstance(fig_or_axes, plt.Figure) else fig_or_axes
     for ax, label in zip(axes, labels):
         ax.annotate(labelstyle % label, xy=xy, xycoords=xycoords,
-                    **defkwargs)
+                    **annotate_kwargs)
 
 def align_seqs(seqs):
     """ Align multiple sequences using mafft-linsi with default parameters.
