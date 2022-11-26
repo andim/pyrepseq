@@ -336,14 +336,14 @@ def isdist1(x, reference, neighborhood=levenshtein_neighbors):
             return True
     return False
 
-def _isdist2(x, reference):
-    """ Is the string x a Hamming distance 2 away from any of the kmers in the reference set"""
+def _isdist2_hamming(x, reference):
+    """Is the string x a Hamming distance 2 away from any string in the reference set"""
     for i in range(len(x)):
-        for j in range(i+1, len(x)):
-            for aai in aminoacids:
-                if aai == x[i]:
-                    continue
-                si = x[:i]+aai+x[i+1:]
+     	for aai in aminoacids:
+            if aai == x[i]:
+                continue
+            si = x[:i]+aai+x[i+1:]
+            for j in range(i+1, len(x)):
                 for aaj in aminoacids:
                     if aaj == x[j]:
                         continue
@@ -351,19 +351,19 @@ def _isdist2(x, reference):
                         return True
     return False
 
-def _isdist3(x, reference):
-    """ Is the string x a Hamming distance 3 away from any of the kmers in the reference set"""
+def _isdist3_hamming(x, reference):
+    """Is the string x a Hamming distance 3 away from any string in the reference set"""
     for i in range(len(x)):
-        for j in range(i+1, len(x)):
-            for k in range(j+1, len(x)):
-                for aai in aminoacids:
-                    if aai == x[i]:
+        for aai in aminoacids:
+            if aai == x[i]:
+                continue
+            si = x[:i]+aai+x[i+1:]
+            for j in range(i+1, len(x)):
+                for aaj in aminoacids:
+                    if aaj == x[j]:
                         continue
-                    si = x[:i]+aai+x[i+1:]
-                    for aaj in aminoacids:
-                        if aaj == x[j]:
-                            continue
-                        sij = si[:j]+aaj+si[j+1:]
+                    sij = si[:j]+aaj+si[j+1:]
+                    for k in range(j+1, len(x)):
                         for aak in aminoacids:
                             if aak == x[k]:
                                 continue
@@ -379,23 +379,23 @@ def nndist_hamming(seq, reference, maxdist=4):
     seqs: list of sequences
     seq: sequence instance
     reference: set of referencesequences
-    maxdist: distance beyond which to cut off the calculation (currently needs to be <=4)
+    maxdist: distance beyond which to cut off the calculation (needs to be <=4)
 
     Returns
     -------
     distance of nearest neighbor 
 
-    Note: This function does not check whether neighbors are of same length.
+    Note: This function does not check if strings are of same length.
     """
     if maxdist>4:
         raise NotImplementedError
     if seq in reference:
         return 0
-    if (maxdist==1) or isdist1(seq, reference):
+    if (maxdist==1) or isdist1(seq, reference, neighborhood=hamming_neighbors):
         return 1
-    if (maxdist==2) or _isdist2(seq, reference):
+    if (maxdist==2) or _isdist2_hamming(seq, reference):
         return 2
-    if (maxdist==3) or _isdist3(seq, reference):
+    if (maxdist==3) or _isdist3_hamming(seq, reference):
         return 3
     return 4
 
