@@ -132,12 +132,18 @@ def pcDelta(seqs, seqs2=None, bins=None,
     if bins is None:
         bins = np.arange(0, 25)
     seqs = downsample(seqs, maxseqs)
-    if type(seqs) is tuple:
-        seqs_alpha, seqs_beta = seqs
+    if (type(seqs) is tuple) or ((type(seqs) is pd.DataFrame) and seqs.shape[1]==2):
+        if type(seqs) is tuple:
+            seqs_alpha, seqs_beta = seqs
+        if type(seqs) is pd.DataFrame:
+            seqs_alpha, seqs_beta = seqs.iloc[:, 0], seqs.iloc[:, 1]
         if seqs2 is None:
             hist, _ = np.histogram(pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins)
         else:
-            seqs_alpha2, seqs_beta2 = seqs2
+            if type(seqs2) is tuple:
+                seqs_alpha2, seqs_beta2 = seqs2
+            if type(seqs2) is pd.DataFrame:
+                seqs_alpha2, seqs_beta2 = seqs2.iloc[:, 0], seqs2.iloc[:, 1]
             hist, _ = np.histogram(cdist(seqs_alpha, seqs_alpha2, **kwargs) + cdist(seqs_beta, seqs_beta2, **kwargs), bins=bins)
     else:
         if seqs2 is None:
@@ -152,7 +158,7 @@ def pcDelta(seqs, seqs2=None, bins=None,
     hist = hist.astype(np.float64)+pseudocount
     return hist/hist_sum
 
-def pcDelta_grouped(df, by, seq_columns, normalize=True):
+def pcDelta_grouped(df, by, seq_columns, **kwargs):
     """Near-coincidence probabilities conditioned to within-group comparisons.
     
     Parameters
@@ -162,22 +168,20 @@ def pcDelta_grouped(df, by, seq_columns, normalize=True):
       see pd.DataFrame.groupby
     seq_columns : string
        The data frame column on which we want to apply the pcDelta analysis
+    **kwargs : keyword arguments
+        passed on to pcDelta
        
     Returns
     -------
-    Y : ndarray
-        Returns the the mean of the pC deltas for each group average by delta value
+    pcs : pd.DataFrame
+        Returns a DataFrame of pC(delta) for each group
     
     """
     
-    
-    pcDeltas = []
-    for label, dfg in df.groupby(by):
-        pcDeltas.append(pcDelta(dfg[seq_columns], pseudocount=0.0, normalize=False))
-    pcDeltas = np.array(pcDeltas)
-    if normalize:
-        return np.sum(pcDeltas, axis=0)/np.sum(pcDeltas)
-    return np.sum(pcDeltas, axis=0)
+    def pcDelta_within_group(dfg):
+        return pd.Series(pcDelta(dfg[seq_columns], **kwargs),
+                         name='Delta', index=kwargs.get('bins'))
+    return df.groupby(by).apply(pcDelta_within_group)
 
 def load_pcDelta_background(return_bins=True):
     """
