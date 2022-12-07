@@ -1,5 +1,6 @@
 from .io import aminoacids
 import os.path
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,7 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
         The distance metric to use. Default: Levenshtein distance.
     dtype : np.dtype
         data type of the distance matrix, default: np.uint8
+        Note: make sure to change the dtype, if the metric does not return integers
 
     Returns
     -------
@@ -32,6 +34,7 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
         of original observations. The metric ``dist(u=X[i], v=X[j])``
         is computed and stored in entry 
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
+
     """
     if metric is None:
         metric = levenshtein_distance
@@ -59,6 +62,7 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
         The distance metric to use. Default: Levenshtein distance.
     dtype : np.dtype
         data type of the distance matrix, default: np.uint8
+        Note: make sure to change the dtype, if the metric does not return integers
 
     Returns
     -------
@@ -182,6 +186,37 @@ def pcDelta_grouped(df, by, seq_columns, **kwargs):
         return pd.Series(pcDelta(dfg[seq_columns], **kwargs),
                          name='Delta', index=kwargs.get('bins'))
     return df.groupby(by).apply(pcDelta_within_group)
+
+def pcDelta_grouped_cross(df, by, seq_columns, **kwargs):
+    """Near-coincidence probabilities conditioned to cross-group comparisons.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+    by : mapping, function, label, or list of labels
+      see pd.DataFrame.groupby
+    seq_columns : string
+       The data frame column on which we want to apply the pcDelta analysis
+    **kwargs : keyword arguments
+        passed on to pcDelta
+       
+    Returns
+    -------
+    pcs : pd.DataFrame
+        Returns a DataFrame of pC(delta) across pairs of groups
+    
+    """
+    
+    groups = sorted(list(df.groupby(by)))
+    data = []
+    index = []
+    for ((name1, d1)), (name2, d2) in itertools.combinations(groups, 2):
+        pcg = pcDelta(d1[seq_columns], d2[seq_columns], **kwargs)
+        index.append([name1, name2])
+        data.append(pcg)
+    data = np.array(data)
+    index = np.array(index)
+    return pd.DataFrame(data, index=index)
 
 def load_pcDelta_background(return_bins=True):
     """
