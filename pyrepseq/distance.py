@@ -104,7 +104,7 @@ def downsample(seqs, maxseqs):
     return seqs
 
 def pcDelta(seqs, seqs2=None, bins=None,
-            normalize=True, pseudocount=0.5, 
+            normalize=True, pseudocount=0.0, 
             maxseqs=None,
             **kwargs):
     r"""
@@ -122,7 +122,8 @@ def pcDelta(seqs, seqs2=None, bins=None,
     normalize: bool
         whether to return pc (normalized) or raw counts
     pseudocount : float
-       by default uses Jeffrey's prior value of 0.5 
+       for a Bayesian estimation of coincidence frequencies
+       e.g. can use Jeffrey's prior value of 0.5 
     maxseqs: int
         maximal number of sequences to keep by random downsampling
     **kwargs: dict
