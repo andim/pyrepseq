@@ -412,3 +412,34 @@ def seqlogos_vj(df, cdr3_column, v_column, j_column, axes=None, **kwargs):
         ax.spines['bottom'].set_visible(False)
         ax.spines['left'].set_visible(False)
     return axes
+
+class HandlerTupleOffset(mpl.legend_handler.HandlerTuple):
+    """
+    Legend Handler for tuple plotting markers on top of each other
+    """
+    def __init__(self, horizontal=True, **kwargs):
+        """
+        horizontal: shift horizontally (for markers), else shift vertically (for lines)
+        """
+        self.horizontal = horizontal
+        mpl.legend_handler.HandlerTuple.__init__(self, **kwargs)
+
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize,
+                       trans):
+        horizontal = self.horizontal
+        nhandles = len(orig_handle)
+        perside = (nhandles - 1) / 2
+        offset = (width if horizontal else height) / nhandles
+        handler_map = legend.get_legend_handler_map()
+        a_list = []
+        for i, handle1 in enumerate(orig_handle):
+            handler = legend.get_legend_handler(handler_map, handle1)
+            _a_list = handler.create_artists(legend, handle1,
+                                             xdescent+(offset*(i-perside) if horizontal else 0),
+                                             ydescent+(offset*(i-perside) if not horizontal else 0),
+                                             width, height,
+                                             fontsize,
+                                             trans)
+            a_list.extend(_a_list)
+        return a_list
