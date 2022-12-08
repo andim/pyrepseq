@@ -105,12 +105,14 @@ def overlap_coefficient(A, B):
     This measure is defined  defined as 
     :math:`O(A, B) = |A intersection B| / min(|A|, |B|)`
 
-    A, B: iterables (will be converted to sets). If A, B are pd.Series na values will be dropped first
+    A, B: iterables (will be converted to sets). na values will be dropped first
     """
-    if type(A) == pd.Series:
-        A = A.dropna()
-    if type(B) == pd.Series:
-        B = B.dropna()
+    if type(A) != pd.Series:
+        A = pd.Series(A)
+    if type(B) != pd.Series:
+        B = pd.Series(B)
+    A = A.dropna()
+    B = B.dropna()
     A = set(A)
     B = set(B)
     return len(A.intersection(B))/min(len(A), len(B))
