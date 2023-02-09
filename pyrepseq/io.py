@@ -10,7 +10,7 @@ def standardize_dataframe(df_old, from_columns,
                           to_columns = ["TRAV", "CDR3A","TRAJ",
                                         "TRBV", "CDR3B", "TRBJ",
                                         "Epitope", "MHCA", "MHCB",
-                                        "duplicate_counts"]):
+                                        "clonal_counts"]):
 
 
     df = pd.DataFrame()

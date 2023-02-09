@@ -10,7 +10,7 @@ def standardize_dataframe(df_old, from_columns,
                           to_columns = ["TRAV", "CDR3A","TRAJ",
                                         "TRBV", "CDR3B", "TRBJ",
                                         "Epitope", "MHCA", "MHCB",
-                                        "duplicate_counts"]):
+                                        "clonal_counts"]):
 
 
     df = pd.DataFrame()
@@ -21,14 +21,14 @@ def standardize_dataframe(df_old, from_columns,
             df[to_column] = np.full(len(df_old), np.nan)
 
     if df["CDR3A"].isnull().all():
-        df = df[df['CDR3B'].apply(prs.isvalidcdr3)]
+        df = df[df['CDR3B'].apply(isvalidcdr3)]
 
     elif df["CDR3B"].isnull().all():
-        df = df[df['CDR3A'].apply(prs.isvalidcdr3)]
+        df = df[df['CDR3A'].apply(isvalidcdr3)]
 
     else:
-        df = df[df['CDR3A'].apply(prs.isvalidcdr3)]
-        df = df[df['CDR3B'].apply(prs.isvalidcdr3)]
+        df = df[df['CDR3A'].apply(isvalidcdr3)]
+        df = df[df['CDR3B'].apply(isvalidcdr3)]
 
     return df 
 
