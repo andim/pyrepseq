@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: pyrepseq
+Version: 1.0
+Summary: Python library for immune repertoire analyses
+Home-page: http://pyrepseq.readthedocs.io/
+Download-URL: http://github.com/andim/pyrepseq
+Author: Andreas Mayer
+Author-email: andimscience@gmail.com
+Maintainer: Andreas Mayer
+Maintainer-email: andimscience@gmail.com
+License: MIT
+Platform: OS Independent
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Topic :: Scientific/Engineering
+License-File: LICENSE
+
+
+Pyrepseq = scipy & seaborn for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.
