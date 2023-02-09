@@ -6,6 +6,33 @@ import pandas as pd
 aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
 _aminoacids_set = set(aminoacids)
 
+def standardize_dataframe(df_old, from_columns,
+                          to_columns = ["TRAV", "CDR3A","TRAJ",
+                                        "TRBV", "CDR3B", "TRBJ",
+                                        "Epitope", "MHCA", "MHCB",
+                                        "duplicate_counts"]):
+
+
+    df = pd.DataFrame()
+    for from_column, to_column in zip(from_columns, to_columns):
+        try:
+            df[to_column] = df_old[from_column]
+        except:
+            df[to_column] = np.full(len(df_old), np.nan)
+
+    if df["CDR3A"].isnull().all():
+        df = df[df['CDR3B'].apply(prs.isvalidcdr3)]
+
+    elif df["CDR3B"].isnull().all():
+        df = df[df['CDR3A'].apply(prs.isvalidcdr3)]
+
+    else:
+        df = df[df['CDR3A'].apply(prs.isvalidcdr3)]
+        df = df[df['CDR3B'].apply(prs.isvalidcdr3)]
+
+    return df 
+
+
 def isvalidaa(string):
     "returns true if string is composed only of characters from the standard amino acid alphabet"
     try:
