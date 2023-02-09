@@ -201,13 +201,14 @@ def clustermap_split(data_lower, data_upper, *,
                         tree_kws=tree_kws, **kws)
 
 def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
-                           linkage_kws=dict(method='average', optimal_ordering=True),
-                           cluster_kws=dict(t=6, criterion='distance'),
-                           cbar_kws=dict(label='Sequence Distance',
-                               format='%d', orientation='horizontal'),
-                           meta_columns=None,
-                           meta_to_colors=None,
-                           **kws):
+                          norm=None,
+                          linkage_kws=dict(method='average', optimal_ordering=True),
+                          cluster_kws=dict(t=6, criterion='distance'),
+                          cbar_kws=dict(label='Sequence Distance',
+                              format='%d', orientation='horizontal'),
+                          meta_columns=None,
+                          meta_to_colors=None,
+                          **kws):
     """
     Plots a sequence-similarity clustermap.
 
@@ -215,6 +216,7 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     ----------
     df : pandas DataFrame with data
     alpha_column, beta_column: column name with alpha and beta amino acid information
+    norm: function to normalize distances
     linkage_kws: keyword arguments for linkage algorithm
     cluster_kws: keyword arguments for clustering algorithm
     cbar_kws: keyword arguments for colorbar
@@ -247,8 +249,12 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     cmaplist = [cmap(i) for i in range(cmap.N)]
     cmap = mpl.colors.LinearSegmentedColormap.from_list(
         'Custom cmap', list(reversed(cmaplist)), cmap.N)
-    bounds = np.arange(0, 7, 1) 
-    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+
+    if norm is None:
+        bounds = np.arange(0, 7, 1) 
+        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+        # plot tick in the middle of the discretized colormap
+        cbar_kws.update(dict(ticks=bounds[:-1]+0.5))
 
     cluster_colors = pd.Series(meta_to_colors[0](cluster, min_count=2),
                                name='Cluster')
@@ -265,8 +271,6 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
     else:
         colors = cluster_colors
     
-    # plot tick in the middle of the discretized colormap
-    cbar_kws.update(dict(ticks=bounds[:-1]+0.5))
     
     # default clustermap kws
     clustermap_kws = dict(cbar_kws=cbar_kws,
@@ -284,9 +288,10 @@ def similarity_clustermap(df, alpha_column='cdr3a', beta_column='cdr3b',
                           row_colors=colors,
                           **clustermap_kws)
 
-    cbar_labels = [str(b) for b in bounds[:-1]]
-    cbar_labels[-1] = '>' + cbar_labels[-1]
-    cg.cax.set_xticklabels(cbar_labels)
+    if norm is None:
+        cbar_labels = [str(b) for b in bounds[:-1]]
+        cbar_labels[-1] = '>' + cbar_labels[-1]
+        cg.cax.set_xticklabels(cbar_labels)
     cg.ax_heatmap.set_xlabel(r'CDR3$\alpha$ Sequence')
     cg.ax_heatmap.set_ylabel(r'CDR3$\beta$ Sequence')
     cg.ax_col_dendrogram.set_visible(False)
@@ -356,6 +361,10 @@ def seqlogos(seqs, ax=None, **kwargs):
         if None create new figure
     **kwargs: dict
         passed on to logomaker.Logo
+
+    Returns
+    -------
+    axes, counts_matrix
     """
     lengths = np.array([len(s) for s in seqs])
     if(len(np.unique(lengths))>1):
@@ -372,7 +381,7 @@ def seqlogos(seqs, ax=None, **kwargs):
     ax.spines['bottom'].set_visible(False)
     if ax is None:
         fig.tight_layout()
-    return ax
+    return ax, counts_mat
    
 def seqlogos_vj(df, cdr3_column, v_column, j_column, axes=None, **kwargs):
     """
