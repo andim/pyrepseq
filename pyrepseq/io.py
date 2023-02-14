@@ -20,44 +20,39 @@ def standardize_dataframe(df_old, from_columns,
     '''
     Utility function to organise TCR data into a standardised format.
 
-    :param df_old:
+    Parameters
+    ----------
+
+    df_old: pandas.DataFrame
         Source ``DataFrame`` from which to pull data.
-    :type df_old:
-        ``pandas.DataFrame``
-    :param from_columns:
+        
+    from_columns: Iterable
         Iterable of old table column names to be mapped to the standardised columns, in their respective order.
-    :type from_columns:
-        ``Iterable``
-    :param to_columns:
+        
+    to_columns: Iterable
         List of columns to map the old ``from_columns`` to.
         Defaults to ``["TRAV", "CDR3A","TRAJ", "TRBV", "CDR3B", "TRBJ", "Epitope", "MHCA", "MHCB", "clonal_counts"]``.
-    :type to_columns:
-        ``Iterable``
-    :param species:
+        
+    species: str
         Name of the species from which the TCR data is derived, in their binomial nomenclature, camel-cased.
         Defaults to ``'HomoSapiens'``.
-    :type species:
-        ``str``
-    :param tcr_enforce_functional:
+        
+    tcr_enforce_functional: bool
         When set to ``True``, TCR genes that are not functional (i.e. ORF or pseudogene) are removed, and replaced with ``None``.
         Defaults to ``True``.
-    :type tcr_enforce_functional:
-        ``bool``
-    :param tcr_precision:
+        
+    tcr_precision: str
         Level of precision to trim the TCR gene data to (``'gene'`` or ``'allele'``).
         Defaults to ``'gene'``.
-    :type tcr_precision:
-        ``str``
-    :param mhc_precision:
+        
+    mhc_precision: str
         Level of precision to trim the MHC gene data to (``'gene'``, ``'protein'`` or ``'allele'``).
         Defaults to ``'gene'``.
-    :type mhc_precision:
-        ``str``
-
-    :return:
+        
+    Returns
+    -------
+    pandas.DataFrame
         Standardised ``DataFrame`` containing the original data, cleaned.
-    :rtype:
-        ``pandas.DataFrame``
     '''
 
 
