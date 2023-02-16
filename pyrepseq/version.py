@@ -50,4 +50,4 @@ VERSION = __version__
 PACKAGES = ['pyrepseq']
 PACKAGE_DATA = {'' : ['data/*.csv']}
 REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein", "matplotlib",
-            "seaborn", "logomaker", "biopython"]
+            "seaborn", "logomaker", "biopython", "tidytcells"]
