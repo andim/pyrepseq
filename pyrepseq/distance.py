@@ -1,4 +1,5 @@
 from .io import aminoacids
+from .stats import pc
 import os.path
 import itertools
 
@@ -119,6 +120,7 @@ def pcDelta(seqs, seqs2=None, bins=None,
         second list of sequences for cross-comparisons
     bins: iterable
         bins for the distances Delta. (Default: range(0, 25))
+        bins=0: Calculate exact coincidence probability
     normalize: bool
         whether to return pc (normalized) or raw counts
     pseudocount : float
@@ -136,6 +138,9 @@ def pcDelta(seqs, seqs2=None, bins=None,
     """
     if bins is None:
         bins = np.arange(0, 25)
+    if isinstance(bins, int) and bins == 0:
+        return pc(seqs, seqs2)
+
     seqs = downsample(seqs, maxseqs)
     if (type(seqs) is tuple) or ((type(seqs) is pd.DataFrame) and seqs.shape[1]==2):
         if type(seqs) is tuple:
@@ -184,11 +189,13 @@ def pcDelta_grouped(df, by, seq_columns, **kwargs):
     """
     
     def pcDelta_within_group(dfg):
+        index = kwargs.get('bins')
+        index = [index] if isinstance(index, int) else index
         return pd.Series(pcDelta(dfg[seq_columns], **kwargs),
-                         name='Delta', index=kwargs.get('bins'))
+                         name='Delta', index=index)
     return df.groupby(by).apply(pcDelta_within_group)
 
-def pcDelta_grouped_cross(df, by, seq_columns, **kwargs):
+def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
     """Near-coincidence probabilities conditioned to cross-group comparisons.
     
     Parameters
@@ -198,6 +205,8 @@ def pcDelta_grouped_cross(df, by, seq_columns, **kwargs):
       see pd.DataFrame.groupby
     seq_columns : string
        The data frame column on which we want to apply the pcDelta analysis
+    condensed : bool
+        Return a condensed instead of squareform matrix (default: False)
     **kwargs : keyword arguments
         passed on to pcDelta
        
@@ -216,8 +225,16 @@ def pcDelta_grouped_cross(df, by, seq_columns, **kwargs):
         index.append([name1, name2])
         data.append(pcg)
     data = np.array(data)
-    index = np.array(index)
-    return pd.DataFrame(data, index=index)
+    if condensed:
+        return pd.DataFrame(data,
+        	index=pd.MultiIndex.from_tuples(index,
+        	names=['group1', 'group2']))
+    names = [name for name, dfg in groups]
+    data_square = squareform(data)
+    np.fill_diagonal(data_square,
+                     pcDelta_grouped(df, 'sample', seq_columns='bioidentity', bins=0))
+    return pd.DataFrame(data_square, index=names, columns=names)
+
 
 def load_pcDelta_background(return_bins=True):
     """

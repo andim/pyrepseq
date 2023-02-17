@@ -29,10 +29,7 @@ def _discrete_loglikelihood(x, alpha, xmin):
 
 def powerlaw_mle_alpha(c, cmin=1.0, method='exact', **kwargs):
     """Maximum likelihood estimate of the power-law exponent.
-
     
-    for discrete counts.
-
     Parameters
     ----------
     c : counts
@@ -67,19 +64,35 @@ def powerlaw_mle_alpha(c, cmin=1.0, method='exact', **kwargs):
         return result.x
     return 1.0 + len(c)/np.sum(np.log(c/cmin))
 
-def pc(array):
+def pc(array, array2=None):
     r"""Estimate the coincidence probability :math:`p_C` from a sample.
     :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
     If :math:`n_i` are the counts of the i-th unique element and 
     :math:`N = \sum_i n_i` the length of the array, then:
     :math:`p_C = \sum_i n_i (n_i-1)/(N(N-1))`
-    
+
     Note: This measure is also known as the Simpson or Hunter-Gaston index
+
+    Parameters
+    ----------
+    array : array-like
+        list of sampled elements
+    array2: array-like
+        second list of sampled elements: if provided probability
+        of cross-coincidences is calculated as :math:`p_C = (sum_i n_1i n_2i) / (N_1 N_2)`
+    
     """
     array = np.asarray(array)
-    N = array.shape[0]
-    _, counts = np.unique(array, return_counts=True)
-    return np.sum(counts*(counts-1))/(N*(N-1))
+    if array2 is None:
+        N = array.shape[0]
+        _, counts = np.unique(array, return_counts=True)
+        return np.sum(counts*(counts-1))/(N*(N-1))
+
+    array2 = np.asarray(array2)
+    v, c = np.unique(array, return_counts=True)
+    v2, c2 = np.unique(array2, return_counts=True)
+    v_int, ind1_int, ind2_int = np.intersect1d(v, v2, assume_unique=True, return_indices=True)
+    return np.sum(c[ind1_int]*c2[ind2_int])/(len(array)*len(array2))
 
 def jaccard_index(A, B):
     """
