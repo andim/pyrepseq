@@ -13,6 +13,7 @@ def standardize_dataframe(df_old, from_columns,
                                         "TRBV", "CDR3B", "TRBJ",
                                         "Epitope", "MHCA", "MHCB",
                                         "clonal_counts"],
+                          standardise = True,
                           species = 'HomoSapiens',
                           tcr_enforce_functional = True,
                           tcr_precision = 'gene',
@@ -32,6 +33,10 @@ def standardize_dataframe(df_old, from_columns,
     to_columns: Iterable
         List of columns to map the old ``from_columns`` to.
         Defaults to ``["TRAV", "CDR3A","TRAJ", "TRBV", "CDR3B", "TRBJ", "Epitope", "MHCA", "MHCB", "clonal_counts"]``.
+
+    standardise: bool
+        When set to ``False``, gene name standardisation is not attempted.
+        Defaults to ``True``.
         
     species: str
         Name of the species from which the TCR data is derived, in their binomial nomenclature, camel-cased.
@@ -75,32 +80,39 @@ def standardize_dataframe(df_old, from_columns,
     
 
     # Standardise TCR genes and MHC genes
-    for col in ('TRAV', 'TRAJ', 'TRBV', 'TRBJ'):
-        if not col in to_columns:
-            warn(f'No column identified for {col}. Skipping gene standardisation...')
-            continue
-        
-        df[col] = df[col].map(
-            lambda x: None if pd.isna(x) else tt.tcr.standardise(
-                gene_name=x,
-                species=species,
-                enforce_functional=tcr_enforce_functional,
-                precision=tcr_precision
+    if standardise:
+        for col in ('TRAV', 'TRAJ', 'TRBV', 'TRBJ'):
+            if not col in to_columns:
+                warn(
+                    f'No column identified for {col}. '
+                    'Skipping gene standardisation...'
+                )
+                continue
+            
+            df[col] = df[col].map(
+                lambda x: None if pd.isna(x) else tt.tcr.standardise(
+                    gene_name=x,
+                    species=species,
+                    enforce_functional=tcr_enforce_functional,
+                    precision=tcr_precision
+                )
             )
-        )
-    
-    for col in ('MHCA', 'MHCB'):
-        if not col in to_columns:
-            warn(f'No column identified for {col}. Skipping gene standardisation...')
-            continue
         
-        df[col] = df[col].map(
-            lambda x: None if pd.isna(x) else tt.mhc.standardise(
-                gene_name=x,
-                species=species,
-                precision=mhc_precision
+        for col in ('MHCA', 'MHCB'):
+            if not col in to_columns:
+                warn(
+                    f'No column identified for {col}. '
+                    'Skipping gene standardisation...'
+                )
+                continue
+            
+            df[col] = df[col].map(
+                lambda x: None if pd.isna(x) else tt.mhc.standardise(
+                    gene_name=x,
+                    species=species,
+                    precision=mhc_precision
+                )
             )
-        )
 
     return df 
 
