@@ -91,7 +91,7 @@ def standardize_dataframe(df_old, from_columns,
             
             df[col] = df[col].map(
                 lambda x: None if pd.isna(x) else tt.tcr.standardise(
-                    gene_name=x,
+                    gene=x,
                     species=species,
                     enforce_functional=tcr_enforce_functional,
                     precision=tcr_precision
@@ -108,7 +108,7 @@ def standardize_dataframe(df_old, from_columns,
             
             df[col] = df[col].map(
                 lambda x: None if pd.isna(x) else tt.mhc.standardise(
-                    gene_name=x,
+                    gene=x,
                     species=species,
                     precision=mhc_precision
                 )
