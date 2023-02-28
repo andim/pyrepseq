@@ -3,13 +3,16 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 import tidytcells as tt
+from typing import Iterable, Mapping, Optional
 from warnings import warn
 
 aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
 _aminoacids_set = set(aminoacids)
 
-def standardize_dataframe(df_old, from_columns,
-                          to_columns = ["TRAV", "CDR3A","TRAJ",
+def standardize_dataframe(df_old,
+                          col_mapper: Optional[Mapping] = None,
+                          from_columns: Optional[Iterable] = None,
+                          to_columns: Optional[Iterable] = ["TRAV", "CDR3A","TRAJ",
                                         "TRBV", "CDR3B", "TRBJ",
                                         "Epitope", "MHCA", "MHCB",
                                         "clonal_counts"],
@@ -26,12 +29,22 @@ def standardize_dataframe(df_old, from_columns,
 
     df_old: pandas.DataFrame
         Source ``DataFrame`` from which to pull data.
+
+    col_mapper: Mapping
+        A mapping object, such as a dictionary, which maps the old column names to the new column names.
+        Mutually exclusive with from_columns and to_columns.
+        Defaults to ``None``.
         
     from_columns: Iterable
         Iterable of old table column names to be mapped to the standardised columns, in their respective order.
+        Mutually exclusive with col_mapper.
+        Must be same length as to_columns.
+        Defaults to ``None``.
         
     to_columns: Iterable
         List of columns to map the old ``from_columns`` to.
+        Mutually exclusive with col_mapper.
+        Must be same length as from_columns.
         Defaults to ``["TRAV", "CDR3A","TRAJ", "TRBV", "CDR3B", "TRBJ", "Epitope", "MHCA", "MHCB", "clonal_counts"]``.
 
     standardise: bool
@@ -59,60 +72,62 @@ def standardize_dataframe(df_old, from_columns,
     pandas.DataFrame
         Standardised ``DataFrame`` containing the original data, cleaned.
     '''
-
-
-    df = pd.DataFrame()
-    for from_column, to_column in zip(from_columns, to_columns):
-        try:
-            df[to_column] = df_old[from_column]
-        except:
-            df[to_column] = np.full(len(df_old), np.nan)
-
-    if df["CDR3A"].isnull().all():
-        df = df[df['CDR3B'].apply(isvalidcdr3)]
-
-    elif df["CDR3B"].isnull().all():
-        df = df[df['CDR3A'].apply(isvalidcdr3)]
-
-    else:
-        df = df[df['CDR3A'].apply(isvalidcdr3)]
-        df = df[df['CDR3B'].apply(isvalidcdr3)]
-    
-
-    # Standardise TCR genes and MHC genes
-    if standardise:
-        for col in ('TRAV', 'TRAJ', 'TRBV', 'TRBJ'):
-            if not col in to_columns:
-                warn(
-                    f'No column identified for {col}. '
-                    'Skipping gene standardisation...'
-                )
-                continue
-            
-            df[col] = df[col].map(
-                lambda x: None if pd.isna(x) else tt.tcr.standardise(
-                    gene=x,
-                    species=species,
-                    enforce_functional=tcr_enforce_functional,
-                    precision=tcr_precision
-                )
+    if col_mapper is None:
+        if from_columns is None:
+            raise ValueError(
+                'Please specify either col_mapper or from_columns.'
             )
         
-        for col in ('MHCA', 'MHCB'):
-            if not col in to_columns:
-                warn(
-                    f'No column identified for {col}. '
-                    'Skipping gene standardisation...'
-                )
-                continue
-            
-            df[col] = df[col].map(
-                lambda x: None if pd.isna(x) else tt.mhc.standardise(
-                    gene=x,
-                    species=species,
-                    precision=mhc_precision
-                )
+        if not (
+            isinstance(from_columns, Iterable) and
+            isinstance(to_columns, Iterable)
+        ):
+            raise TypeError('from_columns and to_columns must be iterables.')
+        
+        if len(from_columns) != len(to_columns):
+            raise ValueError(
+                'from_columns and to_columns must be of same legnth.'
             )
+
+        col_mapper = {
+            from_col: to_col
+            for from_col, to_col in zip(from_columns, to_columns)
+        }
+
+    df = df_old[list(col_mapper.keys())]
+    df.rename(columns=col_mapper, inplace=True)
+    
+    # Standardise TCR genes and MHC genes
+    if standardise:
+        for chain in ('A', 'B'):
+
+            cdr3 = f'CDR3{chain}'
+            if cdr3 in df.columns:
+                df[cdr3] = df[cdr3].map(
+                    lambda x: x if isvalidcdr3(x) else pd.NA
+                )
+
+            for gene in ('V', 'J'):
+                col = f'TR{chain}{gene}'
+                if col in df.columns:
+                    df[col] = df[col].map(
+                        lambda x: None if pd.isna(x) else tt.tcr.standardise(
+                            gene=x,
+                            species=species,
+                            enforce_functional=tcr_enforce_functional,
+                            precision=tcr_precision
+                        )
+                    )
+            
+            mhc = f'MHC{chain}'
+            if mhc in df.columns:
+                df[mhc] = df[mhc].map(
+                    lambda x: None if pd.isna(x) else tt.mhc.standardise(
+                        gene=x,
+                        species=species,
+                        precision=mhc_precision
+                    )
+                )
 
     return df 
 
