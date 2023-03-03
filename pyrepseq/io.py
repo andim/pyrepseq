@@ -16,11 +16,13 @@ def standardize_dataframe(df_old,
                                         "TRBV", "CDR3B", "TRBJ",
                                         "Epitope", "MHCA", "MHCB",
                                         "clonal_counts"],
-                          standardise = True,
+                          standardize: Optional[bool] = None,
+                          standardise: Optional[bool] = None,
                           species = 'HomoSapiens',
                           tcr_enforce_functional = True,
                           tcr_precision = 'gene',
-                          mhc_precision = 'gene'):
+                          mhc_precision = 'gene',
+                          suppress_warnings = False):
     '''
     Utility function to organise TCR data into a standardised format.
 
@@ -47,9 +49,12 @@ def standardize_dataframe(df_old,
         Must be same length as from_columns.
         Defaults to ``["TRAV", "CDR3A","TRAJ", "TRBV", "CDR3B", "TRBJ", "Epitope", "MHCA", "MHCB", "clonal_counts"]``.
 
-    standardise: bool
+    standardize: bool
         When set to ``False``, gene name standardisation is not attempted.
         Defaults to ``True``.
+
+    standardise: bool
+        Alias for standardize.
         
     species: str
         Name of the species from which the TCR data is derived, in their binomial nomenclature, camel-cased.
@@ -66,12 +71,23 @@ def standardize_dataframe(df_old,
     mhc_precision: str
         Level of precision to trim the MHC gene data to (``'gene'``, ``'protein'`` or ``'allele'``).
         Defaults to ``'gene'``.
+
+    suppress_warnings: bool
+        If ``True``, suppresses warnings that are emitted when the standardisation of certain values fails.
+        Defaults to ``False``.
         
     Returns
     -------
     pandas.DataFrame
         Standardised ``DataFrame`` containing the original data, cleaned.
     '''
+    # Alias resolution
+    if (not standardize is None) and (not standardise is None):
+        raise ValueError('standardize and standardise are mutually exclusive.')
+    
+    if standardize is None:
+        standardize = True if standardise is None else standardise
+
     if col_mapper is None:
         if from_columns is None:
             raise ValueError(
@@ -98,7 +114,7 @@ def standardize_dataframe(df_old,
     df.rename(columns=col_mapper, inplace=True)
     
     # Standardise TCR genes and MHC genes
-    if standardise:
+    if standardize:
         for chain in ('A', 'B'):
 
             cdr3 = f'CDR3{chain}'
@@ -115,7 +131,8 @@ def standardize_dataframe(df_old,
                             gene=x,
                             species=species,
                             enforce_functional=tcr_enforce_functional,
-                            precision=tcr_precision
+                            precision=tcr_precision,
+                            suppress_warnings=suppress_warnings
                         )
                     )
             
@@ -125,7 +142,8 @@ def standardize_dataframe(df_old,
                     lambda x: None if pd.isna(x) else tt.mhc.standardise(
                         gene=x,
                         species=species,
-                        precision=mhc_precision
+                        precision=mhc_precision,
+                        suppress_warnings=suppress_warnings
                     )
                 )
 
