@@ -3,38 +3,40 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 import tidytcells as tt
+from typing import Iterable, Mapping, Optional
 from warnings import warn
 
 aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
 _aminoacids_set = set(aminoacids)
 
-def standardize_dataframe(df_old, from_columns,
-                          to_columns = ["TRAV", "CDR3A","TRAJ",
-                                        "TRBV", "CDR3B", "TRBJ",
-                                        "Epitope", "MHCA", "MHCB",
-                                        "clonal_counts"],
-                          standardise = True,
+def standardize_dataframe(df_old,
+                          col_mapper: Mapping,
+                          standardize: bool = True,
                           species = 'HomoSapiens',
                           tcr_enforce_functional = True,
                           tcr_precision = 'gene',
-                          mhc_precision = 'gene'):
+                          mhc_precision = 'gene',
+                          suppress_warnings = False):
     '''
     Utility function to organise TCR data into a standardised format.
 
+    If standardization is enabled (True by default), the function will additionally attempt to standardise the TCR and MHC gene symbols to be IMGT-compliant, and CDR3 sequences to be valid.
+    The appropriate standardization procedures will be applied for columns with the following names:
+        - TRAV / TRBV
+        - TRAJ / TRBJ
+        - CDR3A / CDR3B
+        - MHCA / MHCB
+    
     Parameters
     ----------
 
     df_old: pandas.DataFrame
         Source ``DataFrame`` from which to pull data.
-        
-    from_columns: Iterable
-        Iterable of old table column names to be mapped to the standardised columns, in their respective order.
-        
-    to_columns: Iterable
-        List of columns to map the old ``from_columns`` to.
-        Defaults to ``["TRAV", "CDR3A","TRAJ", "TRBV", "CDR3B", "TRBJ", "Epitope", "MHCA", "MHCB", "clonal_counts"]``.
 
-    standardise: bool
+    col_mapper: Mapping
+        A mapping object, such as a dictionary, which maps the old column names to the new column names.
+
+    standardize: bool
         When set to ``False``, gene name standardisation is not attempted.
         Defaults to ``True``.
         
@@ -53,66 +55,52 @@ def standardize_dataframe(df_old, from_columns,
     mhc_precision: str
         Level of precision to trim the MHC gene data to (``'gene'``, ``'protein'`` or ``'allele'``).
         Defaults to ``'gene'``.
+
+    suppress_warnings: bool
+        If ``True``, suppresses warnings that are emitted when the standardisation of certain values fails.
+        Defaults to ``False``.
         
     Returns
     -------
     pandas.DataFrame
         Standardised ``DataFrame`` containing the original data, cleaned.
     '''
-
-
-    df = pd.DataFrame()
-    for from_column, to_column in zip(from_columns, to_columns):
-        try:
-            df[to_column] = df_old[from_column]
-        except:
-            df[to_column] = np.full(len(df_old), np.nan)
-
-    if df["CDR3A"].isnull().all():
-        df = df[df['CDR3B'].apply(isvalidcdr3)]
-
-    elif df["CDR3B"].isnull().all():
-        df = df[df['CDR3A'].apply(isvalidcdr3)]
-
-    else:
-        df = df[df['CDR3A'].apply(isvalidcdr3)]
-        df = df[df['CDR3B'].apply(isvalidcdr3)]
+    df = df_old[list(col_mapper.keys())]
+    df.rename(columns=col_mapper, inplace=True)
     
-
     # Standardise TCR genes and MHC genes
-    if standardise:
-        for col in ('TRAV', 'TRAJ', 'TRBV', 'TRBJ'):
-            if not col in to_columns:
-                warn(
-                    f'No column identified for {col}. '
-                    'Skipping gene standardisation...'
+    if standardize:
+        for chain in ('A', 'B'):
+
+            cdr3 = f'CDR3{chain}'
+            if cdr3 in df.columns:
+                df[cdr3] = df[cdr3].map(
+                    lambda x: x if isvalidcdr3(x) else pd.NA
                 )
-                continue
+
+            for gene in ('V', 'J'):
+                col = f'TR{chain}{gene}'
+                if col in df.columns:
+                    df[col] = df[col].map(
+                        lambda x: None if pd.isna(x) else tt.tcr.standardise(
+                            gene=x,
+                            species=species,
+                            enforce_functional=tcr_enforce_functional,
+                            precision=tcr_precision,
+                            suppress_warnings=suppress_warnings
+                        )
+                    )
             
-            df[col] = df[col].map(
-                lambda x: None if pd.isna(x) else tt.tcr.standardise(
-                    gene=x,
-                    species=species,
-                    enforce_functional=tcr_enforce_functional,
-                    precision=tcr_precision
+            mhc = f'MHC{chain}'
+            if mhc in df.columns:
+                df[mhc] = df[mhc].map(
+                    lambda x: None if pd.isna(x) else tt.mhc.standardise(
+                        gene=x,
+                        species=species,
+                        precision=mhc_precision,
+                        suppress_warnings=suppress_warnings
+                    )
                 )
-            )
-        
-        for col in ('MHCA', 'MHCB'):
-            if not col in to_columns:
-                warn(
-                    f'No column identified for {col}. '
-                    'Skipping gene standardisation...'
-                )
-                continue
-            
-            df[col] = df[col].map(
-                lambda x: None if pd.isna(x) else tt.mhc.standardise(
-                    gene=x,
-                    species=species,
-                    precision=mhc_precision
-                )
-            )
 
     return df 
 
