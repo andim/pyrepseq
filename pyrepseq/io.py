@@ -10,14 +10,8 @@ aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
 _aminoacids_set = set(aminoacids)
 
 def standardize_dataframe(df_old,
-                          col_mapper: Optional[Mapping] = None,
-                          from_columns: Optional[Iterable] = None,
-                          to_columns: Optional[Iterable] = ["TRAV", "CDR3A","TRAJ",
-                                        "TRBV", "CDR3B", "TRBJ",
-                                        "Epitope", "MHCA", "MHCB",
-                                        "clonal_counts"],
-                          standardize: Optional[bool] = None,
-                          standardise: Optional[bool] = None,
+                          col_mapper: Mapping,
+                          standardize: bool = True,
                           species = 'HomoSapiens',
                           tcr_enforce_functional = True,
                           tcr_precision = 'gene',
@@ -26,6 +20,13 @@ def standardize_dataframe(df_old,
     '''
     Utility function to organise TCR data into a standardised format.
 
+    If standardization is enabled (True by default), the function will additionally attempt to standardise the TCR and MHC gene symbols to be IMGT-compliant, and CDR3 sequences to be valid.
+    The appropriate standardization procedures will be applied for columns with the following names:
+        - TRAV / TRBV
+        - TRAJ / TRBJ
+        - CDR3A / CDR3B
+        - MHCA / MHCB
+    
     Parameters
     ----------
 
@@ -34,27 +35,10 @@ def standardize_dataframe(df_old,
 
     col_mapper: Mapping
         A mapping object, such as a dictionary, which maps the old column names to the new column names.
-        Mutually exclusive with from_columns and to_columns.
-        Defaults to ``None``.
-        
-    from_columns: Iterable
-        Iterable of old table column names to be mapped to the standardised columns, in their respective order.
-        Mutually exclusive with col_mapper.
-        Must be same length as to_columns.
-        Defaults to ``None``.
-        
-    to_columns: Iterable
-        List of columns to map the old ``from_columns`` to.
-        Mutually exclusive with col_mapper.
-        Must be same length as from_columns.
-        Defaults to ``["TRAV", "CDR3A","TRAJ", "TRBV", "CDR3B", "TRBJ", "Epitope", "MHCA", "MHCB", "clonal_counts"]``.
 
     standardize: bool
         When set to ``False``, gene name standardisation is not attempted.
         Defaults to ``True``.
-
-    standardise: bool
-        Alias for standardize.
         
     species: str
         Name of the species from which the TCR data is derived, in their binomial nomenclature, camel-cased.
@@ -81,35 +65,6 @@ def standardize_dataframe(df_old,
     pandas.DataFrame
         Standardised ``DataFrame`` containing the original data, cleaned.
     '''
-    # Alias resolution
-    if (not standardize is None) and (not standardise is None):
-        raise ValueError('standardize and standardise are mutually exclusive.')
-    
-    if standardize is None:
-        standardize = True if standardise is None else standardise
-
-    if col_mapper is None:
-        if from_columns is None:
-            raise ValueError(
-                'Please specify either col_mapper or from_columns.'
-            )
-        
-        if not (
-            isinstance(from_columns, Iterable) and
-            isinstance(to_columns, Iterable)
-        ):
-            raise TypeError('from_columns and to_columns must be iterables.')
-        
-        if len(from_columns) != len(to_columns):
-            raise ValueError(
-                'from_columns and to_columns must be of same legnth.'
-            )
-
-        col_mapper = {
-            from_col: to_col
-            for from_col, to_col in zip(from_columns, to_columns)
-        }
-
     df = df_old[list(col_mapper.keys())]
     df.rename(columns=col_mapper, inplace=True)
     

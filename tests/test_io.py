@@ -35,16 +35,6 @@ class TestStandardizeDataFrame:
         assert result.equals(self.df_standardized)
 
 
-    def test_from_to_columns(self):
-        with pytest.warns(UserWarning, match='Failed to standardise'):
-            result = standardize_dataframe(
-                df_old=self.df_old,
-                from_columns=range(10)
-            )
-
-        assert result.equals(self.df_standardized)
-
-
     def test_no_standardization(self):
         result = standardize_dataframe(
             df_old=self.df_old,
