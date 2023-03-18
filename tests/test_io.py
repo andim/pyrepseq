@@ -57,3 +57,30 @@ class TestStandardizeDataFrame:
             )
         
         assert result.equals(self.df_standardized)
+    
+class TestSequenceExtract:
+    a1ao7 = "KEVEQNSGPLSVPEGAIASLNCTYSDRGSQSFFWYRQYSGKSPELIMSIYSNGDKEDGRFTAQLNKASQYVSLLIRDSQPSDSATYLCAVTTDSWGKLQFGAGTQVVVTPDIQNPDPAVYQLRDSKSSDKSVCLFTDFDSQTNVSQSKDSDVYITDKTVLDMRSMDFKSNSAVAWSNKSDFACANAFNNSIIPEDTFFPSPESS"
+    a1ao7_r = "-KEVEQNSGPLSVPEGAIASLNCTYSDRG------SQSFFWYRQYSGKSPELIMSIYS----NGDKED-----GRFTAQLNKASQYVSLLIRDSQPSDSATYLCAVTTDS--WGKLQFGAGTQVVVTP"
+    b1ao7 = "NAGVTQTPKFQVLKTGQSMTLQCAQDMNHEYMSWYRQDPGMGLRLIHYSVGAGITDQGEVPNGYNVSRSTTEDFPLRLLSAAPSQTSVYFCASRPGLAGGRPEQYFGPGTRLTVTEDLKNVFPPEVAVFEPSEAEISHTQKATLVCLATGFYPDHVELSWWVNGKEVHSGVSTDPQPLKEQPALNDSRYALSSRLRVSATFWQNPRNHFRCQVQFYGLSENDEWTQDRAKPVTQIVSAEAWGRAD"
+    b1ao7_r = "NAGVTQTPKFQVLKTGQSMTLQCAQDMNH-------EYMSWYRQDPGMGLRLIHYSVG----AGITDQGEVP-NGYNVSRS-TTEDFPLRLLSAAPSQTSVYFCASRPGLAGGRPEQYFGPGTRLTVT"
+    
+    def test_get_v_region_seq(self):
+        a = get_vregion_seq(self.a1ao7, gaps='yes')
+        a1 = get_vregion_seq(self.a1ao7)
+
+        assert a == self.a1ao7_r
+        assert a1 == self.a1ao7_r.replace("-", "")
+
+        b = get_vregion_seq(self.b1ao7, gaps = 'yes')
+        b1 = get_vregion_seq(self.b1ao7)
+
+        assert b == self.b1ao7_r
+        assert b1 == self.b1ao7_r.replace("-", "")
+
+    def test_get_cdrs(self):
+        assert get_cdr1_seq(self.a1ao7, gaps='yes') == 'DRG------SQS'
+        assert get_cdr2_seq(self.a1ao7, gaps='yes') == 'IYS----NGD'
+        assert get_cdr3_seq(self.a1ao7, gaps='yes') == 'CAVTTDS--WGKLQF'
+        assert get_cdr1_seq(self.a1ao7) == 'DRGSQS'
+        assert get_cdr2_seq(self.a1ao7) == 'IYSNGD'
+        assert get_cdr3_seq(self.a1ao7) == 'CAVTTDSWGKLQF'

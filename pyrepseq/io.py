@@ -194,3 +194,56 @@ def multimerge(dfs, on, suffixes=None, **kwargs):
                       dfs)
     return reduce(lambda left, right: pd.merge(left, right, on,
                                                **merge_kwargs), dfs)
+
+def get_vregion_seq(s, gaps = 'no'):
+    # get sequence of only the V region from full tcr sequence
+    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
+    imgt = anarci([("myseq", s)], "imgt")
+    if imgt[0][0] != None:
+        renumbering = imgt[0][0][0][0]
+        renumbering = imgt[0][0][0][0]
+        seq = "".join([x[1] for x in renumbering]).strip()
+        if gaps == 'no':
+            seq = seq.replace("-", "")
+    else:
+        seq = None
+    return(seq)
+
+def get_cdr3_seq(s, gaps = 'no'):
+    # get sequence of only the cdr3 from full tcr sequence
+    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
+    imgt = anarci([("myseq", s)], "imgt")
+    if imgt[0][0] != None:
+        renumbering = imgt[0][0][0][0]
+        seq = "".join([x[1] for x in renumbering if x[0][0] > 103 and x[0][0] <119]).strip()
+        if gaps == 'no':
+            seq = seq.replace("-", "")
+    else:
+        seq = None
+    return seq
+
+def get_cdr1_seq(s, gaps = 'no'):
+    # get sequence of only the cdr1 from full tcr sequence
+    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
+    imgt = anarci([("myseq", s)], "imgt")
+    if imgt[0][0] != None:
+        renumbering = imgt[0][0][0][0]
+        seq = "".join([x[1] for x in renumbering if x[0][0] > 26 and x[0][0] < 39]).strip()
+        if gaps == 'no':
+            seq = seq.replace("-", "")
+    else:
+        seq = None
+    return seq
+
+def get_cdr2_seq(s, gaps = 'no'):
+    # get sequence of only the cdr2 from full tcr sequence
+    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
+    imgt = anarci([("myseq", s)], "imgt")
+    if imgt[0][0] != None:
+        renumbering = imgt[0][0][0][0]
+        seq = "".join([x[1] for x in renumbering if x[0][0] > 55 and x[0][0] < 66]).strip()
+        if gaps == 'no':
+            seq = seq.replace("-", "")
+    else:
+        seq = None
+    return seq
