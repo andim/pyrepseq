@@ -135,7 +135,7 @@ def jaccard_index(A, B):
     B = set(B)
     return len(A.intersection(B))/(len(A.union(B)))
 
-def overlap(A, B)
+def overlap(A, B):
     """
     Calculate the number of overlapping elements of two sets.
 
