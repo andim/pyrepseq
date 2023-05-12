@@ -94,6 +94,30 @@ def pc(array, array2=None):
     v_int, ind1_int, ind2_int = np.intersect1d(v, v2, assume_unique=True, return_indices=True)
     return np.sum(c[ind1_int]*c2[ind2_int])/(len(array)*len(array2))
 
+
+def stdpc(array):
+    array = np.asarray(array)
+    _, n = np.unique(array, return_counts=True)
+    return stdpc_n(n)
+
+def varpc_n(n):
+    "Variance estimator for Simpson's index"
+    N = np.sum(n)
+    p2_hat = np.sum(n*(n-1))/(N*(N-1))
+    p3_hat = np.sum(n*(n-1)*(n-2))/(N*(N-1)*(N-2))
+    beta = 2*(2*N-3)/((N-2)*(N-3))
+    var = (4*(N-2)/(N*(N-1))*(1+beta)*p3_hat
+           - beta*p2_hat**2
+           + 2/(N*(N-1))*(1+beta)*p2_hat
+           )
+    return var
+
+def stdpc_n(n):
+    "Std.dev. estimator for Simpson's index"
+    return varpc_n(n)**.5
+
+
+
 def jaccard_index(A, B):
     """
     Calculate the Jaccard index for two sets.
@@ -111,11 +135,30 @@ def jaccard_index(A, B):
     B = set(B)
     return len(A.intersection(B))/(len(A.union(B)))
 
+def overlap(A, B)
+    """
+    Calculate the number of overlapping elements of two sets.
+
+    This measure is defined as 
+    :math:`|A intersection B|`
+
+    A, B: iterables (will be converted to sets). na values will be dropped first
+    """
+    if type(A) != pd.Series:
+        A = pd.Series(A)
+    if type(B) != pd.Series:
+        B = pd.Series(B)
+    A = A.dropna()
+    B = B.dropna()
+    A = set(A)
+    B = set(B)
+    return len(A.intersection(B))
+
 def overlap_coefficient(A, B):
     """
     Calculate the overlap coefficient for two sets.
 
-    This measure is defined  defined as 
+    This measure is defined as 
     :math:`O(A, B) = |A intersection B| / min(|A|, |B|)`
 
     A, B: iterables (will be converted to sets). na values will be dropped first
