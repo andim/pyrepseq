@@ -95,6 +95,32 @@ def pc(array, array2=None):
     return np.sum(c[ind1_int]*c2[ind2_int])/(len(array)*len(array2))
 
 
+def pc_joint(df, on):
+    "Joint coincidence probability estimator"
+    
+    array = ""
+    for column in on:
+        array += df[column]
+        
+    return pc(array)
+
+def pc_conditional(df, by, on, weight = True):
+    "Conditional coincidence probability estimator"
+    
+    p = df.groupby(by).apply(lambda x: pc_joint(x,on))
+    
+    counts = df.value_counts(by)
+    weights = np.ones(len(counts))/len(counts)
+    if weight:
+        
+        #Calculate probability of each grouping
+        weights = counts/counts.sum()
+    
+    mean_pc = np.sum(weights*p**0.5)**2
+
+    return mean_pc
+
+
 def stdpc(array):
     array = np.asarray(array)
     _, n = np.unique(array, return_counts=True)
