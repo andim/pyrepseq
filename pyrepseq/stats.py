@@ -363,6 +363,7 @@ def var_chao2(counts, m):
         ratio = q1/q2
         return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
       
+
 def jaccard_index(A, B):
     """
     Calculate the Jaccard index for two sets.
