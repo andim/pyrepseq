@@ -34,13 +34,13 @@ def renyi2_entropy(df, features, by = [], log_fun = np.log2):
     return entropy
 
 
-def feature_relevance_dict(df_spc, df_back, features, by = [], epitope_column="Epitope", *args, **kwargs):
+def feature_relevance_dict(df_spc, df_back, features, by = [], spc_group_column=None, *args, **kwargs):
     
-    if not epitope_column:
+    if not spc_group_column:
         by_spc = by
 
     else:
-        by_spc = by + [epitope_column]
+        by_spc = by + [spc_group_column]
         
     relevance_dict = {}
     #Iterate through the features
