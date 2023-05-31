@@ -64,6 +64,23 @@ def powerlaw_mle_alpha(c, cmin=1.0, method='exact', **kwargs):
         return result.x
     return 1.0 + len(c)/np.sum(np.log(c/cmin))
 
+def pc_n(n):
+    r"""Estimate the coincidence probability :math:`p_C` from sampled counts.
+    :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
+    If :math:`n_i` are the counts of the i-th unique element and 
+    :math:`N = \sum_i n_i` the length of the array, then:
+    :math:`p_C = \sum_i n_i (n_i-1)/(N(N-1))`
+
+    Note: This measure is also known as the Simpson or Hunter-Gaston index
+
+    Parameters
+    ----------
+    n : array-like
+        list of counts
+    """
+    N = np.sum(n)
+    return np.sum(n*(n-1))/(N*(N-1))
+
 def pc(array, array2=None):
     r"""Estimate the coincidence probability :math:`p_C` from a sample.
     :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
