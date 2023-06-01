@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.optimize
 import scipy.special
+import warnings
 
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
     """ Draw samples from a discrete power-law.
@@ -97,26 +98,36 @@ def pc(array, array2=None):
 
 def pc_joint(df, on):
     "Joint coincidence probability estimator"
-    
-    array = ""
-    for column in on:
-        array += df[column]
-        
-    return pc(array)
 
-def pc_conditional(df, by, on, weight = True):
+    return pc(df[on].sum(1))
+
+def pc_conditional(df, by, on, weight=True, suppress_warnings=True):
     "Conditional coincidence probability estimator"
     
-    p = df.groupby(by).apply(lambda x: pc_joint(x,on))
+    #Disable warnings
+    if suppress_warnings:
+        warnings.filterwarnings('ignore')
+        
+    #Check if a joint or lone probability is required
+    if type(on) == str or type(on) == np.str_:
+        p = df.groupby(by).apply(lambda x: pc(x[on]))
+
+    else:
+        p = df.groupby(by).apply(lambda x: pc_joint(x,on))
     
-    counts = df.value_counts(by)
+    #Mask p values for which there was insufficient data to compute pc
+    mask = ~np.isnan(p)
+    counts =  df.groupby(by).size()[mask]
     weights = np.ones(len(counts))/len(counts)
     if weight:
         
         #Calculate probability of each grouping
         weights = counts/counts.sum()
     
-    mean_pc = np.sum(weights*p**0.5)**2
+    mean_pc = np.sum(weights*p[mask]**0.5)**2
+    
+    if suppress_warnings:
+        warnings.filterwarnings('default')
 
     return mean_pc
 
