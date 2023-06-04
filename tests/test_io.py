@@ -7,9 +7,9 @@ import warnings
 class TestStandardizeDataFrame:
     df_old = pd.DataFrame(
         [
-            ['TRAJ23*01', 'CATQYF', 'TRAV26-1*01', 'TRBJ2-3*01', 'CASQYF', 'TRBV13*01', 'AAA', 'A1', 'B2M', 1],
+            ['TRAJ23*01', 'CATQYF', 'TRAV26-1*01', 'TRBJ2-3*01', 'CASQYF', 'TRBV13*01', 'aaa', 'A1', 'B2M', 1],
             [None, 'CATQYF', None, None, 'CASQYF', None, None, None, None, 1],
-            ['foobar', 'CATQYF', 'TRAV26-1*01', 'TRBJ2-3*01', 'CASQYF', 'TRBV13*01', 'AAA', 'foobar', 'B2M', 1]
+            ['foobar', 'ATQY', 'TRAV26-1*01', 'TRBJ2-3*01', 'CASQYF', 'TRBV13*01', 'AAA', 'foobar', 'B2M', 1]
         ],
         columns=range(10)
     )
@@ -24,7 +24,7 @@ class TestStandardizeDataFrame:
 
 
     def test_standardize_df(self):
-        with pytest.warns(UserWarning, match='Failed to standardise'):
+        with pytest.warns(UserWarning, match='Failed to standardize'):
             result = standardize_dataframe(
                 df_old=self.df_old,
                 col_mapper={

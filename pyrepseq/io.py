@@ -12,20 +12,24 @@ _aminoacids_set = set(aminoacids)
 def standardize_dataframe(df_old,
                           col_mapper: Mapping,
                           standardize: bool = True,
-                          species = 'HomoSapiens',
-                          tcr_enforce_functional = True,
-                          tcr_precision = 'gene',
-                          mhc_precision = 'gene',
-                          suppress_warnings = False):
+                          species: str = 'HomoSapiens',
+                          tcr_enforce_functional: bool = True,
+                          tcr_precision: str = 'gene',
+                          mhc_precision: str = 'gene',
+                          strict_cdr3_standardization: bool = False,
+                          suppress_warnings: bool = False):
     '''
-    Utility function to organise TCR data into a standardised format.
+    Utility function to organise TCR data into a standardized format.
 
-    If standardization is enabled (True by default), the function will additionally attempt to standardise the TCR and MHC gene symbols to be IMGT-compliant, and CDR3 sequences to be valid.
+    If standardization is enabled (True by default), the function will additionally attempt to standardize the TCR and MHC gene symbols to be IMGT-compliant, and CDR3/Epitope amino acid sequences to be valid.
+    During standardization, most non-standardizable/nonsensical values will be removed, replaced with `None`.
+    However, since epitopes are not necessarily always amino acid sequences, values in the Epitope column that fail standardization will be kept as their original value.
     The appropriate standardization procedures will be applied for columns with the following names:
         - TRAV / TRBV
         - TRAJ / TRBJ
         - CDR3A / CDR3B
         - MHCA / MHCB
+        - Epitope
     
     Parameters
     ----------
@@ -56,6 +60,11 @@ def standardize_dataframe(df_old,
         Level of precision to trim the MHC gene data to (``'gene'``, ``'protein'`` or ``'allele'``).
         Defaults to ``'gene'``.
 
+    strict_cdr3_standardization: bool
+        If True, any string that does not look like a CDR3 sequence is rejected.
+        If False, any inputs that are valid amino acid sequences but do not start with C and end with F/W are not rejected and instead are corrected by having a C appended to the beginning and an F appended at the end.
+        Defaults to False.
+
     suppress_warnings: bool
         If ``True``, suppresses warnings that are emitted when the standardisation of certain values fails.
         Defaults to ``False``.
@@ -63,26 +72,30 @@ def standardize_dataframe(df_old,
     Returns
     -------
     pandas.DataFrame
-        Standardised ``DataFrame`` containing the original data, cleaned.
+        Standardized ``DataFrame`` containing the original data, cleaned.
     '''
     df = df_old[list(col_mapper.keys())]
     df.rename(columns=col_mapper, inplace=True)
     
-    # Standardise TCR genes and MHC genes
+    # Standardize TCR genes and MHC genes
     if standardize:
         for chain in ('A', 'B'):
 
             cdr3 = f'CDR3{chain}'
             if cdr3 in df.columns:
                 df[cdr3] = df[cdr3].map(
-                    lambda x: x if isvalidcdr3(x) else pd.NA
+                    lambda x: None if pd.isna(x) else tt.junction.standardize(
+                        seq=x,
+                        strict=strict_cdr3_standardization,
+                        suppress_warnings=suppress_warnings,
+                    )
                 )
 
             for gene in ('V', 'J'):
                 col = f'TR{chain}{gene}'
                 if col in df.columns:
                     df[col] = df[col].map(
-                        lambda x: None if pd.isna(x) else tt.tcr.standardise(
+                        lambda x: None if pd.isna(x) else tt.tcr.standardize(
                             gene=x,
                             species=species,
                             enforce_functional=tcr_enforce_functional,
@@ -94,10 +107,19 @@ def standardize_dataframe(df_old,
             mhc = f'MHC{chain}'
             if mhc in df.columns:
                 df[mhc] = df[mhc].map(
-                    lambda x: None if pd.isna(x) else tt.mhc.standardise(
+                    lambda x: None if pd.isna(x) else tt.mhc.standardize(
                         gene=x,
                         species=species,
                         precision=mhc_precision,
+                        suppress_warnings=suppress_warnings
+                    )
+                )
+
+            if 'Epitope' in df.columns:
+                df['Epitope'] = df['Epitope'].map(
+                    lambda x: None if pd.isna(x) else tt.aa.standardize(
+                        seq=x,
+                        on_fail="keep",
                         suppress_warnings=suppress_warnings
                     )
                 )
