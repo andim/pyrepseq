@@ -111,8 +111,8 @@ def pc(array, array2=None):
     v_int, ind1_int, ind2_int = np.intersect1d(v, v2, assume_unique=True, return_indices=True)
     return np.sum(c[ind1_int]*c2[ind2_int])/(len(array)*len(array2))
 
-
 def stdpc(array):
+    "Std.dev. estimator for Simpson's index"
     array = np.asarray(array)
     _, n = np.unique(array, return_counts=True)
     return stdpc_n(n)
@@ -132,7 +132,6 @@ def varpc_n(n):
 def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
     return varpc_n(n)**.5
-
 
 
 def jaccard_index(A, B):
