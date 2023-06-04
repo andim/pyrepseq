@@ -6,4 +6,4 @@ matplotlib
 seaborn
 logomaker
 biopython
-tidytcells>=1.4.0
+tidytcells>=1.8.4
