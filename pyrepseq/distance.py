@@ -321,15 +321,12 @@ def next_nearest_neighbors(x, neighborhood, maxdistance=2):
     distance = 1
     while distance < maxdistance:
         neighbors_dist = []
-        for x in neighbors[-1]:
-            neighbors_dist.extend(neighborhood(x))
+        for y in neighbors[-1]:
+            neighbors_dist.extend(neighborhood(y))
         neighbors.append(set(neighbors_dist))
         distance += 1
     neighbor_set = set(_flatten_list(neighbors))
-    try:
-        neighbor_set.remove(x)
-    except KeyError:
-        pass
+    neighbor_set.discard(x)
     return neighbor_set
  
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
