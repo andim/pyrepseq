@@ -111,6 +111,17 @@ def pc(array, array2=None):
     v_int, ind1_int, ind2_int = np.intersect1d(v, v2, assume_unique=True, return_indices=True)
     return np.sum(c[ind1_int]*c2[ind2_int])/(len(array)*len(array2))
 
+def chao1(counts):
+    """Estimate richness from sampled counts."""
+    return np.sum(counts) + counts[0]**2/(2*counts[1])
+
+def var_chao1(counts):
+    """Variance estimator for Chao's richness."""
+    f1 = counts[0]
+    f2 = counts[1]
+    ratio = f1/f2
+    return f2*((ratio/4)**4 + ratio**3 + (ratio/2)**2)
+
 def stdpc(array):
     "Std.dev. estimator for Simpson's index"
     array = np.asarray(array)
