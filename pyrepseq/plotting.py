@@ -454,9 +454,14 @@ class HandlerTupleOffset(mpl.legend_handler.HandlerTuple):
             a_list.extend(_a_list)
         return a_list
 
-def density_scatter(x, y, ax=None, sort=True, bins=20, trans=None, **kwargs):
+def density_scatter(x, y, ax=None, discrete=False, sort=True, bins=20, trans=None, **kwargs):
     """
     Scatter plot with color indicating point density estimated by local binning.
+
+    discrete: Boolean
+        Is the data discrete?
+    sort: Boolean
+        sort the data points by density to plot densest points last.
     """
     x = np.asarray(x)
     y = np.asarray(y)
