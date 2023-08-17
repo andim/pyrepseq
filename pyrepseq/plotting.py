@@ -458,10 +458,19 @@ def density_scatter(x, y, ax=None, discrete=False, sort=True, bins=20, trans=Non
     """
     Scatter plot with color indicating point density estimated by local binning.
 
+    ax: matplotlib.Axes
+        axes on which to plot
     discrete: Boolean
-        Is the data discrete?
+        Is the data discrete? -> count-based density
+    bins: int
+        number of bins for density estimation
+    trans: function
+       transformation to apply before density estimation 
     sort: Boolean
         sort the data points by density to plot densest points last.
+    **kwargs:
+        passed on to ax.scatter
+        
     """
     x = np.asarray(x)
     y = np.asarray(y)
@@ -477,8 +486,8 @@ def density_scatter(x, y, ax=None, discrete=False, sort=True, bins=20, trans=Non
         if trans is None:
             trans = lambda x: x
         data , x_e, y_e = np.histogram2d(trans(x), trans(y), bins=bins)
-        z = interpn(( 0.5*(x_e[1:] + x_e[:-1]), 0.5*(y_e[1:]+y_e[:-1]) ),
-                    data, np.vstack([trans(x),trans(y)]).T,
+        z = interpn((0.5*(x_e[1:] + x_e[:-1]), 0.5*(y_e[1:]+y_e[:-1])),
+                    data, np.vstack([trans(x), trans(y)]).T,
                     method="splinef2d", bounds_error=False)
 
     # Sort the points by density, so that the densest points are plotted last
