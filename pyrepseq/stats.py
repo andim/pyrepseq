@@ -105,18 +105,18 @@ def pc_conditional(df, by, on, weight=True, suppress_warnings=True):
     "Conditional coincidence probability estimator"
     
     #Disable warnings
-    if suppress_warnings:
-        warnings.filterwarnings('ignore')
+    #if suppress_warnings:
+        #warnings.filterwarnings('ignore')
         
     #Check if a joint or lone probability is required
-    if type(on) == str or type(on) == np.str_:
-        p = df.groupby(by).apply(lambda x: pc(x[on]))
+    if type(on) == list:
+        p_c = df.groupby(by).apply(lambda x: pc_joint(x,on))
 
     else:
-        p = df.groupby(by).apply(lambda x: pc_joint(x,on))
-    
+        p_c = df.groupby(by).apply(lambda x: pc(x[on]))
+        
     #Mask p values for which there was insufficient data to compute pc
-    mask = ~np.isnan(p)
+    mask = ~np.isnan(p_c)
     counts =  df.groupby(by).size()[mask]
     weights = np.ones(len(counts))/len(counts)
     if weight:
@@ -124,10 +124,10 @@ def pc_conditional(df, by, on, weight=True, suppress_warnings=True):
         #Calculate probability of each grouping
         weights = counts/counts.sum()
     
-    mean_pc = np.sum(weights*p[mask]**0.5)**2
+    mean_pc = np.sum(weights*p_c[mask]**0.5)**2
     
-    if suppress_warnings:
-        warnings.filterwarnings('default')
+    #if suppress_warnings:
+        #warnings.filterwarnings('default')
 
     return mean_pc
 
