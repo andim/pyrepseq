@@ -6,4 +6,6 @@ from .util import *
 from .clustering import *
 from . import plotting 
 from . import metric
+from . import plotting 
+from . import tcr_info
 from .version import __version__
