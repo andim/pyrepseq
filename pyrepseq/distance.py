@@ -367,19 +367,21 @@ def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
             pairs.append((i, seqs_list.index(y)))
     return pairs
 
-def calculate_neighbor_numbers(seqs, neighborhood=levenshtein_neighbors):
+def calculate_neighbor_numbers(seqs, reference=None, neighborhood=levenshtein_neighbors):
     """Calculate the number of neighbors for each sequence in a list.
 
     Parameters
     ----------
     seqs: list of sequences
+    reference: list of sequences, set(seqs) if None
     neighborhood: function returning iterator over neighbors
     
     Returns
     -------
     integer array of number of neighboring sequences
     """
-    reference = set(seqs)
+    if reference is None:
+        reference = set(seqs)
     return np.array([len(set(neighborhood(seq)) & reference) for seq in seqs])
 
 def isdist1(x, reference, neighborhood=levenshtein_neighbors):
