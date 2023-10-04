@@ -26,14 +26,14 @@ CLASSIFIERS = ["Development Status :: 5 - Production/Stable",
                "Topic :: Scientific/Engineering"]
 
 # Description should be a one-liner:
-description = "Python library for immune repertoire analyses" 
+description = "Immune repertoire analysis toolkit" 
 # Long description will go up on the pypi page
 long_description = """
 Pyrepseq = scipy & seaborn for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.
 """
 
 NAME = "pyrepseq"
-MAINTAINER = "Andreas Mayer"
+MAINTAINER = "Andreas Tiffeau-Mayer"
 MAINTAINER_EMAIL = "andimscience@gmail.com"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
