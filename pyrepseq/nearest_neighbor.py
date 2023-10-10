@@ -7,8 +7,13 @@ from rapidfuzz.process import extract
 from multiprocessing import Pool
 from .util import flatten_array, ensure_numpy, check_common_input, make_output
 from .distance import levenshtein_neighbors, hamming_neighbors
+from itertools import combinations
 
 AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY'
+
+# ===================================
+# kdtree
+# ===================================
 
 
 def histogram_encode(cdr3, compression):
@@ -144,6 +149,10 @@ def kdtree_leven(seqs, max_edits=1, max_returns=None, n_cpu=1,
     return make_output(triplets, output_type)
 
 
+# ===================================
+# hash-based
+# ===================================
+
 def generate_neighbors(query, max_edits, is_hamming):
     neighbor_func = hamming_neighbors if is_hamming else levenshtein_neighbors
     ans = {query: 0}
@@ -244,12 +253,77 @@ def hash_based(seqs, max_edits=1, max_returns=None, n_cpu=1,
     return make_output(triplets, output_type)
 
 
-def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
-                     custom_distance=None, max_custom_distance=float('inf'),
-                     output_type='triplets'):
+# ===================================
+# symspell
+# ===================================
+
+
+def comb_gen(seq, max_edits):
+    _len, ans = len(seq), set([seq])
+    for edit in range(1, max_edits+1):
+        for indexes in combinations(range(_len), edit):
+            new_seq, offset = [], 0
+            for index in indexes:
+                new_seq.append(seq[offset:index])
+                offset = index+1
+            new_seq.append(seq[offset:_len])
+            ans.add(''.join(new_seq))
+    return ans
+
+
+def generate_index(seqs, max_edits):
+    ans = {}
+    for i, seq in enumerate(seqs):
+        for comb in comb_gen(seq, max_edits):
+            if comb in ans:
+                ans[comb].append(i)
+            else:
+                ans[comb] = [i]
+    return ans
+
+
+def symspell_lookup(index, seqs, max_edits, max_returns,
+                    custom_distance, max_custom_dist):
+    ans = []
+    threshold = max_custom_dist
+    if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
+        threshold = max_edits
+    max_returns = max_returns if max_returns is not None else float('inf')
+    if custom_distance == 'hamming':
+        custom_distance = hamming
+    elif custom_distance is None:
+        custom_distance = levenshtein
+
+    for i, seq in enumerate(seqs):
+        j_indices, count = set(), 0
+        for comb in comb_gen(seq, max_edits):
+            if comb not in index:
+                continue
+            for j_index in index[comb]:
+                j_indices.add(j_index)
+
+        for j_index in j_indices:
+            if i == j_index:
+                continue
+            try:
+                dist = custom_distance(seqs[i], seqs[j_index])
+                if dist > threshold:
+                    continue
+                if count >= max_returns:
+                    break
+                ans.append((i, j_index, dist))
+                count += 1
+            except:
+                continue
+    return ans
+
+
+def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
+             custom_distance=None, max_custom_distance=float('inf'),
+             output_type='triplets'):
     """
     List all neighboring CDR3B sequences efficiently within the given distance.
-    The distance can be given in terms of hamming, levenshtein, or custom.
+    This is an improved version over the hash-based.
 
     Parameters
     ----------
@@ -260,7 +334,7 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
     max_returns : int or None
         maximum neighbor size
     n_cpu : int
-        number of CPU cores running in parallel
+        ignored
     custom_distance : Function(str1, str2) or "hamming"
         custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
     max_custom_distance : float
@@ -277,8 +351,49 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "ndarray" returns numpy's 2d array representing dense matrix
     """
 
-    if max_edits == 1 and len(seqs) > 10000:
-        return hash_based(seqs, max_edits, max_returns, n_cpu,
-                          custom_distance, max_custom_distance, output_type)
-    return kdtree(seqs, max_edits, max_returns, n_cpu,
-                  custom_distance, max_custom_distance, output_type)
+    index = generate_index(seqs, max_edits)
+    triplets = symspell_lookup(index, seqs, max_edits, max_returns,
+                               custom_distance, max_custom_distance)
+    return make_output(triplets, output_type)
+
+
+# ===================================
+# combined function
+# ===================================
+
+
+def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
+                     custom_distance=None, max_custom_distance=float('inf'),
+                     output_type='triplets'):
+    """
+    List all neighboring CDR3B sequences efficiently within the given distance.
+    The distance can be given in terms of hamming, levenshtein, or custom.
+
+    Parameters
+    ----------
+    strings : iterable of strings
+        list of CDR3B sequences
+    max_edits : int
+        maximum edit distance defining the neighbors
+    max_returns : int or None
+        maximum neighbor size
+    n_cpu : int
+        ignored
+    custom_distance : Function(str1, str2) or "hamming"
+        custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
+    max_custom_distance : float
+        maximum distance to include in the result, ignored if custom distance is not supplied
+    output_type: string
+        format of returns, can be "triplets", "coo_matrix", or "ndarray"
+
+    Returns
+    -------
+    neighbors : array of 3D-tuples, sparse matrix, or dense matrix
+        neigbors along with their edit distances according to the given output_type
+        if "triplets" returns are [(x_index, y_index, edit_distance)]
+        if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
+        if "ndarray" returns numpy's 2d array representing dense matrix
+    """
+
+    return symspell(seqs, max_edits, max_returns, n_cpu,
+                    custom_distance, max_custom_distance, output_type)
