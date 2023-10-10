@@ -8,6 +8,7 @@ from multiprocessing import Pool
 from .util import flatten_array, ensure_numpy, check_common_input, make_output
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations
+from Levenshtein import hamming as hamming_distance
 
 AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY'
 
@@ -290,7 +291,7 @@ def symspell_lookup(index, seqs, max_edits, max_returns,
         threshold = max_edits
     max_returns = max_returns if max_returns is not None else float('inf')
     if custom_distance == 'hamming':
-        custom_distance = hamming
+        custom_distance = hamming_distance
     elif custom_distance is None:
         custom_distance = levenshtein
 
