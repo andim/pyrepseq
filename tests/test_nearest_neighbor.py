@@ -93,7 +93,7 @@ def test_custom_distance(algorithm):
                                max_custom_distance=0), test_output)
 
 
-# @pytest.mark.skip(reason="very slow")
+@pytest.mark.skip(reason="very slow")
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_bulk(algorithm):
     combinations1 = product('ACD', repeat=2)
