@@ -38,6 +38,6 @@ class TcrMetric(ABC):
     @abstractmethod
     def distance_bins(self) -> Iterable[Union[float, int]]:
         """
-        list representing the bins to use when generating tcr distance histograms.
+        Iterable containing the bin edges to use when generating tcr distance histograms.
         """
         pass

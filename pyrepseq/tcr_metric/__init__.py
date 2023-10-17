@@ -1,5 +1,16 @@
-from .tcr_metric import TcrMetric
-
-from .beta_cdr3_levenshtein import BetaCdr3Levenshtein
-from .beta_cdr_levenshtein import BetaCdrLevenshtein
-from .tcrdist.beta_tcrdist import BetaTcrdist, BetaCdr3Tcrdist
+from .levenshtein import (
+    AlphaCdr3Levenshtein,
+    BetaCdr3Levenshtein,
+    Cdr3Levenshtein,
+    AlphaCdrLevenshtein,
+    BetaCdrLevenshtein,
+    CdrLevenshtein
+)
+from .tcrdist.tcrdist_metric import (
+    AlphaCdr3Tcrdist,
+    BetaCdr3Tcrdist,
+    Cdr3Tcrdist,
+    AlphaTcrdist,
+    BetaTcrdist,
+    Tcrdist
+)
