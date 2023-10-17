@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
 import scipy.cluster.hierarchy as hc
+from scipy.interpolate import interpn
 
 import logomaker as lm
 
@@ -452,3 +453,48 @@ class HandlerTupleOffset(mpl.legend_handler.HandlerTuple):
                                              trans)
             a_list.extend(_a_list)
         return a_list
+
+def density_scatter(x, y, ax=None, discrete=False, sort=True, bins=20, trans=None, **kwargs):
+    """
+    Scatter plot with color indicating point density estimated by local binning.
+
+    ax: matplotlib.Axes
+        axes on which to plot
+    discrete: Boolean
+        Is the data discrete? -> count-based density
+    bins: int
+        number of bins for density estimation
+    trans: function
+       transformation to apply before density estimation 
+    sort: Boolean
+        sort the data points by density to plot densest points last.
+    **kwargs:
+        passed on to ax.scatter
+        
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    if ax is None :
+        ax = plt.gca()
+
+    if discrete:
+        points, counts = np.unique(np.array(list(zip(x,y))), return_counts=True, axis=0)
+        x = points[:, 0]
+        y = points[:, 1]
+        z = counts
+    else:
+        if trans is None:
+            trans = lambda x: x
+        data , x_e, y_e = np.histogram2d(trans(x), trans(y), bins=bins)
+        z = interpn((0.5*(x_e[1:] + x_e[:-1]), 0.5*(y_e[1:]+y_e[:-1])),
+                    data, np.vstack([trans(x), trans(y)]).T,
+                    method="splinef2d", bounds_error=False)
+
+    # Sort the points by density, so that the densest points are plotted last
+    if sort :
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
+
+    ax.scatter(x, y, c=z, **kwargs)
+    return ax
+

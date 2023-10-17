@@ -22,7 +22,7 @@ Stats
 ~~~~~
 
 .. automodule:: pyrepseq.stats
-   :members: powerlaw_sample, powerlaw_mle_alpha, pC, jaccard_index, overlap_coefficient
+   :members:
 
 Distance
 ~~~~~~~~

@@ -232,9 +232,8 @@ def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
     names = [name for name, dfg in groups]
     data_square = squareform(data)
     np.fill_diagonal(data_square,
-                     pcDelta_grouped(df, 'sample', seq_columns='bioidentity', bins=0))
+                     pcDelta_grouped(df, by, seq_columns=seq_columns, **kwargs))
     return pd.DataFrame(data_square, index=names, columns=names)
-
 
 def load_pcDelta_background(return_bins=True):
     """
@@ -322,15 +321,12 @@ def next_nearest_neighbors(x, neighborhood, maxdistance=2):
     distance = 1
     while distance < maxdistance:
         neighbors_dist = []
-        for x in neighbors[-1]:
-            neighbors_dist.extend(neighborhood(x))
+        for y in neighbors[-1]:
+            neighbors_dist.extend(neighborhood(y))
         neighbors.append(set(neighbors_dist))
         distance += 1
     neighbor_set = set(_flatten_list(neighbors))
-    try:
-        neighbor_set.remove(x)
-    except KeyError:
-        pass
+    neighbor_set.discard(x)
     return neighbor_set
  
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
@@ -371,19 +367,21 @@ def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
             pairs.append((i, seqs_list.index(y)))
     return pairs
 
-def calculate_neighbor_numbers(seqs, neighborhood=levenshtein_neighbors):
+def calculate_neighbor_numbers(seqs, reference=None, neighborhood=levenshtein_neighbors):
     """Calculate the number of neighbors for each sequence in a list.
 
     Parameters
     ----------
     seqs: list of sequences
+    reference: list of sequences, set(seqs) if None
     neighborhood: function returning iterator over neighbors
     
     Returns
     -------
     integer array of number of neighboring sequences
     """
-    reference = set(seqs)
+    if reference is None:
+        reference = set(seqs)
     return np.array([len(set(neighborhood(seq)) & reference) for seq in seqs])
 
 def isdist1(x, reference, neighborhood=levenshtein_neighbors):

@@ -2,8 +2,8 @@ from os.path import join as pjoin
 
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 1
-_version_minor = 0
-_version_micro = ''  # use '' for first of series, number for 1 and above
+_version_minor = 2
+_version_micro = '1'  # use '' for first of series, number for 1 and above
 #_version_extra = 'dev'
 _version_extra = ''  # Uncomment this for full releases
 
@@ -30,6 +30,32 @@ description = "Immune repertoire analysis toolkit"
 # Long description will go up on the pypi page
 long_description = """
 Pyrepseq = scipy & seaborn for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.
+
+
+## Documentation and examples
+
+You can find API documentation on [readthedocs](https://pyrepseq.readthedocs.io/en/latest/?badge=latest)
+
+There are jupyter notebooks illustrating some of the functionality in the 'examples' folder.
+
+You can also find usage examples by looking at the code underlying our recent paper [Mayer Callan PNAS 2023](https://github.com/andim/paper_coincidences).
+
+## Installation
+
+The quickest way to install Pyrepseq is via pip:
+
+`pip install pyrepseq`
+
+
+Pyrepseq can also be installed from its [Github](https://github.com/andim/pyrepseq) source, by running `python setup.py install` in the main directory.
+
+## Support and contributing
+
+For bug reports and enhancement requests use the [Github issue tool](http://github.com/andim/pyrepseq/issues/new), or (even better!) open a [pull request](http://github.com/andim/pyrepseq/pulls) with relevant changes. If you have any questions don't hesitate to contact us by email (andimscience@gmail.com) or Twitter ([@andimscience](http://twitter.com/andimscience)).
+
+You can run the testsuite by running `pytest` in the top-level directory.
+
+You are cordially invited to [contribute](https://github.com/andim/pyrepseq/blob/master/CONTRIBUTING.md) to the further development of pyrepseq!
 """
 
 NAME = "pyrepseq"
@@ -50,4 +76,4 @@ VERSION = __version__
 PACKAGES = ['pyrepseq']
 PACKAGE_DATA = {'' : ['data/*.csv']}
 REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein", "matplotlib",
-            "seaborn", "logomaker", "biopython", "tidytcells>=1.4.0"]
+            "seaborn", "logomaker", "biopython", "tidytcells>=1.4.0,<2.0"]

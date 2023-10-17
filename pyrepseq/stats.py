@@ -65,6 +65,23 @@ def powerlaw_mle_alpha(c, cmin=1.0, method='exact', **kwargs):
         return result.x
     return 1.0 + len(c)/np.sum(np.log(c/cmin))
 
+def pc_n(n):
+    r"""Estimate the coincidence probability :math:`p_C` from sampled counts.
+    :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
+    If :math:`n_i` are the counts of the i-th unique element and 
+    :math:`N = \sum_i n_i` the length of the array, then:
+    :math:`p_C = \sum_i n_i (n_i-1)/(N(N-1))`
+
+    Note: This measure is also known as the Simpson or Hunter-Gaston index
+
+    Parameters
+    ----------
+    n : array-like
+        list of counts
+    """
+    N = np.sum(n)
+    return np.sum(n*(n-1))/(N*(N-1))
+
 def pc(array, array2=None):
     r"""Estimate the coincidence probability :math:`p_C` from a sample.
     :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
@@ -95,6 +112,16 @@ def pc(array, array2=None):
     v_int, ind1_int, ind2_int = np.intersect1d(v, v2, assume_unique=True, return_indices=True)
     return np.sum(c[ind1_int]*c2[ind2_int])/(len(array)*len(array2))
 
+def chao1(counts):
+    """Estimate richness from sampled counts."""
+    return np.sum(counts) + counts[0]**2/(2*counts[1])
+
+def var_chao1(counts):
+    """Variance estimator for Chao's richness."""
+    f1 = counts[0]
+    f2 = counts[1]
+    ratio = f1/f2
+    return f2*((ratio/4)**4 + ratio**3 + (ratio/2)**2)
 
 def pc_joint(df, on):
     "Joint coincidence probability estimator"
@@ -133,6 +160,7 @@ def pc_conditional(df, by, on, weight=True, suppress_warnings=True):
 
 
 def stdpc(array):
+    "Std.dev. estimator for Simpson's index"
     array = np.asarray(array)
     _, n = np.unique(array, return_counts=True)
     return stdpc_n(n)
@@ -152,7 +180,6 @@ def varpc_n(n):
 def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
     return varpc_n(n)**.5
-
 
 
 def jaccard_index(A, B):
