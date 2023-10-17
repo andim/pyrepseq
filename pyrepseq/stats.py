@@ -269,39 +269,65 @@ def pc_conditional(df, by, on, take_mean=True, weight_uniformly=False):
 
 
 def pc_joint(df, on):
-    "Joint coincidence probability estimator"
+    """Joint coincidence probability estimator
+    
+    Parameters
+    ----------
+    df : pandas DataFrame
+    on: list of strings
+        columns on which to obtain a joint probability of coincidence
+
+    Returns
+    ----------
+    float:
+        pc computed on the concatenations of each specified column in on
+    
+    """
 
     return pc(df[on].sum(1))
 
-def pc_conditional(df, by, on, weight=True, suppress_warnings=True):
-    "Conditional coincidence probability estimator"
+def pc_conditional(df, by, on, take_mean = True):
+    """Conditional coincidence probability estimator
     
-    #Disable warnings
-    #if suppress_warnings:
-        #warnings.filterwarnings('ignore')
+    Parameters
+    ----------
+    df : pandas DataFrame
+    by: list
+        conditioning parameters used to group input data frame
+    on: string/list of strings
+        column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
+        then pc is computed on the concatenations of each specified column
+    take_mean: bool
+        specify wether to take the average once pc has been computed for each specified group
+
+    Returns
+    ----------: 
+    pandas DataFrame/float:
+        pc of df[on] computed over each group specified in by.
+        if take_mean=True then the average of these group by pcs is returned
+    """
+    
+    if type(by) == list and len(by) == 1:
+        by = by[0]
         
-    #Check if a joint or lone probability is required
     if type(on) == list:
         p_c = df.groupby(by).apply(lambda x: pc_joint(x,on))
 
     else:
         p_c = df.groupby(by).apply(lambda x: pc(x[on]))
         
-    #Mask p values for which there was insufficient data to compute pc
-    mask = ~np.isnan(p_c)
-    counts =  df.groupby(by).size()[mask]
-    weights = np.ones(len(counts))/len(counts)
-    if weight:
+    if take_mean:
         
-        #Calculate probability of each grouping
+        #Mask p values for which there was insufficient data to compute pc
+        mask = ~np.isnan(p_c)
+        counts =  df.groupby(by).size()[mask]
         weights = counts/counts.sum()
-    
-    mean_pc = np.sum(weights*p_c[mask]**0.5)**2
-    
-    #if suppress_warnings:
-        #warnings.filterwarnings('default')
+        mean_pc = np.sum(weights*p_c[mask]**0.5)**2
 
-    return mean_pc
+        return mean_pc
+    
+    else:
+        return p_c
 
 
 def stdpc(array):
