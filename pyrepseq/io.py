@@ -1,15 +1,15 @@
 from functools import reduce
 
-import numpy as np
 import pandas as pd
+from pandas import DataFrame
 import tidytcells as tt
-from typing import Iterable, Mapping, Optional
-from warnings import warn
+from typing import Mapping
 
 aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
 _aminoacids_set = set(aminoacids)
 
-def standardize_dataframe(df_old,
+
+def standardize_dataframe(df_old: DataFrame,
                           col_mapper: Mapping,
                           standardize: bool = True,
                           species: str = 'HomoSapiens',
@@ -30,7 +30,7 @@ def standardize_dataframe(df_old,
         - CDR3A / CDR3B
         - MHCA / MHCB
         - Epitope
-    
+
     Parameters
     ----------
 
@@ -43,19 +43,19 @@ def standardize_dataframe(df_old,
     standardize: bool
         When set to ``False``, gene name standardisation is not attempted.
         Defaults to ``True``.
-        
+
     species: str
         Name of the species from which the TCR data is derived, in their binomial nomenclature, camel-cased.
         Defaults to ``'HomoSapiens'``.
-        
+
     tcr_enforce_functional: bool
         When set to ``True``, TCR genes that are not functional (i.e. ORF or pseudogene) are removed, and replaced with ``None``.
         Defaults to ``True``.
-        
+
     tcr_precision: str
         Level of precision to trim the TCR gene data to (``'gene'`` or ``'allele'``).
         Defaults to ``'gene'``.
-        
+
     mhc_precision: str
         Level of precision to trim the MHC gene data to (``'gene'``, ``'protein'`` or ``'allele'``).
         Defaults to ``'gene'``.
@@ -68,7 +68,7 @@ def standardize_dataframe(df_old,
     suppress_warnings: bool
         If ``True``, suppresses warnings that are emitted when the standardisation of certain values fails.
         Defaults to ``False``.
-        
+
     Returns
     -------
     pandas.DataFrame
@@ -76,7 +76,7 @@ def standardize_dataframe(df_old,
     '''
     df = df_old[list(col_mapper.keys())]
     df.rename(columns=col_mapper, inplace=True)
-    
+
     # Standardize TCR genes and MHC genes
     if standardize:
         for chain in ('A', 'B'):
@@ -95,7 +95,7 @@ def standardize_dataframe(df_old,
                 col = f'TR{chain}{gene}'
                 if col in df.columns:
                     df[col] = df[col].map(
-                        lambda x: None if pd.isna(x) else tt.tcr.standardize(
+                        lambda x: None if pd.isna(x) else tt.tr.standardize(
                             gene=x,
                             species=species,
                             enforce_functional=tcr_enforce_functional,
@@ -103,11 +103,11 @@ def standardize_dataframe(df_old,
                             suppress_warnings=suppress_warnings
                         )
                     )
-            
+
             mhc = f'MHC{chain}'
             if mhc in df.columns:
                 df[mhc] = df[mhc].map(
-                    lambda x: None if pd.isna(x) else tt.mhc.standardize(
+                    lambda x: None if pd.isna(x) else tt.mh.standardize(
                         gene=x,
                         species=species,
                         precision=mhc_precision,
@@ -124,7 +124,7 @@ def standardize_dataframe(df_old,
                     )
                 )
 
-    return df 
+    return df
 
 
 def isvalidaa(string):
@@ -148,9 +148,11 @@ def isvalidcdr3(string):
     and also https://doi.org/10.1093/nar/gkac190
     """
     try:
-        return (isvalidaa(string)
+        return (
+            isvalidaa(string)
             and (string[0] == 'C')
-            and (string[-1] in ['F', 'W', 'C']))
+            and (string[-1] in ['F', 'W', 'C'])
+        )
     # if 'string' is not of string type (e.g. nan) it is not valid
     except TypeError:
         return False
