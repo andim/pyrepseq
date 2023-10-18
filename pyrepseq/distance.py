@@ -33,7 +33,7 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
         Returns a condensed distance matrix Y.  For
         each :math:`i` and :math:`j` (where :math:`i<j<m`), where m is the number
         of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry 
+        is computed and stored in entry
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     """
@@ -43,14 +43,15 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
     m = len(strings)
     dm = np.empty((m * (m - 1)) // 2, dtype=dtype)
     k = 0
-    for i in range(0, m-1):
-        for j in range(i+1, m):
+    for i in range(0, m - 1):
+        for j in range(i + 1, m):
             dm[k] = metric(strings[i], strings[j], **kwargs)
             k += 1
     return dm
 
+
 def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
-    """ Compute distance between each pair of the two collections of strings.
+    """Compute distance between each pair of the two collections of strings.
         (`scipy.spatial.distance.cdist` equivalent for strings)
 
     Parameters
@@ -86,6 +87,7 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
             dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
     return dm
 
+
 def downsample(seqs, maxseqs):
     """
     Random downsampling of a list of sequences.
@@ -104,10 +106,10 @@ def downsample(seqs, maxseqs):
         return np.random.choice(seqs, maxseqs, replace=False)
     return seqs
 
-def pcDelta(seqs, seqs2=None, bins=None,
-            normalize=True, pseudocount=0.0, 
-            maxseqs=None,
-            **kwargs):
+
+def pcDelta(
+    seqs, seqs2=None, bins=None, normalize=True, pseudocount=0.0, maxseqs=None, **kwargs
+):
     r"""
     Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
     among input sequences.
@@ -125,7 +127,7 @@ def pcDelta(seqs, seqs2=None, bins=None,
         whether to return pc (normalized) or raw counts
     pseudocount : float
        for a Bayesian estimation of coincidence frequencies
-       e.g. can use Jeffrey's prior value of 0.5 
+       e.g. can use Jeffrey's prior value of 0.5
     maxseqs: int
         maximal number of sequences to keep by random downsampling
     **kwargs: dict
@@ -142,19 +144,25 @@ def pcDelta(seqs, seqs2=None, bins=None,
         return pc(seqs, seqs2)
 
     seqs = downsample(seqs, maxseqs)
-    if (type(seqs) is tuple) or ((type(seqs) is pd.DataFrame) and seqs.shape[1]==2):
+    if (type(seqs) is tuple) or ((type(seqs) is pd.DataFrame) and seqs.shape[1] == 2):
         if type(seqs) is tuple:
             seqs_alpha, seqs_beta = seqs
         if type(seqs) is pd.DataFrame:
             seqs_alpha, seqs_beta = seqs.iloc[:, 0], seqs.iloc[:, 1]
         if seqs2 is None:
-            hist, _ = np.histogram(pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins)
+            hist, _ = np.histogram(
+                pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins
+            )
         else:
             if type(seqs2) is tuple:
                 seqs_alpha2, seqs_beta2 = seqs2
             if type(seqs2) is pd.DataFrame:
                 seqs_alpha2, seqs_beta2 = seqs2.iloc[:, 0], seqs2.iloc[:, 1]
-            hist, _ = np.histogram(cdist(seqs_alpha, seqs_alpha2, **kwargs) + cdist(seqs_beta, seqs_beta2, **kwargs), bins=bins)
+            hist, _ = np.histogram(
+                cdist(seqs_alpha, seqs_alpha2, **kwargs)
+                + cdist(seqs_beta, seqs_beta2, **kwargs),
+                bins=bins,
+            )
     else:
         if seqs2 is None:
             hist, _ = np.histogram(pdist(seqs, **kwargs), bins=bins)
@@ -163,14 +171,15 @@ def pcDelta(seqs, seqs2=None, bins=None,
     if not normalize:
         return hist
     if not pseudocount:
-        return hist/np.sum(hist)
-    hist_sum = np.sum(hist)+2*pseudocount
-    hist = hist.astype(np.float64)+pseudocount
-    return hist/hist_sum
+        return hist / np.sum(hist)
+    hist_sum = np.sum(hist) + 2 * pseudocount
+    hist = hist.astype(np.float64) + pseudocount
+    return hist / hist_sum
+
 
 def pcDelta_grouped(df, by, seq_columns, **kwargs):
     """Near-coincidence probabilities conditioned to within-group comparisons.
-    
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -180,24 +189,25 @@ def pcDelta_grouped(df, by, seq_columns, **kwargs):
        The data frame column on which we want to apply the pcDelta analysis
     **kwargs : keyword arguments
         passed on to pcDelta
-       
+
     Returns
     -------
     pcs : pd.DataFrame
         Returns a DataFrame of pC(delta) for each group
-    
+
     """
-    
+
     def pcDelta_within_group(dfg):
-        index = kwargs.get('bins')
+        index = kwargs.get("bins")
         index = [index] if isinstance(index, int) else index
-        return pd.Series(pcDelta(dfg[seq_columns], **kwargs),
-                         name='Delta', index=index)
+        return pd.Series(pcDelta(dfg[seq_columns], **kwargs), name="Delta", index=index)
+
     return df.groupby(by).apply(pcDelta_within_group)
+
 
 def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
     """Near-coincidence probabilities conditioned to cross-group comparisons.
-    
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -209,14 +219,14 @@ def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
         Return a condensed instead of squareform matrix (default: False)
     **kwargs : keyword arguments
         passed on to pcDelta
-       
+
     Returns
     -------
     pcs : pd.DataFrame
         Returns a DataFrame of pC(delta) across pairs of groups
-    
+
     """
-    
+
     groups = sorted(list(df.groupby(by)))
     data = []
     index = []
@@ -226,9 +236,9 @@ def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
         data.append(pcg)
     data = np.array(data)
     if condensed:
-        return pd.DataFrame(data,
-        	index=pd.MultiIndex.from_tuples(index,
-        	names=['group1', 'group2']))
+        return pd.DataFrame(
+            data, index=pd.MultiIndex.from_tuples(index, names=["group1", "group2"])
+        )
     names = [name for name, dfg in groups]
     data_square = squareform(data)
     np.fill_diagonal(data_square,
@@ -247,41 +257,43 @@ def load_pcDelta_background(return_bins=True):
         DataFrame with coincidence probabilities
     bins : ndarray [if return_bins = True]
         Delta bins to be used as bins for other data
-    
+
     """
     folder = os.path.dirname(__file__)
-    path = os.path.join(folder, 'data', 'pcdelta_pbmc_minervina.csv')
+    path = os.path.join(folder, "data", "pcdelta_pbmc_minervina.csv")
     back = pd.read_csv(path, index_col=0)
     if not return_bins:
         return back
     bins = list(back.index)
-    bins.append(bins[-1]+1)
+    bins.append(bins[-1] + 1)
     bins = np.array(bins)
     return back, bins
+
 
 def levenshtein_neighbors(x, alphabet=aminoacids):
     """Iterator over Levenshtein neighbors of a string x"""
     # deletion
     for i in range(len(x)):
         # only delete first repeated amino acid
-        if (i > 0) and (x[i] == x[i-1]):
+        if (i > 0) and (x[i] == x[i - 1]):
             continue
-        yield x[:i]+x[i+1:]
+        yield x[:i] + x[i + 1 :]
     # replacement
     for i in range(len(x)):
         for aa in alphabet:
             # do not replace with same amino acid
             if aa == x[i]:
                 continue
-            yield x[:i]+aa+x[i+1:]
+            yield x[:i] + aa + x[i + 1 :]
     # insertion
-    for i in range(len(x)+1):
+    for i in range(len(x) + 1):
         for aa in alphabet:
             # only insert after first repeated amino acid
-            if (i>0) and (aa == x[i-1]):
+            if (i > 0) and (aa == x[i - 1]):
                 continue
             # insertion
-            yield x[:i]+aa+x[i:]
+            yield x[:i] + aa + x[i:]
+
 
 def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
     """Iterator over Hamming neighbors of a string x.
@@ -298,10 +310,12 @@ def hamming_neighbors(x, alphabet=aminoacids, variable_positions=None):
         for aa in alphabet:
             if aa == x[i]:
                 continue
-            yield x[:i]+aa+x[i+1:]
+            yield x[:i] + aa + x[i + 1 :]
+
 
 def _flatten_list(inlist):
     return [item for sublist in inlist for item in sublist]
+
 
 def next_nearest_neighbors(x, neighborhood, maxdistance=2):
     """Set of next nearest neighbors of a string x.
@@ -316,7 +330,7 @@ def next_nearest_neighbors(x, neighborhood, maxdistance=2):
     -------
     set of neighboring sequences
     """
-   
+
     neighbors = [list(neighborhood(x))]
     distance = 1
     while distance < maxdistance:
@@ -328,7 +342,8 @@ def next_nearest_neighbors(x, neighborhood, maxdistance=2):
     neighbor_set = set(_flatten_list(neighbors))
     neighbor_set.discard(x)
     return neighbor_set
- 
+
+
 def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
     """Find neighboring sequences in a list of unique sequences.
 
@@ -343,10 +358,11 @@ def find_neighbor_pairs(seqs, neighborhood=hamming_neighbors):
     reference = set(seqs)
     pairs = []
     for x in sorted(set(seqs)):
-        for y in (set(neighborhood(x)) & reference):
+        for y in set(neighborhood(x)) & reference:
             pairs.append((x, y))
         reference.remove(x)
     return pairs
+
 
 def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
     """Find neighboring sequences in a list of unique sequences.
@@ -363,7 +379,7 @@ def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
     seqs_list = list(seqs)
     pairs = []
     for i, x in enumerate(seqs):
-        for y in (set(neighborhood(x)) & reference):
+        for y in set(neighborhood(x)) & reference:
             pairs.append((i, seqs_list.index(y)))
     return pairs
 
@@ -375,7 +391,7 @@ def calculate_neighbor_numbers(seqs, reference=None, neighborhood=levenshtein_ne
     seqs: list of sequences
     reference: list of sequences, set(seqs) if None
     neighborhood: function returning iterator over neighbors
-    
+
     Returns
     -------
     integer array of number of neighboring sequences
@@ -384,27 +400,30 @@ def calculate_neighbor_numbers(seqs, reference=None, neighborhood=levenshtein_ne
         reference = set(seqs)
     return np.array([len(set(neighborhood(seq)) & reference) for seq in seqs])
 
+
 def isdist1(x, reference, neighborhood=levenshtein_neighbors):
-    """ Is the string x distance 1 away from any of the strings in the reference set"""
+    """Is the string x distance 1 away from any of the strings in the reference set"""
     for neighbor in neighborhood(x):
         if neighbor in reference:
             return True
     return False
 
+
 def _isdist2_hamming(x, reference):
     """Is the string x a Hamming distance 2 away from any string in the reference set"""
     for i in range(len(x)):
-     	for aai in aminoacids:
+        for aai in aminoacids:
             if aai == x[i]:
                 continue
-            si = x[:i]+aai+x[i+1:]
-            for j in range(i+1, len(x)):
+            si = x[:i] + aai + x[i + 1 :]
+            for j in range(i + 1, len(x)):
                 for aaj in aminoacids:
                     if aaj == x[j]:
                         continue
-                    if si[:j]+aaj+si[j+1:] in reference:
+                    if si[:j] + aaj + si[j + 1 :] in reference:
                         return True
     return False
+
 
 def _isdist3_hamming(x, reference):
     """Is the string x a Hamming distance 3 away from any string in the reference set"""
@@ -412,19 +431,20 @@ def _isdist3_hamming(x, reference):
         for aai in aminoacids:
             if aai == x[i]:
                 continue
-            si = x[:i]+aai+x[i+1:]
-            for j in range(i+1, len(x)):
+            si = x[:i] + aai + x[i + 1 :]
+            for j in range(i + 1, len(x)):
                 for aaj in aminoacids:
                     if aaj == x[j]:
                         continue
-                    sij = si[:j]+aaj+si[j+1:]
-                    for k in range(j+1, len(x)):
+                    sij = si[:j] + aaj + si[j + 1 :]
+                    for k in range(j + 1, len(x)):
                         for aak in aminoacids:
                             if aak == x[k]:
                                 continue
-                            if sij[:k]+aak+sij[k+1:] in reference:
+                            if sij[:k] + aak + sij[k + 1 :] in reference:
                                 return True
     return False
+
 
 def nndist_hamming(seq, reference, maxdist=4):
     """Calculate the nearest-neighbor distance by Hamming distance
@@ -438,26 +458,29 @@ def nndist_hamming(seq, reference, maxdist=4):
 
     Returns
     -------
-    distance of nearest neighbor 
+    distance of nearest neighbor
 
     Note: This function does not check if strings are of same length.
     """
-    if maxdist>4:
+    if maxdist > 4:
         raise NotImplementedError
     if seq in reference:
         return 0
-    if (maxdist==1) or isdist1(seq, reference, neighborhood=hamming_neighbors):
+    if (maxdist == 1) or isdist1(seq, reference, neighborhood=hamming_neighbors):
         return 1
-    if (maxdist==2) or _isdist2_hamming(seq, reference):
+    if (maxdist == 2) or _isdist2_hamming(seq, reference):
         return 2
-    if (maxdist==3) or _isdist3_hamming(seq, reference):
+    if (maxdist == 3) or _isdist3_hamming(seq, reference):
         return 3
     return 4
 
-def hierarchical_clustering(seqs, 
-                            pdist_kws=dict(),
-                            linkage_kws=dict(method='average', optimal_ordering=True),
-                            cluster_kws=dict(t=6, criterion='distance')):
+
+def hierarchical_clustering(
+    seqs,
+    pdist_kws=dict(),
+    linkage_kws=dict(method="average", optimal_ordering=True),
+    cluster_kws=dict(t=6, criterion="distance"),
+):
     """
     Hierarchical clustering by sequence similarity.
 
@@ -471,7 +494,7 @@ def hierarchical_clustering(seqs,
         distances_beta = pdist(seqs_beta, **pdist_kws)
         distances = distances_alpha + distances_beta
     else:
-        raise NotImplementedError('seqs needs to be a tuple')
+        raise NotImplementedError("seqs needs to be a tuple")
     linkage = hc.linkage(distances, **linkage_kws)
     cluster = hc.fcluster(linkage, **cluster_kws)
     return linkage, cluster

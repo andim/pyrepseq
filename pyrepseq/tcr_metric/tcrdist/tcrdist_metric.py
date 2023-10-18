@@ -32,7 +32,9 @@ class AbstractTcrdist(TcrMetric):
     def _tcrdist_type(self) -> TcrdistType:
         pass
 
-    def calc_cdist_matrix(self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame) -> ndarray:
+    def calc_cdist_matrix(
+        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
+    ) -> ndarray:
         cdist_matrices = []
 
         if TcrChain.ALPHA in self._chains_to_compare:
@@ -44,17 +46,25 @@ class AbstractTcrdist(TcrMetric):
 
         return sum(cdist_matrices)
 
-    def _calc_alpha_cdist(self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame) -> ndarray:
-        result = tcrdist_interface.calc_alpha_cdist_matrices(anchor_tcrs, comparison_tcrs)
+    def _calc_alpha_cdist(
+        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
+    ) -> ndarray:
+        result = tcrdist_interface.calc_alpha_cdist_matrices(
+            anchor_tcrs, comparison_tcrs
+        )
         if self._tcrdist_type is TcrdistType.CDR3:
-            return result["cdr3_b_aa"]
+            return result["cdr3_a_aa"]
         else:
             return result["tcrdist"]
 
-    def _calc_beta_cdist(self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame) -> ndarray:
-        result = tcrdist_interface.calc_beta_cdist_matrices(anchor_tcrs, comparison_tcrs)
+    def _calc_beta_cdist(
+        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
+    ) -> ndarray:
+        result = tcrdist_interface.calc_beta_cdist_matrices(
+            anchor_tcrs, comparison_tcrs
+        )
         if self._tcrdist_type is TcrdistType.CDR3:
-            return result["cdr3_a_aa"]
+            return result["cdr3_b_aa"]
         else:
             return result["tcrdist"]
 
@@ -66,41 +76,41 @@ class AbstractTcrdist(TcrMetric):
 
 class AlphaCdr3Tcrdist(AbstractTcrdist):
     name = "Alpha CDR3 tcrdist"
-    distance_bins = range(0, 80+1, 2)
+    distance_bins = range(0, 80 + 1, 2)
     _chains_to_compare = [TcrChain.ALPHA]
     _tcrdist_type = TcrdistType.CDR3
 
 
 class BetaCdr3Tcrdist(AbstractTcrdist):
     name = "Beta CDR3 tcrdist"
-    distance_bins = range(0, 80+1, 2)
+    distance_bins = range(0, 80 + 1, 2)
     _chains_to_compare = [TcrChain.BETA]
     _tcrdist_type = TcrdistType.CDR3
 
 
 class Cdr3Tcrdist(AbstractTcrdist):
     name = "CDR3 tcrdist"
-    distance_bins = range(0, 160+1, 2)
+    distance_bins = range(0, 160 + 1, 2)
     _chains_to_compare = [TcrChain.ALPHA, TcrChain.BETA]
     _tcrdist_type = TcrdistType.CDR3
 
 
 class AlphaTcrdist(AbstractTcrdist):
     name = "Alpha tcrdist"
-    distance_bins = range(0, 300+1, 5)
+    distance_bins = range(0, 300 + 1, 5)
     _chains_to_compare = [TcrChain.ALPHA]
     _tcrdist_type = TcrdistType.FULL
 
 
 class BetaTcrdist(AbstractTcrdist):
     name = "Beta tcrdist"
-    distance_bins = range(0, 300+1, 5)
+    distance_bins = range(0, 300 + 1, 5)
     _chains_to_compare = [TcrChain.BETA]
     _tcrdist_type = TcrdistType.FULL
 
 
 class Tcrdist(AbstractTcrdist):
     name = "tcrdist"
-    distance_bins = range(0, 600+1, 5)
+    distance_bins = range(0, 600 + 1, 5)
     _chains_to_compare = [TcrChain.ALPHA, TcrChain.BETA]
     _tcrdist_type = TcrdistType.FULL

@@ -5,7 +5,7 @@ from pandas import DataFrame
 import tidytcells as tt
 from typing import Mapping
 
-aminoacids = 'ACDEFGHIKLMNPQRSTVWY'
+aminoacids = "ACDEFGHIKLMNPQRSTVWY"
 _aminoacids_set = set(aminoacids)
 
 
@@ -81,7 +81,10 @@ def standardize_dataframe(df_old: DataFrame,
     if standardize:
         for chain in ('A', 'B'):
 
-            cdr3 = f'CDR3{chain}'
+    # Standardize TCR genes and MHC genes
+    if standardize:
+        for chain in ("A", "B"):
+            cdr3 = f"CDR3{chain}"
             if cdr3 in df.columns:
                 df[cdr3] = df[cdr3].map(
                     lambda x: None if pd.isna(x) else tt.junction.standardize(
@@ -91,8 +94,8 @@ def standardize_dataframe(df_old: DataFrame,
                     )
                 )
 
-            for gene in ('V', 'J'):
-                col = f'TR{chain}{gene}'
+            for gene in ("V", "J"):
+                col = f"TR{chain}{gene}"
                 if col in df.columns:
                     df[col] = df[col].map(
                         lambda x: None if pd.isna(x) else tt.tr.standardize(
@@ -100,7 +103,7 @@ def standardize_dataframe(df_old: DataFrame,
                             species=species,
                             enforce_functional=tcr_enforce_functional,
                             precision=tcr_precision,
-                            suppress_warnings=suppress_warnings
+                            suppress_warnings=suppress_warnings,
                         )
                     )
 
@@ -111,7 +114,7 @@ def standardize_dataframe(df_old: DataFrame,
                         gene=x,
                         species=species,
                         precision=mhc_precision,
-                        suppress_warnings=suppress_warnings
+                        suppress_warnings=suppress_warnings,
                     )
                 )
 
@@ -175,75 +178,25 @@ def multimerge(dfs, on, suffixes=None, **kwargs):
     merged dataframe
     """
 
-    merge_kwargs = dict(how='outer')
+    merge_kwargs = dict(how="outer")
     merge_kwargs.update(kwargs)
     if suffixes:
         dfs_new = []
         for df, suffix in zip(dfs, suffixes):
-            if not on == 'index':
+            if not on == "index":
                 df = df.set_index(on)
-            dfs_new.append(df.add_suffix('_'+suffix))
-        return reduce(lambda left, right: pd.merge(left, right,
-                                                   right_index=True, left_index=True,
-                                                   **merge_kwargs),
-                      dfs_new)
-    if on == 'index':
-        return reduce(lambda left, right: pd.merge(left, right,
-                                                   right_index=True, left_index=True,
-                                                   **merge_kwargs),
-                      dfs)
-    return reduce(lambda left, right: pd.merge(left, right, on,
-                                               **merge_kwargs), dfs)
-
-def get_vregion_seq(s, gaps = 'no'):
-    # get sequence of only the V region from full tcr sequence
-    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
-    imgt = anarci([("myseq", s)], "imgt")
-    if imgt[0][0] != None:
-        renumbering = imgt[0][0][0][0]
-        renumbering = imgt[0][0][0][0]
-        seq = "".join([x[1] for x in renumbering]).strip()
-        if gaps == 'no':
-            seq = seq.replace("-", "")
-    else:
-        seq = None
-    return(seq)
-
-def get_cdr3_seq(s, gaps = 'no'):
-    # get sequence of only the cdr3 from full tcr sequence
-    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
-    imgt = anarci([("myseq", s)], "imgt")
-    if imgt[0][0] != None:
-        renumbering = imgt[0][0][0][0]
-        seq = "".join([x[1] for x in renumbering if x[0][0] > 103 and x[0][0] <119]).strip()
-        if gaps == 'no':
-            seq = seq.replace("-", "")
-    else:
-        seq = None
-    return seq
-
-def get_cdr1_seq(s, gaps = 'no'):
-    # get sequence of only the cdr1 from full tcr sequence
-    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
-    imgt = anarci([("myseq", s)], "imgt")
-    if imgt[0][0] != None:
-        renumbering = imgt[0][0][0][0]
-        seq = "".join([x[1] for x in renumbering if x[0][0] > 26 and x[0][0] < 39]).strip()
-        if gaps == 'no':
-            seq = seq.replace("-", "")
-    else:
-        seq = None
-    return seq
-
-def get_cdr2_seq(s, gaps = 'no'):
-    # get sequence of only the cdr2 from full tcr sequence
-    assert gaps in ['yes', 'no'], 'gaps should be one of [yes, no]'
-    imgt = anarci([("myseq", s)], "imgt")
-    if imgt[0][0] != None:
-        renumbering = imgt[0][0][0][0]
-        seq = "".join([x[1] for x in renumbering if x[0][0] > 55 and x[0][0] < 66]).strip()
-        if gaps == 'no':
-            seq = seq.replace("-", "")
-    else:
-        seq = None
-    return seq
+            dfs_new.append(df.add_suffix("_" + suffix))
+        return reduce(
+            lambda left, right: pd.merge(
+                left, right, right_index=True, left_index=True, **merge_kwargs
+            ),
+            dfs_new,
+        )
+    if on == "index":
+        return reduce(
+            lambda left, right: pd.merge(
+                left, right, right_index=True, left_index=True, **merge_kwargs
+            ),
+            dfs,
+        )
+    return reduce(lambda left, right: pd.merge(left, right, on, **merge_kwargs), dfs)
