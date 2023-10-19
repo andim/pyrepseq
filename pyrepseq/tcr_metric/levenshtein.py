@@ -5,7 +5,7 @@ from pyrepseq.tcr_metric.tcr_metric import TcrMetric
 from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 from scipy.spatial import distance
-from tidytcells import tcr
+from tidytcells import tr
 from typing import Iterable, Optional, Tuple
 
 
@@ -89,12 +89,12 @@ class LevenshteinMetric(TcrMetric):
     def _get_cdr1_from_v_gene_if_possible(self, v_gene: Optional[str]) -> Optional[str]:
         if not isinstance(v_gene, str):
             return None
-        return tcr.get_aa_sequence(v_gene)["CDR1-IMGT"]
+        return tr.get_aa_sequence(v_gene)["CDR1-IMGT"]
 
     def _get_cdr2_from_v_gene_if_possible(self, v_gene: Optional[str]) -> Optional[str]:
         if not isinstance(v_gene, str):
             return None
-        return tcr.get_aa_sequence(v_gene)["CDR2-IMGT"]
+        return tr.get_aa_sequence(v_gene)["CDR2-IMGT"]
 
     def _calc_cdist_matrix_for_column(
         self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame, column: str
