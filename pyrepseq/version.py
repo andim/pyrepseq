@@ -74,4 +74,4 @@ VERSION = __version__
 PACKAGES = ['pyrepseq']
 PACKAGE_DATA = {'': ['data/*.csv']}
 REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein", "matplotlib",
-            "seaborn", "logomaker", "biopython", "tidytcells>=2.0.0,<2.1"]
+            "seaborn", "logomaker", "biopython", "tidytcells~=2.0"]
