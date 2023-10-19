@@ -84,5 +84,6 @@ REQUIRES = [
     "seaborn",
     "logomaker",
     "biopython",
+    "tcrdist3",
     "tidytcells~=2.0",
 ]
