@@ -1,9 +1,11 @@
+from setuptools import find_packages
+
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 1
 _version_minor = 2
-_version_micro = '1'  # use '' for first of series, number for 1 and above
-#_version_extra = 'dev'
-_version_extra = ''  # Uncomment this for full releases
+_version_micro = "1"  # use '' for first of series, number for 1 and above
+# _version_extra = 'dev'
+_version_extra = ""  # Uncomment this for full releases
 
 # Construct full version string from these.
 _ver = [_version_major, _version_minor]
@@ -12,16 +14,18 @@ if _version_micro:
 if _version_extra:
     _ver.append(_version_extra)
 
-__version__ = '.'.join(map(str, _ver))
+__version__ = ".".join(map(str, _ver))
 
-CLASSIFIERS = ["Development Status :: 5 - Production/Stable",
-               "Environment :: Console",
-               "Intended Audience :: Science/Research",
-               "License :: OSI Approved :: MIT License",
-               "Operating System :: OS Independent",
-               "Programming Language :: Python :: 3",
-               "Programming Language :: Python :: 3.8",
-               "Topic :: Scientific/Engineering"]
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Scientific/Engineering",
+]
 
 # Description should be a one-liner:
 description = "Python library for immune repertoire analyses"
@@ -71,7 +75,17 @@ MAJOR = _version_major
 MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
-PACKAGES = ['pyrepseq']
-PACKAGE_DATA = {'': ['data/*.csv']}
-REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein", "matplotlib",
-            "seaborn", "logomaker", "biopython", "tidytcells~=2.0"]
+PACKAGES = find_packages()
+PACKAGE_DATA = {"": ["data/*.csv"]}
+REQUIRES = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "Levenshtein",
+    "matplotlib",
+    "seaborn",
+    "logomaker",
+    "biopython",
+    "tcrdist3",
+    "tidytcells~=2.0",
+]

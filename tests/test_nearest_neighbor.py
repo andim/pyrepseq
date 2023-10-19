@@ -10,9 +10,9 @@ fallback_cache = None
 
 
 def fallback(seqs, max_edits=1):
-    '''
+    """
     basic levenshtein comparison
-    '''
+    """
     ans = []
     for i in range(len(seqs)):
         for j in range(len(seqs)):
@@ -32,7 +32,7 @@ def set_equal(list_a, list_b):
 
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_basic(algorithm):
-    test_input = ['CAAA', 'CDDD', 'CADA', 'CAAK']
+    test_input = ["CAAA", "CDDD", "CADA", "CAAK"]
     test_output = [(0, 2, 1), (0, 3, 1), (2, 0, 1), (3, 0, 1)]
     assert set_equal(algorithm(test_input, max_edits=1), test_output)
 
@@ -40,6 +40,7 @@ def test_basic(algorithm):
     assert set_equal(fallback_version, test_output)
 
     test_output = [(0, 2, 1), (2, 0, 1), (3, 0, 1)]
+
     assert set_equal(algorithm(test_input, max_edits=1,
                                max_returns=1), test_output)
 
@@ -60,7 +61,7 @@ def test_duplicate(algorithm):
 
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_compatibility(algorithm):
-    test_input = np.array(['CAAA', 'CDDD', 'CADA'])
+    test_input = np.array(["CAAA", "CDDD", "CADA"])
     test_output = [(0, 2, 1), (2, 0, 1)]
     assert set_equal(algorithm(test_input, max_edits=1), test_output)
 
@@ -70,7 +71,7 @@ def test_compatibility(algorithm):
 
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_hamming(algorithm):
-    test_input = ['CAAA', 'CDDD', 'CADA', 'CAAAD']
+    test_input = ["CAAA", "CDDD", "CADA", "CAAAD"]
     test_output = [(0, 2, 1), (2, 0, 1)]
     assert set_equal(algorithm(test_input, custom_distance='hamming',
                                max_edits=1), test_output)
@@ -78,7 +79,7 @@ def test_hamming(algorithm):
 
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_custom_distance(algorithm):
-    test_input = ['CAAA', 'CDDD', 'CADA', 'CAAK']
+    test_input = ["CAAA", "CDDD", "CADA", "CAAK"]
     test_output = [(0, 2, 1), (0, 3, 1), (2, 0, 1), (3, 0, 1)]
     assert set_equal(algorithm(test_input, max_edits=1,
                                custom_distance=distance), test_output)
@@ -96,13 +97,16 @@ def test_custom_distance(algorithm):
 @pytest.mark.skip(reason="very slow")
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_bulk(algorithm):
-    combinations1 = product('ACD', repeat=2)
-    combinations2 = product('ACD', repeat=3)
-    combinations3 = product('ACD', repeat=4)
-    combinations4 = product('ACD', repeat=5)
-    combinations5 = product('ACD', repeat=6)
-    combinations6 = product('ACD', repeat=7)
-    def to_string(x): return 'C'+''.join(x)
+    combinations1 = product("ACD", repeat=2)
+    combinations2 = product("ACD", repeat=3)
+    combinations3 = product("ACD", repeat=4)
+    combinations4 = product("ACD", repeat=5)
+    combinations5 = product("ACD", repeat=6)
+    combinations6 = product("ACD", repeat=7)
+
+    def to_string(x):
+        return "C" + "".join(x)
+
     test_input = list(map(to_string, combinations1))
     test_input += list(map(to_string, combinations2))
     test_input += list(map(to_string, combinations3))
