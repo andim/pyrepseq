@@ -22,3 +22,21 @@ def test_calc_cdist_matrix(metric, expected, mock_data_df: DataFrame):
     result = metric.calc_cdist_matrix(anchor_tcrs, comparison_tcrs)
 
     assert np.array_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    ("weights", "expected"),
+    (
+        ({"alpha_weight": 2}, np.array([[0, 14, 31], [14, 0, 45]])),
+        ({"cdr3_weight": 2}, np.array([[0, 20, 19], [20, 0, 39]])),
+        ({"insertion_weight": 2, "deletion_weight": 2}, np.array([[0, 14, 20], [14, 0, 34]]))
+    )
+)
+def test_weighting(weights, expected, mock_data_df: DataFrame):
+    metric = tcr_metric.CdrLevenshtein(**weights)
+    anchor_tcrs = mock_data_df.iloc[0:2]
+    comparison_tcrs = mock_data_df.iloc[0:3]
+
+    result = metric.calc_cdist_matrix(anchor_tcrs, comparison_tcrs)
+
+    assert np.array_equal(result, expected)
