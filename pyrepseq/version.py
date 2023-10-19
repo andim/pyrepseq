@@ -1,3 +1,5 @@
+from setuptools import find_packages
+
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 1
 _version_minor = 2
@@ -73,7 +75,7 @@ MAJOR = _version_major
 MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
-PACKAGES = ["pyrepseq"]
+PACKAGES = find_packages()
 PACKAGE_DATA = {"": ["data/*.csv"]}
 REQUIRES = [
     "numpy",
