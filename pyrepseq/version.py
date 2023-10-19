@@ -1,5 +1,3 @@
-from os.path import join as pjoin
-
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 _version_major = 1
 _version_minor = 2
@@ -21,12 +19,12 @@ CLASSIFIERS = ["Development Status :: 5 - Production/Stable",
                "Intended Audience :: Science/Research",
                "License :: OSI Approved :: MIT License",
                "Operating System :: OS Independent",
-               "Programming Language :: Python :: 3",              
+               "Programming Language :: Python :: 3",
                "Programming Language :: Python :: 3.8",
                "Topic :: Scientific/Engineering"]
 
 # Description should be a one-liner:
-description = "Python library for immune repertoire analyses" 
+description = "Python library for immune repertoire analyses"
 # Long description will go up on the pypi page
 long_description = """
 Pyrepseq = scipy & seaborn for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.
@@ -74,6 +72,6 @@ MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
 PACKAGES = ['pyrepseq']
-PACKAGE_DATA = {'' : ['data/*.csv']}
+PACKAGE_DATA = {'': ['data/*.csv']}
 REQUIRES = ["numpy", "scipy", "pandas", "Levenshtein", "matplotlib",
-            "seaborn", "logomaker", "biopython", "tidytcells>=1.4.0,<2.0"]
+            "seaborn", "logomaker", "biopython", "tidytcells~=2.0"]
