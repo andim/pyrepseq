@@ -79,10 +79,6 @@ def standardize_dataframe(df_old: DataFrame,
 
     # Standardize TCR genes and MHC genes
     if standardize:
-        for chain in ('A', 'B'):
-
-    # Standardize TCR genes and MHC genes
-    if standardize:
         for chain in ("A", "B"):
             cdr3 = f"CDR3{chain}"
             if cdr3 in df.columns:
