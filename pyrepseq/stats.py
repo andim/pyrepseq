@@ -73,7 +73,7 @@ def powerlaw_mle_alpha(c, cmin=1.0, method="exact", **kwargs):
 def pc_n(n):
     r"""Estimate the coincidence probability :math:`p_C` from sampled counts.
     :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
-    If :math:`n_i` are the counts of the i-th unique element and 
+    If :math:`n_i` are the counts of the i-th unique element and
     :math:`N = \sum_i n_i` the length of the array, then:
     :math:`p_C = \sum_i n_i (n_i-1)/(N(N-1))`
 
@@ -85,7 +85,8 @@ def pc_n(n):
         list of counts
     """
     N = np.sum(n)
-    return np.sum(n*(n-1))/(N*(N-1))
+    return np.sum(n * (n - 1)) / (N * (N - 1))
+
 
 def pc(array, array2=None):
     r"""Estimate the coincidence probability :math:`p_C` from a sample.
@@ -122,14 +123,16 @@ def pc(array, array2=None):
 
 def chao1(counts):
     """Estimate richness from sampled counts."""
-    return np.sum(counts) + counts[0]**2/(2*counts[1])
+    return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
+
 
 def var_chao1(counts):
     """Variance estimator for Chao's richness."""
     f1 = counts[0]
     f2 = counts[1]
-    ratio = f1/f2
-    return f2*((ratio/4)**4 + ratio**3 + (ratio/2)**2)
+    ratio = f1 / f2
+    return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
+
 
 def stdpc(array):
     "Std.dev. estimator for Simpson's index"
@@ -137,21 +140,24 @@ def stdpc(array):
     _, n = np.unique(array, return_counts=True)
     return stdpc_n(n)
 
+
 def varpc_n(n):
     "Variance estimator for Simpson's index"
     N = np.sum(n)
-    p2_hat = np.sum(n*(n-1))/(N*(N-1))
-    p3_hat = np.sum(n*(n-1)*(n-2))/(N*(N-1)*(N-2))
-    beta = 2*(2*N-3)/((N-2)*(N-3))
-    var = (4*(N-2)/(N*(N-1))*(1+beta)*p3_hat
-           - beta*p2_hat**2
-           + 2/(N*(N-1))*(1+beta)*p2_hat
-           )
+    p2_hat = np.sum(n * (n - 1)) / (N * (N - 1))
+    p3_hat = np.sum(n * (n - 1) * (n - 2)) / (N * (N - 1) * (N - 2))
+    beta = 2 * (2 * N - 3) / ((N - 2) * (N - 3))
+    var = (
+        4 * (N - 2) / (N * (N - 1)) * (1 + beta) * p3_hat
+        - beta * p2_hat**2
+        + 2 / (N * (N - 1)) * (1 + beta) * p2_hat
+    )
     return var
+
 
 def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
-    return varpc_n(n)**.5
+    return varpc_n(n) ** 0.5
 
 
 def jaccard_index(A, B):
@@ -176,7 +182,7 @@ def overlap(A, B):
     """
     Calculate the number of overlapping elements of two sets.
 
-    This measure is defined as 
+    This measure is defined as
     :math:`|A intersection B|`
 
     A, B: iterables (will be converted to sets). na values will be dropped first
@@ -191,11 +197,12 @@ def overlap(A, B):
     B = set(B)
     return len(A.intersection(B))
 
+
 def overlap_coefficient(A, B):
     """
     Calculate the overlap coefficient for two sets.
 
-    This measure is defined as 
+    This measure is defined as
     :math:`O(A, B) = |A intersection B| / min(|A|, |B|)`
 
     A, B: iterables (will be converted to sets). na values will be dropped first

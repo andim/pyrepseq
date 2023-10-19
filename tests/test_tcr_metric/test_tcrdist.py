@@ -12,8 +12,8 @@ import pytest
         (tcr_metric.Cdr3Tcrdist(), np.array([[0, 35, 0], [35, 0, 35]])),
         (tcr_metric.AlphaTcrdist(), np.array([[0, 36, 57], [36, 0, 93]])),
         (tcr_metric.BetaTcrdist(), np.array([[0, 69, 46], [69, 0, 115]])),
-        (tcr_metric.Tcrdist(), np.array([[0, 105, 103], [105, 0, 208]]))
-    )
+        (tcr_metric.Tcrdist(), np.array([[0, 105, 103], [105, 0, 208]])),
+    ),
 )
 def test_calc_cdist_matrix(metric, expected, mock_data_df: DataFrame):
     anchor_tcrs = mock_data_df.iloc[0:2]

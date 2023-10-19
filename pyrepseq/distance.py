@@ -241,9 +241,11 @@ def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
         )
     names = [name for name, dfg in groups]
     data_square = squareform(data)
-    np.fill_diagonal(data_square,
-                     pcDelta_grouped(df, by, seq_columns=seq_columns, **kwargs))
+    np.fill_diagonal(
+        data_square, pcDelta_grouped(df, by, seq_columns=seq_columns, **kwargs)
+    )
     return pd.DataFrame(data_square, index=names, columns=names)
+
 
 def load_pcDelta_background(return_bins=True):
     """
@@ -383,7 +385,10 @@ def find_neighbor_pairs_index(seqs, neighborhood=hamming_neighbors):
             pairs.append((i, seqs_list.index(y)))
     return pairs
 
-def calculate_neighbor_numbers(seqs, reference=None, neighborhood=levenshtein_neighbors):
+
+def calculate_neighbor_numbers(
+    seqs, reference=None, neighborhood=levenshtein_neighbors
+):
     """Calculate the number of neighbors for each sequence in a list.
 
     Parameters
