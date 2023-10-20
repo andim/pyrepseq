@@ -81,6 +81,7 @@ REQUIRES = [
     "numpy",
     "scipy",
     "pandas",
+    "rapidfuzz",
     "Levenshtein",
     "matplotlib",
     "seaborn",
