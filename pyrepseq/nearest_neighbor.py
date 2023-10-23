@@ -7,16 +7,23 @@ from rapidfuzz.process import extract
 from multiprocessing import Pool
 from .util import flatten_array, ensure_numpy, check_common_input, make_output
 from .distance import levenshtein_neighbors, hamming_neighbors
+from itertools import combinations
 
-AMINO_ACIDS = 'ACDEFGHIKLMNPQRSTVWY'
+AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
+
+# ===================================
+# kdtree
+# ===================================
 
 
 def histogram_encode(cdr3, compression):
-    dimension = int(np.ceil(len(AMINO_ACIDS)/compression))
-    position_map = {char: int(np.floor(index/compression)) for index,
-                    char in enumerate(AMINO_ACIDS)}
+    dimension = int(np.ceil(len(AMINO_ACIDS) / compression))
+    position_map = {
+        char: int(np.floor(index / compression))
+        for index, char in enumerate(AMINO_ACIDS)
+    }
 
-    ans = np.zeros(dimension, dtype='int')
+    ans = np.zeros(dimension, dtype="int")
     for char in cdr3:
         ans[position_map[char]] += 1
     return ans
@@ -26,10 +33,11 @@ def cal_levenshtein(_args):
     # handle must be a global function for parallelization
     i, y_indices = _args
     seqs, max_edits, limit, custom_distance, _ = _cal_params
-    scorer = hamming if custom_distance == 'hamming' else levenshtein
+    scorer = hamming if custom_distance == "hamming" else levenshtein
     choices = list(filter(lambda y_index: y_index != i, y_indices))
-    result = extract(seqs[i], seqs[choices],
-                     score_cutoff=max_edits, scorer=scorer, limit=limit)
+    result = extract(
+        seqs[i], seqs[choices], score_cutoff=max_edits, scorer=scorer, limit=limit
+    )
 
     ans = []
     for _, dist, y_index in result:
@@ -48,15 +56,16 @@ def cal_custom_dist(_args):
     def distance_filter(x):
         edit_distance = levenshtein(query, seqs[x[1]])
         return x[2] <= max_cust_dist and edit_distance <= max_edits
+
     ans = sorted(filter(distance_filter, ans), key=lambda x: x[2])
     return ans if limit is None else ans[0:limit]
 
 
-def to_triplets(seqs, y_indices, max_edits, limit, n_cpu, custom_distance,
-                max_cust_dist):
+def to_triplets(
+    seqs, y_indices, max_edits, limit, n_cpu, custom_distance, max_cust_dist
+):
     global _cal_params
-    cal = cal_levenshtein if custom_distance in (
-        None, 'hamming') else cal_custom_dist
+    cal = cal_levenshtein if custom_distance in (None, "hamming") else cal_custom_dist
     _cal_params = (seqs, max_edits, limit, custom_distance, max_cust_dist)
     _loop = enumerate(y_indices)
 
@@ -64,7 +73,7 @@ def to_triplets(seqs, y_indices, max_edits, limit, n_cpu, custom_distance,
         result = map(cal, _loop)
     else:
         with Pool(n_cpu) as p:
-            result = p.map(cal, _loop, chunksize=int(len(seqs)/n_cpu))
+            result = p.map(cal, _loop, chunksize=int(len(seqs) / n_cpu))
     return flatten_array(result)
 
 
@@ -78,9 +87,16 @@ def to_len_bucket(seqs):
     return ans
 
 
-def kdtree(seqs, max_edits=1, max_returns=None, n_cpu=1,
-           custom_distance=None, max_custom_distance=float('inf'),
-           output_type='triplets', compression=1):
+def kdtree(
+    seqs,
+    max_edits=1,
+    max_returns=None,
+    n_cpu=1,
+    custom_distance=None,
+    max_custom_distance=float("inf"),
+    output_type="triplets",
+    compression=1,
+):
     """
     List all neighboring CDR3B sequences efficiently within the given edit distance.
     With KDTree, the algorithms run with O(N logN) eliminating unnecessary comparisons.
@@ -113,41 +129,80 @@ def kdtree(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
         if "ndarray" returns numpy's 2d array representing dense matrix
     """
-    check_common_input(seqs, max_edits, max_returns, n_cpu,
-                       custom_distance, max_custom_distance, output_type)
+    check_common_input(
+        seqs,
+        max_edits,
+        max_returns,
+        n_cpu,
+        custom_distance,
+        max_custom_distance,
+        output_type,
+    )
 
-    if custom_distance == 'hamming':
+    if custom_distance == "hamming":
         buckets, ans = to_len_bucket(seqs), []
         for bucket in buckets.values():
-            ans += kdtree_leven(bucket, max_edits, max_returns, n_cpu,
-                                custom_distance, max_custom_distance,
-                                'triplets', compression)
+            ans += kdtree_leven(
+                bucket,
+                max_edits,
+                max_returns,
+                n_cpu,
+                custom_distance,
+                max_custom_distance,
+                "triplets",
+                compression,
+            )
         return make_output(ans, output_type)
-    return kdtree_leven(seqs, max_edits, max_returns, n_cpu, custom_distance,
-                        max_custom_distance, output_type, compression)
+    return kdtree_leven(
+        seqs,
+        max_edits,
+        max_returns,
+        n_cpu,
+        custom_distance,
+        max_custom_distance,
+        output_type,
+        compression,
+    )
 
 
-def kdtree_leven(seqs, max_edits=1, max_returns=None, n_cpu=1,
-                 custom_distance=None, max_custom_distance=float('inf'),
-                 output_type='triplets', compression=1):
+def kdtree_leven(
+    seqs,
+    max_edits=1,
+    max_returns=None,
+    n_cpu=1,
+    custom_distance=None,
+    max_custom_distance=float("inf"),
+    output_type="triplets",
+    compression=1,
+):
     # boilerplate
     seqs = ensure_numpy(seqs)
-    params = {'r': np.sqrt(2)*max_edits, 'workers': n_cpu}
+    params = {"r": np.sqrt(2) * max_edits, "workers": n_cpu}
 
     # algorithm
     matrix = [histogram_encode(x, compression) for x in seqs]
     tree = KDTree(matrix, compact_nodes=True, balanced_tree=True)
     y_indices = tree.query_ball_point(matrix, **params)
-    triplets = to_triplets(seqs, y_indices, max_edits,
-                           max_returns, n_cpu, custom_distance,
-                           max_custom_distance)
+    triplets = to_triplets(
+        seqs,
+        y_indices,
+        max_edits,
+        max_returns,
+        n_cpu,
+        custom_distance,
+        max_custom_distance,
+    )
     return make_output(triplets, output_type)
 
+
+# ===================================
+# hash-based
+# ===================================
 
 def generate_neighbors(query, max_edits, is_hamming):
     neighbor_func = hamming_neighbors if is_hamming else levenshtein_neighbors
     ans = {query: 0}
-    for edit_distance in range(1, max_edits+1):
+    for edit_distance in range(1, max_edits + 1):
         for seq in ans.copy():
             for new_seq in neighbor_func(seq):
                 if new_seq not in ans:
@@ -166,7 +221,7 @@ def build_index(seqs):
 
 def single_lookup(args):
     index, max_edits, limit, custom_distance, max_cust_dist = _params
-    ans, (x_index, seq), is_hamming = [], args, custom_distance == 'hamming'
+    ans, (x_index, seq), is_hamming = [], args, custom_distance == "hamming"
     neighbors = generate_neighbors(seq, max_edits, is_hamming)
 
     for possible_edit, edit_distance in neighbors.items():
@@ -174,7 +229,7 @@ def single_lookup(args):
             for y_index in index[possible_edit]:
                 if x_index == y_index:
                     continue
-                if custom_distance in (None, 'hamming'):
+                if custom_distance in (None, "hamming"):
                     ans.append((x_index, y_index, edit_distance))
                 else:
                     dist = custom_distance(seq, possible_edit)
@@ -183,8 +238,7 @@ def single_lookup(args):
     return ans if limit is None else ans[0:limit]
 
 
-def lookup(index, seqs, max_edits, max_returns, n_cpu,
-           custom_distance, max_cust_dist):
+def lookup(index, seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist):
     global _params
     _params = (index, max_edits, max_returns, custom_distance, max_cust_dist)
 
@@ -193,14 +247,20 @@ def lookup(index, seqs, max_edits, max_returns, n_cpu,
         result = map(single_lookup, _loop)
     else:
         with Pool(n_cpu) as p:
-            chunk = int(len(seqs)/n_cpu)
+            chunk = int(len(seqs) / n_cpu)
             result = p.map(single_lookup, _loop, chunksize=chunk)
     return flatten_array(result)
 
 
-def hash_based(seqs, max_edits=1, max_returns=None, n_cpu=1,
-               custom_distance=None, max_custom_distance=float('inf'),
-               output_type='triplets'):
+def hash_based(
+    seqs,
+    max_edits=1,
+    max_returns=None,
+    n_cpu=1,
+    custom_distance=None,
+    max_custom_distance=float("inf"),
+    output_type="triplets",
+):
     """
     List all neighboring CDR3B sequences efficiently for small edit distances.
     The idea is to list all possible sequences within a given distance and lookup the dictionary if it exists.
@@ -233,15 +293,139 @@ def hash_based(seqs, max_edits=1, max_returns=None, n_cpu=1,
     """
 
     # boilerplate
-    check_common_input(seqs, max_edits, max_returns, n_cpu,
-                       custom_distance, max_custom_distance, output_type)
+    check_common_input(
+        seqs,
+        max_edits,
+        max_returns,
+        n_cpu,
+        custom_distance,
+        max_custom_distance,
+        output_type,
+    )
     seqs = ensure_numpy(seqs)
 
     # algorithm
     index = build_index(seqs)
-    triplets = lookup(index, seqs, max_edits,
-                      max_returns, n_cpu, custom_distance, max_custom_distance)
+    triplets = lookup(
+        index, seqs, max_edits, max_returns, n_cpu, custom_distance, max_custom_distance
+    )
     return make_output(triplets, output_type)
+
+
+# ===================================
+# symspell
+# ===================================
+
+
+def comb_gen(seq, max_edits):
+    _len, ans = len(seq), set([seq])
+    for edit in range(1, max_edits+1):
+        for indexes in combinations(range(_len), edit):
+            new_seq, offset = [], 0
+            for index in indexes:
+                new_seq.append(seq[offset:index])
+                offset = index+1
+            new_seq.append(seq[offset:_len])
+            ans.add(''.join(new_seq))
+    return ans
+
+
+def generate_index(seqs, max_edits):
+    ans = {}
+    for i, seq in enumerate(seqs):
+        for comb in comb_gen(seq, max_edits):
+            if comb in ans:
+                ans[comb].append(i)
+            else:
+                ans[comb] = [i]
+    return ans
+
+
+def hamming_replacement(seq_a, seq_b):
+    # the older versions of the library did not throw error, so we force it
+    if len(seq_a) != len(seq_b):
+        raise ValueError()
+    return hamming(seq_a, seq_b)
+
+
+def symspell_lookup(index, seqs, max_edits, max_returns,
+                    custom_distance, max_custom_dist):
+    ans = []
+    threshold = max_custom_dist
+    if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
+        threshold = max_edits
+    max_returns = max_returns if max_returns is not None else float('inf')
+    if custom_distance == 'hamming':
+        custom_distance = hamming_replacement
+    elif custom_distance is None:
+        custom_distance = levenshtein
+
+    for i, seq in enumerate(seqs):
+        j_indices, count = set(), 0
+        for comb in comb_gen(seq, max_edits):
+            if comb not in index:
+                continue
+            for j_index in index[comb]:
+                j_indices.add(j_index)
+
+        for j_index in j_indices:
+            if i == j_index:
+                continue
+            try:
+                dist = custom_distance(seqs[i], seqs[j_index])
+                if dist > threshold:
+                    continue
+                if count >= max_returns:
+                    break
+                ans.append((i, j_index, dist))
+                count += 1
+            except:
+                continue
+    return ans
+
+
+def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
+             custom_distance=None, max_custom_distance=float('inf'),
+             output_type='triplets'):
+    """
+    List all neighboring CDR3B sequences efficiently within the given distance.
+    This is an improved version over the hash-based.
+
+    Parameters
+    ----------
+    strings : iterable of strings
+        list of CDR3B sequences
+    max_edits : int
+        maximum edit distance defining the neighbors
+    max_returns : int or None
+        maximum neighbor size
+    n_cpu : int
+        ignored
+    custom_distance : Function(str1, str2) or "hamming"
+        custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
+    max_custom_distance : float
+        maximum distance to include in the result, ignored if custom distance is not supplied
+    output_type: string
+        format of returns, can be "triplets", "coo_matrix", or "ndarray"
+
+    Returns
+    -------
+    neighbors : array of 3D-tuples, sparse matrix, or dense matrix
+        neigbors along with their edit distances according to the given output_type
+        if "triplets" returns are [(x_index, y_index, edit_distance)]
+        if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
+        if "ndarray" returns numpy's 2d array representing dense matrix
+    """
+
+    index = generate_index(seqs, max_edits)
+    triplets = symspell_lookup(index, seqs, max_edits, max_returns,
+                               custom_distance, max_custom_distance)
+    return make_output(triplets, output_type)
+
+
+# ===================================
+# combined function
+# ===================================
 
 
 def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
@@ -260,7 +444,7 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
     max_returns : int or None
         maximum neighbor size
     n_cpu : int
-        number of CPU cores running in parallel
+        ignored
     custom_distance : Function(str1, str2) or "hamming"
         custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
     max_custom_distance : float
@@ -277,8 +461,5 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "ndarray" returns numpy's 2d array representing dense matrix
     """
 
-    if max_edits == 1 and len(seqs) > 10000:
-        return hash_based(seqs, max_edits, max_returns, n_cpu,
-                          custom_distance, max_custom_distance, output_type)
-    return kdtree(seqs, max_edits, max_returns, n_cpu,
-                  custom_distance, max_custom_distance, output_type)
+    return symspell(seqs, max_edits, max_returns, n_cpu,
+                    custom_distance, max_custom_distance, output_type)
