@@ -3,6 +3,7 @@ import pandas as pd
 import scipy.optimize
 import scipy.special
 import warnings
+from .util import ensure_numpy
 
 
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
@@ -85,6 +86,8 @@ def pc_n(n):
     n : array-like
         list of counts
     """
+    
+    n = ensure_numpy(n)
     N = np.sum(n)
     return np.sum(n * (n - 1)) / (N * (N - 1))
 
@@ -126,14 +129,12 @@ def chao1(counts):
     """Estimate richness from sampled counts."""
     return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
 
-
 def var_chao1(counts):
     """Variance estimator for Chao's richness."""
     f1 = counts[0]
     f2 = counts[1]
     ratio = f1 / f2
     return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
-
 
 def pc_joint(df, on):
     """Joint coincidence probability estimator
