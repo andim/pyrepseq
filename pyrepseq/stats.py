@@ -268,6 +268,7 @@ def pc_conditional(df, by, on, take_mean=True, weight_uniformly=False):
         return conditional_pcs
 
 
+    
 def pc_joint(df, on):
     """Joint coincidence probability estimator
     
@@ -486,4 +487,8 @@ def renyi2_entropy(df, features, by=None, base=2.0):
     if base is not None:
         entropy /= np.log(base) 
     
+<<<<<<< HEAD
     return entropy
+=======
+    return entropy
+>>>>>>> 0fd7ecb (Add entropy into stats)
