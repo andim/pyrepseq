@@ -28,11 +28,7 @@ CLASSIFIERS = [
 ]
 
 # Description should be a one-liner:
-<<<<<<< HEAD
-description = "Immune repertoire analysis toolkit" 
-=======
 description = "Python library for immune repertoire analyses"
->>>>>>> main
 # Long description will go up on the pypi page
 long_description = """
 Pyrepseq = scipy & seaborn for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.

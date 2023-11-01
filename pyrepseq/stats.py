@@ -136,6 +136,24 @@ def var_chao1(counts):
     ratio = f1 / f2
     return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
 
+def chao2(counts, m):
+    
+  q1 = counts[0] - counts[1]
+  q2 = counts[1]
+  
+  return counts[0] + ((m-1)/m)*(q1*(q1-1))/(2*(q2+1))
+
+def var_chao2(counts):
+  
+  if counts[1] == 0:
+    return np.nan
+  
+  q1 = counts[0] - counts[1]
+  q2 = counts[1]
+  
+  return q2*(0.5*(q1/q2)**2+(q1/q2)**3+0.25*(q1/q2)**4)
+  
+
 def pc_joint(df, on):
     """Joint coincidence probability estimator
     
@@ -280,3 +298,77 @@ def overlap_coefficient(A, B):
     A = set(A)
     B = set(B)
     return len(A.intersection(B)) / min(len(A), len(B))
+
+def shannon_entropy(df, features, by=None, base=2.0):
+    """Compute Shannon entropies
+    
+    Parameters
+    ----------
+    df : pandas DataFrame
+    features: list
+    by: string/list of strings
+    base: float
+
+    Returns
+    ----------: 
+    float
+    """
+    
+    if base is not None and base <= 0:
+        raise ValueError("`base` must be a positive number or `None`.")
+    
+    if type(features) != list:
+        features = [features]
+        
+    if by is None:
+        probabilities = df[features].value_counts(normalize=True)
+        entropy  = -(probabilities*np.log(probabilities)).sum()
+    
+    else:
+        if type(by) == list and len(by) > 1:
+            by = by[0]
+            
+        marginal_probabilities = df[by].value_counts(normalize=True)
+        
+        if type(by) != list:
+            joint_probabilities = df[features+[by]].value_counts(normalize=True)
+        else:
+            joint_probabilities = df[features+by].value_counts(normalize=True)
+
+        entropy = -(joint_probabilities*np.log(joint_probabilities/marginal_probabilities)).sum()
+        
+    if base is not None:
+        entropy /= np.log(base) 
+        
+    return entropy 
+
+def renyi2_entropy(df, features, by=None, base=2.0):
+    """Compute Renyi-Simpson entropies
+    
+    Parameters
+    ----------
+    df : pandas DataFrame
+    features: list
+    by: string/list of strings
+    base: float
+
+    Returns
+    ----------: 
+    float
+    """
+    
+    if base is not None and base <= 0:
+        raise ValueError("`base` must be a positive number or `None`.")
+    
+    if type(features) != list:
+        features = [features]
+            
+    if not by:
+        entropy = -np.log(pc_joint(df, features))
+    else:
+        entropy = -np.log(pc_conditional(df, by, features))
+    
+    if base is not None:
+        entropy /= np.log(base) 
+    
+    return entropy
