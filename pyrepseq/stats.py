@@ -130,28 +130,38 @@ def chao1(counts):
     return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
 
 def var_chao1(counts):
-    """Variance estimator for Chao's richness."""
+    """Variance estimator for Chao1 richness."""
     f1 = counts[0]
     f2 = counts[1]
     ratio = f1 / f2
     return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
 
 def chao2(counts, m):
-    
-  q1 = counts[0] - counts[1]
-  q2 = counts[1]
+    """Estimate richness from incidence data"""
   
-  return counts[0] + ((m-1)/m)*(q1*(q1-1))/(2*(q2+1))
+    q1 = counts[0]
+    q2 = counts[1]
+  
+    if counts[1] == 0:
+        return np.sum(counts) + ((m-1)/m)*(q1*(q1-1))/2
+  
+    else:
+        return np.sum(counts) + ((m-1)/m)*(q1**2)/(2*q2)
 
-def var_chao2(counts):
+def var_chao2(counts, m):
+    """Variance estimator for Chao2 richness."""
+    
+    q1 = counts[0]
+    q2 = counts[1]
+    A = (m-1)/m
+    
+    if counts[1] == 0:
+        return (A*q1*(q1-1))/2 + (A**2*q1*(2*q1-1)**2)/4 - (A**2*q1**4)/(4*chao2(counts, m))
   
-  if counts[1] == 0:
-    return np.nan
-  
-  q1 = counts[0] - counts[1]
-  q2 = counts[1]
-  
-  return q2*(0.5*(q1/q2)**2+(q1/q2)**3+0.25*(q1/q2)**4)
+    else:
+        ratio = q1/q2
+        return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
+      
   
 
 def pc_joint(df, on):
