@@ -18,7 +18,7 @@ def ensure_numpy(arr_like):
 
 
 def check_common_input(
-    seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist, output_type
+    seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist, output_type, seqs2=None
 ):
     assert len(seqs) > 0, "length must be greater than 0"
     try:
@@ -56,17 +56,28 @@ def check_common_input(
         "triplets",
         "ndarray",
     }, "output must be either coo_matrix, triplets, or ndarray"
+    try:
+        for seq in seqs2:
+            assert type(seq) in {
+                str,
+                np.str_,
+            }, "sequences2 must be an iterable of string"
+            assert re.match(
+                r"^[ACDEFGHIKLMNPQRSTVWY]+$", seq
+            ), "sequences2 must contain only valid amino acids"
+    except TypeError:
+        assert seqs2 is None, "sequences2 must be an iterable of string or None"
 
 
-def make_output(triplets, output_type):
+def make_output(triplets, output_type, seqs, seqs2):
     if output_type == "triplets":
         return triplets
 
-    row, col, data, shape = [], [], [], len(seqs)
+    row, col, data = [], [], []
     for triplet in triplets:
         row += [triplet[0], triplet[1]]
         column += [triplet[1], triplet[0]]
         data += [triplet[2], triplet[2]]
-    coo_result = coo_matrix((data, (row, col)), shape=(shape, shape))
+    coo_result = coo_matrix((data, (row, col)), shape=(len(seqs), len(seqs2)))
 
     return coo_result if output_type == "coo_matrix" else coo_result.toarray()
