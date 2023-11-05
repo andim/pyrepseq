@@ -152,7 +152,7 @@ def kdtree(
                 "triplets",
                 compression,
             )
-        return make_output(ans, output_type)
+        return make_output(ans, output_type, seqs, seqs)
     return kdtree_leven(
         seqs,
         max_edits,
@@ -192,7 +192,7 @@ def kdtree_leven(
         custom_distance,
         max_custom_distance,
     )
-    return make_output(triplets, output_type)
+    return make_output(triplets, output_type, seqs, seqs)
 
 
 # ===================================
@@ -309,7 +309,7 @@ def hash_based(
     triplets = lookup(
         index, seqs, max_edits, max_returns, n_cpu, custom_distance, max_custom_distance
     )
-    return make_output(triplets, output_type)
+    return make_output(triplets, output_type, seqs, seqs)
 
 
 # ===================================
@@ -349,7 +349,7 @@ def hamming_replacement(seq_a, seq_b):
 
 
 def symspell_lookup(index, seqs, max_edits, max_returns,
-                    custom_distance, max_custom_dist):
+                    custom_distance, max_custom_dist, seqs2, single_seqs_mode):
     ans = []
     threshold = max_custom_dist
     if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
@@ -360,7 +360,7 @@ def symspell_lookup(index, seqs, max_edits, max_returns,
     elif custom_distance is None:
         custom_distance = levenshtein
 
-    for i, seq in enumerate(seqs):
+    for i, seq in enumerate(seqs2):
         j_indices, count = set(), 0
         for comb in comb_gen(seq, max_edits):
             if comb not in index:
@@ -369,10 +369,10 @@ def symspell_lookup(index, seqs, max_edits, max_returns,
                 j_indices.add(j_index)
 
         for j_index in j_indices:
-            if i == j_index:
+            if i == j_index and single_seqs_mode:
                 continue
             try:
-                dist = custom_distance(seqs[i], seqs[j_index])
+                dist = custom_distance(seqs2[i], seqs[j_index])
                 if dist > threshold:
                     continue
                 if count >= max_returns:
@@ -386,10 +386,13 @@ def symspell_lookup(index, seqs, max_edits, max_returns,
 
 def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
              custom_distance=None, max_custom_distance=float('inf'),
-             output_type='triplets'):
+             output_type='triplets', seqs2=None):
     """
     List all neighboring CDR3B sequences efficiently within the given distance.
     This is an improved version over the hash-based.
+
+    If seqs2 is not provided, every sequences are compared against every other sequences resulting in N(seqs)**2 combinations.
+    Otherwise, seqs are compared against seqs2 resulting in N(seqs)*N(seqs2) combinations.
 
     Parameters
     ----------
@@ -407,6 +410,8 @@ def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
         maximum distance to include in the result, ignored if custom distance is not supplied
     output_type: string
         format of returns, can be "triplets", "coo_matrix", or "ndarray"
+    seq2 : iterable of strings or None
+        another list of CDR3B sequences to compare against
 
     Returns
     -------
@@ -417,10 +422,23 @@ def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "ndarray" returns numpy's 2d array representing dense matrix
     """
 
+    check_common_input(
+        seqs,
+        max_edits,
+        max_returns,
+        n_cpu,
+        custom_distance,
+        max_custom_distance,
+        output_type,
+        seqs2
+    )
+    single_seqs_mode = seqs2 is None
+    if single_seqs_mode:
+        seqs2 = seqs
     index = generate_index(seqs, max_edits)
     triplets = symspell_lookup(index, seqs, max_edits, max_returns,
-                               custom_distance, max_custom_distance)
-    return make_output(triplets, output_type)
+                               custom_distance, max_custom_distance, seqs2, single_seqs_mode)
+    return make_output(triplets, output_type, seqs, seqs2)
 
 
 # ===================================
@@ -430,10 +448,13 @@ def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
 
 def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
                      custom_distance=None, max_custom_distance=float('inf'),
-                     output_type='triplets'):
+                     output_type='triplets', seqs2=None):
     """
     List all neighboring CDR3B sequences efficiently within the given distance.
     The distance can be given in terms of hamming, levenshtein, or custom.
+
+    If seqs2 is not provided, every sequences are compared against every other sequences resulting in N(seqs)**2 combinations.
+    Otherwise, seqs are compared against seqs2 resulting in N(seqs)*N(seqs2) combinations.
 
     Parameters
     ----------
@@ -451,6 +472,8 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
         maximum distance to include in the result, ignored if custom distance is not supplied
     output_type: string
         format of returns, can be "triplets", "coo_matrix", or "ndarray"
+    seq2 : iterable of strings or None
+        another list of CDR3B sequences to compare against
 
     Returns
     -------
@@ -462,4 +485,4 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
     """
 
     return symspell(seqs, max_edits, max_returns, n_cpu,
-                    custom_distance, max_custom_distance, output_type)
+                    custom_distance, max_custom_distance, output_type, seqs2)

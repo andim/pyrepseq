@@ -499,8 +499,7 @@ def seqlogos_vj(df, cdr3_column, v_column, j_column, axes=None, **kwargs):
     for ax in axes:
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.spines["bottom"].set_visible(False)
-        ax.spines["left"].set_visible(False)
+        ax.spines[:].set_visible(False)
     return axes
 
 

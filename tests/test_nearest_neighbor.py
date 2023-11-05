@@ -94,6 +94,14 @@ def test_custom_distance(algorithm):
                                max_custom_distance=0), test_output)
 
 
+def test_seq2():
+    test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
+    test_input2 = ["CDDD", "CAAK"]
+    test_output = [(1,0,1), (1,2,1), (0,3,1),(1,4,0)]
+    assert set_equal(symspell(test_input1, max_edits=1,
+                               seqs2=test_input2), test_output)
+
+
 @pytest.mark.skip(reason="very slow")
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_bulk(algorithm):
