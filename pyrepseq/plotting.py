@@ -260,6 +260,7 @@ def similarity_clustermap(
     alpha_column="cdr3a",
     beta_column="cdr3b",
     norm=None,
+    bounds=np.arange(0, 7, 1),
     linkage_kws=dict(method="average", optimal_ordering=True),
     cluster_kws=dict(t=6, criterion="distance"),
     cbar_kws=dict(label="Sequence Distance", format="%d", orientation="horizontal"),
@@ -274,7 +275,8 @@ def similarity_clustermap(
     ----------
     df : pandas DataFrame with data
     alpha_column, beta_column: column name with alpha and beta amino acid information
-    norm: function to normalize distances
+    norm: `matplotlib.colors.Normalize` subclass for turning distances into colors
+    bounds: bounds used for colormap `matplotlib.colors.BoundaryNorm` (only used if norm = None)
     linkage_kws: keyword arguments for linkage algorithm
     cluster_kws: keyword arguments for clustering algorithm
     cbar_kws: keyword arguments for colorbar
@@ -293,13 +295,19 @@ def similarity_clustermap(
         else:
             meta_to_colors = [labels_to_colors_hls] * (len(meta_columns) + 1)
 
-    sequences_alpha = df[alpha_column]
-    sequences_beta = df[beta_column]
-    sequences = sequences_alpha + "_" + sequences_beta
+    is_single_chain = (alpha_column is None) or (beta_column is None)
+    if is_single_chain: 
+        chain = beta_column if alpha_column is None else alpha_column
+        sequences = df[chain]
+        distances = pdist(sequences)
+    else:
+        sequences_alpha = df[alpha_column]
+        sequences_beta = df[beta_column]
+        sequences = sequences_alpha + "_" + sequences_beta
+        distances_alpha = pdist(sequences_alpha)
+        distances_beta = pdist(sequences_beta)
+        distances = distances_alpha + distances_beta
 
-    distances_alpha = pdist(sequences_alpha)
-    distances_beta = pdist(sequences_beta)
-    distances = distances_alpha + distances_beta
     linkage = hc.linkage(distances, **linkage_kws)
     cluster = hc.fcluster(linkage, **cluster_kws)
 
@@ -310,7 +318,6 @@ def similarity_clustermap(
     )
 
     if norm is None:
-        bounds = np.arange(0, 7, 1)
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
         # plot tick in the middle of the discretized colormap
         cbar_kws.update(dict(ticks=bounds[:-1] + 0.5))
@@ -346,6 +353,11 @@ def similarity_clustermap(
     )
     clustermap_kws.update(kws)
 
+    if is_single_chain:
+        # For plotting purposes to plot upper and lower diagonal with same info
+        distances_alpha = distances
+        distances_beta = distances
+
     cg = clustermap_split(
         pd.DataFrame(squareform(distances_alpha)),
         pd.DataFrame(squareform(distances_beta)),
@@ -361,8 +373,13 @@ def similarity_clustermap(
         cbar_labels = [str(b) for b in bounds[:-1]]
         cbar_labels[-1] = ">" + cbar_labels[-1]
         cg.cax.set_xticklabels(cbar_labels)
-    cg.ax_heatmap.set_xlabel(r"CDR3$\alpha$ Sequence")
-    cg.ax_heatmap.set_ylabel(r"CDR3$\beta$ Sequence")
+    if is_single_chain:
+        label = r"CDR3$\beta$ Sequence" if 'b' in chain else r"CDR3$\alpha$ Sequence" 
+        cg.ax_heatmap.set_xlabel(label)
+        cg.ax_heatmap.set_ylabel(label)
+    else:
+        cg.ax_heatmap.set_xlabel(r"CDR3$\alpha$ Sequence")
+        cg.ax_heatmap.set_ylabel(r"CDR3$\beta$ Sequence")
     cg.ax_col_dendrogram.set_visible(False)
     return cg, linkage, cluster
 

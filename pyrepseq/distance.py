@@ -499,7 +499,7 @@ def hierarchical_clustering(
         distances_beta = pdist(seqs_beta, **pdist_kws)
         distances = distances_alpha + distances_beta
     else:
-        raise NotImplementedError("seqs needs to be a tuple")
+        distances = pdist(seqs, **pdist_kws)
     linkage = hc.linkage(distances, **linkage_kws)
     cluster = hc.fcluster(linkage, **cluster_kws)
     return linkage, cluster
