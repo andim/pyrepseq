@@ -274,7 +274,7 @@ def similarity_clustermap(
     Parameters
     ----------
     df : pandas DataFrame with data
-    alpha_column, beta_column: column name with alpha and beta amino acid information
+    alpha_column, beta_column: column name with alpha and beta amino acid information (set one to None for single chain plotting)
     norm: `matplotlib.colors.Normalize` subclass for turning distances into colors
     bounds: bounds used for colormap `matplotlib.colors.BoundaryNorm` (only used if norm = None)
     linkage_kws: keyword arguments for linkage algorithm
