@@ -187,7 +187,7 @@ def pc_joint(df, on):
 
     return pc(df[on].sum(1))
 
-def pc_conditional(df, by, on, take_mean = True):
+def pc_conditional(df, by, on, take_mean=True, weight_uniformly=False):
     """Conditional coincidence probability estimator
     
     Parameters
@@ -223,7 +223,11 @@ def pc_conditional(df, by, on, take_mean = True):
         conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
         
     if take_mean:
-        group_weights =  df[by].value_counts(normalize=True)
+        if weight_uniformly:
+            group_weights =  df[by].value_counts(normalize=True)
+        else: 
+            group_weights = len(df[by].unique())
+            
         adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
         
         return np.sum(adjusted_group_weights*conditional_pcs)
