@@ -127,10 +127,15 @@ def pc(array, array2=None):
 
 def chao1(counts):
     """Estimate richness from sampled counts."""
+    
+    if counts[1] == 0:
+        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+        
     return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
 
 def var_chao1(counts):
     """Variance estimator for Chao1 richness."""
+     
     f1 = counts[0]
     f2 = counts[1]
     ratio = f1 / f2
@@ -206,24 +211,25 @@ def pc_conditional(df, by, on, take_mean = True):
     if type(by) == list and len(by) == 1:
         by = by[0]
         
+    #Mask df entries where pc will return nan
+    df = df.groupby(by).filter(lambda x: len(x) > 1)
+    if len(df) < 2:
+        return np.nan
+        
     if type(on) == list:
-        p_c = df.groupby(by).apply(lambda x: pc_joint(x,on))
+        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x,on))
 
     else:
-        p_c = df.groupby(by).apply(lambda x: pc(x[on]))
+        conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
         
     if take_mean:
+        group_weights =  df[by].value_counts(normalize=True)
+        adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
         
-        #Mask p values for which there was insufficient data to compute pc
-        mask = ~np.isnan(p_c)
-        counts =  df.groupby(by).size()[mask]
-        weights = counts/counts.sum()
-        mean_pc = np.sum(weights*p_c[mask]**0.5)**2
-
-        return mean_pc
+        return np.sum(adjusted_group_weights*conditional_pcs)
     
     else:
-        return p_c
+        return conditional_pcs
 
 
 def stdpc(array):
