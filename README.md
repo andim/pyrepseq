@@ -3,7 +3,7 @@
 [![Build Status](https://app.travis-ci.com/andim/pyrepseq.svg?branch=main)](https://app.travis-ci.com/andim/pyrepseq)
 [![Documentation Status](https://readthedocs.org/projects/pyrepseq/badge/?version=latest)](https://pyrepseq.readthedocs.io/en/latest/?badge=latest)
 
-# Pyrepseq: analyze your immune repertoire data with ease
+# Pyrepseq: the immune repertoire analysis toolkit
 
 Pyrepseq is `scipy` & `seaborn` for studying adaptive immunity: modular implementations of algorithms for fast analyses, and bespoke plotting functions for compelling visualizations.
 

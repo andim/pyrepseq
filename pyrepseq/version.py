@@ -14,7 +14,7 @@ if _version_micro:
 if _version_extra:
     _ver.append(_version_extra)
 
-__version__ = ".".join(map(str, _ver))
+__version__ = '.'.join(map(str, _ver))
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
@@ -61,7 +61,7 @@ You are cordially invited to [contribute](https://github.com/andim/pyrepseq/blob
 """
 
 NAME = "pyrepseq"
-MAINTAINER = "Andreas Mayer"
+MAINTAINER = "Andreas Tiffeau-Mayer"
 MAINTAINER_EMAIL = "andimscience@gmail.com"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
