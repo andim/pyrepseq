@@ -1,5 +1,6 @@
 from scipy.spatial import KDTree
 import numpy as np
+import pandas as pd
 from rapidfuzz.distance.Levenshtein import distance as levenshtein
 from rapidfuzz.distance.Hamming import distance as hamming
 from scipy.sparse import coo_matrix
@@ -8,6 +9,9 @@ from multiprocessing import Pool
 from .util import flatten_array, ensure_numpy, check_common_input, make_output
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations
+import os
+import pwseqdist
+
 
 AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
 
@@ -450,11 +454,10 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
                      custom_distance=None, max_custom_distance=float('inf'),
                      output_type='triplets', seqs2=None):
     """
-    List all neighboring CDR3B sequences efficiently within the given distance.
+    List all neighboring sequences efficiently within a given distance.
     The distance can be given in terms of hamming, levenshtein, or custom.
 
-    If seqs2 is not provided, every sequences are compared against every other sequences resulting in N(seqs)**2 combinations.
-    Otherwise, seqs are compared against seqs2 resulting in N(seqs)*N(seqs2) combinations.
+    If seqs2 is not provided, every sequence is compared against every other sequence.
 
     Parameters
     ----------
@@ -486,3 +489,30 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
 
     return symspell(seqs, max_edits, max_returns, n_cpu,
                     custom_distance, max_custom_distance, output_type, seqs2)
+
+
+def nearest_neighbor_tcrdist(df, chain='beta', max_edits=1, max_tcrdist=20, **kwargs):
+    """
+    List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
+
+    **kwargs : passed on to nearest_neighbor
+    """
+    chain_letter = chain[0].upper()
+    neighbors = nearest_neighbor(list(df[f'CDR3{chain_letter}']),
+                                                  max_edits=max_edits, **kwargs)
+
+    folder = os.path.dirname(__file__)
+    path = os.path.join(folder, "data", f"vdists_{chain}.csv")
+    vdists = pd.read_csv(path, index_col=0)
+
+    neighbors_arr = np.array(neighbors)
+    edges = neighbors_arr[:, :2]
+    tcrdist_v = vdists.lookup(df[f'TR{chain_letter}V'].iloc[edges[:, 0]],
+                              df[f'TR{chain_letter}V'].iloc[edges[:, 1]])
+    tcrdist_cdr3 = pwseqdist.apply_pairwise_sparse(metric=pwseqdist.metrics.nb_vector_tcrdist,
+                                seqs=np.asarray(df[f'CDR3{chain_letter}']), pairs=edges,
+                                use_numba=True)
+    tcrdist = tcrdist_v + tcrdist_cdr3
+    neighbors_arr[:, 2] = tcrdist
+
+    return neighbors_arr[neighbors_arr[:, 2]<max_tcrdist]
