@@ -24,6 +24,24 @@ def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
     r = np.random.rand(int(size))
     return np.floor((xmin - 0.5) * (1.0 - r) ** (-1.0 / (alpha - 1.0)) + 0.5)
 
+def subsample(counts, n):
+    """Randomly subsample from a vector of counts without replacement.
+
+    Parameters
+    ----------
+    counts : Vector of counts (integers) to randomly subsample from.
+    n : Number of items to subsample from `counts`. Must be less than or equal
+        to the sum of `counts`.
+
+    Returns
+    -------
+    indices, counts: Subsampled vector of counts where the sum of the elements equals `n`
+    """
+    n = int(n)
+    unpacked = np.concatenate([np.repeat(np.array(i,), count) for i, count in enumerate(counts)])
+    sample = np.random.choice(unpacked, size=n, replace=False)
+    unique, counts = np.unique(sample, return_counts=True)
+    return unique, counts
 
 def _discrete_loglikelihood(x, alpha, xmin):
     "Power-law loglikelihood"
@@ -223,11 +241,10 @@ def pc_conditional(df, by, on, take_mean=True, weight_uniformly=False):
         conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
         
     if take_mean:
-        if weight_uniformly:
-            group_weights =  df[by].value_counts(normalize=True)
-        else: 
-            group_weights = len(df[by].unique())
-            
+        if not weight_uniformly:
+            return np.mean(conditional_pcs)
+
+        group_weights =  df[by].value_counts(normalize=True)
         adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
         
         return np.sum(adjusted_group_weights*conditional_pcs)
