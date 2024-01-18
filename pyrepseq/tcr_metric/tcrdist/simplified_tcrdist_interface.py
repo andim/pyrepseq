@@ -131,6 +131,14 @@ class TcrdistInterface:
                 ),
                 stacklevel=2,
             )
+        except IndexError:
+            aa_string = None
+            warnings.warn(
+                "{} gene was not found in index, no cdr seq could be inferred".format(
+                    gene
+                ),
+                stacklevel=2,
+            )
         return aa_string
 
     def _get_pws_kwargs(self, chain: Literal["alpha", "beta"]) -> dict:

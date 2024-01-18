@@ -6,7 +6,7 @@ API Reference
 .. toctree::
    :maxdepth: 2
 
-main module
+Main module
 -----------
 
 .. automodule:: pyrepseq
@@ -30,8 +30,15 @@ Distance
 .. automodule:: pyrepseq.distance
    :members:
 
+Nearest Neighbor
+~~~~~~~~~~~~~~~~
 
-plotting submodule
+.. automodule:: pyrepseq.nearest_neighbor
+   :members:
+
+
+
+Plotting submodule
 ------------------
 
 .. automodule:: pyrepseq.plotting
