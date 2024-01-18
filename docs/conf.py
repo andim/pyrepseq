@@ -3,8 +3,8 @@
 # -- Project information
 
 project = "Pyrepseq"
-copyright = "2022, Andreas Mayer"
-author = "Andreas Mayer"
+copyright = "2022-2024, Andreas Tiffeau-Mayer and team"
+author = "QImmuno Lab"
 
 release = "0.1"
 version = "0.1.0"
@@ -19,6 +19,7 @@ import pyrepseq
 # -- General configuration
 
 extensions = [
+    "sphinx_rtd_theme",
     "sphinx.ext.duration",
     "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
