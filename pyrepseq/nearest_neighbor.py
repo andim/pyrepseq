@@ -491,15 +491,27 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
                     custom_distance, max_custom_distance, output_type, seqs2)
 
 
+def _lookup(df, row_labels, col_labels):
+    values = df.values
+    ridx = df.index.get_indexer(row_labels)
+    cidx = df.columns.get_indexer(col_labels)
+    flat_index = ridx * len(df.columns) + cidx
+    return values.flat[flat_index]
+
 def nearest_neighbor_tcrdist(df, chain='beta', max_edits=1, max_tcrdist=20, **kwargs):
     """
     List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
 
-    **kwargs : passed on to nearest_neighbor
+    chain: 'alpha' or 'beta'
+    max_edits : only return neighbors up to <= this edit distance
+    max_tcrdist : only return neighbor up to <= this TCR distance
+
+    **kwargs : passed on to nearest_neighbor function
+
     """
     chain_letter = chain[0].upper()
     neighbors = nearest_neighbor(list(df[f'CDR3{chain_letter}']),
-                                                  max_edits=max_edits, **kwargs)
+                                 max_edits=max_edits, **kwargs)
 
     folder = os.path.dirname(__file__)
     path = os.path.join(folder, "data", f"vdists_{chain}.csv")
@@ -507,12 +519,13 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=1, max_tcrdist=20, **kw
 
     neighbors_arr = np.array(neighbors)
     edges = neighbors_arr[:, :2]
-    tcrdist_v = vdists.lookup(df[f'TR{chain_letter}V'].iloc[edges[:, 0]],
-                              df[f'TR{chain_letter}V'].iloc[edges[:, 1]])
+    tcrdist_v = _lookup(vdists,
+                        df[f'TR{chain_letter}V'].iloc[edges[:, 0]],
+                        df[f'TR{chain_letter}V'].iloc[edges[:, 1]])
     tcrdist_cdr3 = pwseqdist.apply_pairwise_sparse(metric=pwseqdist.metrics.nb_vector_tcrdist,
                                 seqs=np.asarray(df[f'CDR3{chain_letter}']), pairs=edges,
                                 use_numba=True)
     tcrdist = tcrdist_v + tcrdist_cdr3
     neighbors_arr[:, 2] = tcrdist
 
-    return neighbors_arr[neighbors_arr[:, 2]<max_tcrdist]
+    return neighbors_arr[neighbors_arr[:, 2]<=max_tcrdist]
