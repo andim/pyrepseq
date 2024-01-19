@@ -6,7 +6,6 @@ from rapidfuzz.distance.Hamming import distance as hamming
 from scipy.sparse import coo_matrix
 from rapidfuzz.process import extract
 from multiprocessing import Pool
-from .util import flatten_array, ensure_numpy, check_common_input, make_output
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
 import os
@@ -538,15 +537,6 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=1, max_tcrdist=20, **kw
 
 def flatten_array(nested_array):
     return list(itertools.chain(*nested_array))
-
-
-def ensure_numpy(arr_like):
-    module = type(arr_like).__module__
-    if module == "pandas.core.series":
-        return arr_like.to_numpy()
-    if module == "numpy":
-        return arr_like
-    return np.array(arr_like)
 
 
 def check_common_input(
