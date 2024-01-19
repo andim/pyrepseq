@@ -8,6 +8,7 @@ from rapidfuzz.process import extract
 from multiprocessing import Pool
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
+from .util import ensure_numpy
 import os
 import pwseqdist
 import re
