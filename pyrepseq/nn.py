@@ -79,7 +79,7 @@ def _to_triplets(
     else:
         with Pool(n_cpu) as p:
             result = p.map(cal, _loop, chunksize=int(len(seqs) / n_cpu))
-    return flatten_array(result)
+    return _flatten_array(result)
 
 
 def _to_len_bucket(seqs):
@@ -537,7 +537,7 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=1, max_tcrdist=20, **kw
 
 
 def _flatten_array(nested_array):
-    return list(itertools.chain(*nested_array))
+    return list(chain(*nested_array))
 
 
 def _check_common_input(
