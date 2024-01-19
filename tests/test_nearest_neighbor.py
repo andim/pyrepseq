@@ -1,5 +1,5 @@
 import pytest
-from pyrepseq.nearest_neighbor import hash_based, kdtree, symspell
+from pyrepseq.nn import hash_based, kdtree, symspell
 from itertools import product
 from Levenshtein import distance
 import numpy as np
