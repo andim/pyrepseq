@@ -240,12 +240,20 @@ def pc_conditional(df, by, on, weight_uniformly=True):
         column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
         then joint pc is computed on the concatenations of each specified column
     weight_uniformly: bool
+<<<<<<< HEAD
         treat each group created by conditioning equally if true or weight according to group size if false
+=======
+        treat each group created by conditioning equally or weight according to group size
+>>>>>>> 1888ca8 (Clean up tcr info)
     
     Returns
     ----------: 
     pandas DataFrame/float:
+<<<<<<< HEAD
         pc of df[on] computed over each group specified in by and averaged with a non-conventional weighting factor
+=======
+        pc of df[on] computed over each group specified in by
+>>>>>>> 1888ca8 (Clean up tcr info)
     """
     
     if type(by) == list and len(by) == 1:
@@ -308,7 +316,10 @@ def stdpc_joint(df, on):
 
 def stdpc_conditional(df, by, on, weight_uniformly=True):
     """Std.dev. estimator for conditional probability of coincidence
+<<<<<<< HEAD
         !!Still to be developed!!
+=======
+>>>>>>> 1888ca8 (Clean up tcr info)
     """
     
     if type(by) == list and len(by) == 1:
@@ -397,5 +408,9 @@ def overlap_coefficient(A, B):
     B = B.dropna()
     A = set(A)
     B = set(B)
+<<<<<<< HEAD
     
     return len(A.intersection(B)) / min(len(A), len(B))
+=======
+    return len(A.intersection(B)) / min(len(A), len(B))
+>>>>>>> 1888ca8 (Clean up tcr info)
