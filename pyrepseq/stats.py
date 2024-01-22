@@ -364,6 +364,46 @@ def var_chao2(counts, m):
         return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
       
 
+def stdpc_joint(df, on):
+    "Std.dev. estimator for joint Simpson's index"
+
+    return stdpc(df[on].sum(1))
+
+
+def stdpc_conditional(df, by, on, weight_uniformly=True):
+    """Std.dev. estimator for conditional probability of coincidence
+    """
+    
+    if type(by) == list and len(by) == 1:
+        by = by[0]
+        
+    #Mask df entries where pc will return nan
+    df = df.groupby(by).filter(lambda x: len(x) > 1)
+    if len(df) < 2:
+        return np.nan
+        
+    if type(on) == list:
+        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x,on))
+        conditional_stdpcs = df.groupby(by).apply(lambda x: stdpc_joint(x,on))
+
+    else:
+        conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
+        conditional_stdpcs = df.groupby(by).apply(lambda x: stdpc(x[on]))
+        
+    if weight_uniformly:
+        group_weights = np.ones(len(df[by].value_counts()))
+               
+    else: 
+        group_weights =  df[by].value_counts(normalize=True)
+    
+    adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
+   
+    mean_variance = np.sum(adjusted_group_weights*conditional_stdpcs**2)
+    variance_mean = np.sum(adjusted_group_weights*conditional_pcs**2) - pc_conditional(df, by, on, weight_uniformly)**2
+            
+    return np.sqrt(mean_variance+variance_mean)
+
+
 def jaccard_index(A, B):
     """
     Calculate the Jaccard index for two sets.
@@ -420,7 +460,11 @@ def overlap_coefficient(A, B):
     B = B.dropna()
     A = set(A)
     B = set(B)
+<<<<<<< HEAD
     
+=======
+<<<<<<< HEAD
+>>>>>>> c8f829f (Clean up tcr info)
     return len(A.intersection(B)) / min(len(A), len(B))
 <<<<<<< HEAD
 =======
@@ -502,4 +546,10 @@ def renyi2_entropy(df, features, by=None, base=2.0):
 =======
     return entropy
 >>>>>>> 0fd7ecb (Add entropy into stats)
+<<<<<<< HEAD
 >>>>>>> d026e48 (Add entropy into stats)
+=======
+=======
+    return len(A.intersection(B)) / min(len(A), len(B))
+>>>>>>> 36111ba (Clean up tcr info)
+>>>>>>> c8f829f (Clean up tcr info)
