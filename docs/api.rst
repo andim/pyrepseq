@@ -33,7 +33,7 @@ Distance
 Nearest Neighbor
 ~~~~~~~~~~~~~~~~
 
-.. automodule:: pyrepseq.nearest_neighbor
+.. automodule:: pyrepseq.nn
    :members:
 
 
