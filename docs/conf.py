@@ -3,18 +3,18 @@
 # -- Project information
 
 project = "Pyrepseq"
-copyright = "2022-2024, Andreas Tiffeau-Mayer and team"
-author = "QImmuno Lab"
-
-release = "0.1"
-version = "0.1.0"
-
+copyright = "2022-2024, Q-Immuno Lab (Andreas Tiffeau-Mayer and team)"
+author = "Q-Immuno Lab"
 
 import sys
 import os
 
 sys.path.insert(0, os.path.abspath("../"))
 import pyrepseq
+
+version = pyrepseq.__version__
+release = pyrepseq.__version__
+
 
 # -- General configuration
 
