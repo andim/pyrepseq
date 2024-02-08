@@ -85,6 +85,7 @@ REQUIRES = [
     "Levenshtein",
     "matplotlib",
     "seaborn",
+    "igraph",
     "logomaker",
     "biopython",
     "tcrdist3",
