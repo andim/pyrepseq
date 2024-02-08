@@ -86,6 +86,7 @@ REQUIRES = [
     "matplotlib",
     "seaborn",
     "igraph",
+    "sklearn",
     "logomaker",
     "biopython",
     "tcrdist3",
