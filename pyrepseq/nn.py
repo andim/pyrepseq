@@ -599,7 +599,7 @@ def _make_output(triplets, output_type, seqs, seqs2):
     row, col, data = [], [], []
     for triplet in triplets:
         row += [triplet[0], triplet[1]]
-        column += [triplet[1], triplet[0]]
+        col += [triplet[1], triplet[0]]
         data += [triplet[2], triplet[2]]
     coo_result = coo_matrix((data, (row, col)), shape=(len(seqs), len(seqs2)))
 
