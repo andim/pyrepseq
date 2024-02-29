@@ -10,12 +10,10 @@ from scipy.interpolate import interpn
 
 import logomaker as lm
 
-import subprocess
-from io import StringIO
-from Bio import SeqIO
 
 
 from .distance import *
+from .util import *
 
 
 def rankfrequency(
@@ -414,32 +412,6 @@ def label_axes(
     axes = fig_or_axes.axes if isinstance(fig_or_axes, plt.Figure) else fig_or_axes
     for ax, label in zip(axes, labels):
         ax.annotate(labelstyle % label, xy=xy, xycoords=xycoords, **annotate_kwargs)
-
-
-def align_seqs(seqs):
-    """Align multiple sequences using mafft-linsi with default parameters.
-
-    Parameters
-    ----------
-    seqs: iterable of strings
-
-    Returns
-    -------
-    list of strings
-        aligned sequences (with gaps)
-    """
-    seq_str = ""
-    for i, seq in enumerate(seqs):
-        seq_str += f"> seq {i}\n"
-        seq_str += f"{seq}\n"
-    child = subprocess.Popen(
-        ["mafft-linsi", "--quiet", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
-    )
-    child.stdin.write(seq_str.encode())
-    child_out = child.communicate()[0].decode("utf8")
-    seqs_aligned = list(SeqIO.parse(StringIO(child_out), "fasta"))
-    child.stdin.close()
-    return [str(seq.seq) for seq in seqs_aligned]
 
 
 def seqlogos(seqs, ax=None, **kwargs):
