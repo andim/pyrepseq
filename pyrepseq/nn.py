@@ -498,15 +498,21 @@ def _lookup(df, row_labels, col_labels):
     flat_index = ridx * len(df.columns) + cidx
     return values.flat[flat_index]
 
-def nearest_neighbor_tcrdist(df, chain='beta', max_edits=1, max_tcrdist=20, **kwargs):
+def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, max_tcrdist=20, **kwargs):
     """
     List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
 
+    Parameters
+    ----------
     chain: 'alpha' or 'beta'
     max_edits : only return neighbors up to <= this edit distance
     max_tcrdist : only return neighbor up to <= this TCR distance
 
     **kwargs : passed on to nearest_neighbor function
+
+    Returns
+    --------
+    sparse (i, j, dist) matrix
 
     """
     chain_letter = chain[0].upper()

@@ -69,8 +69,7 @@ def powerlaw_mle_alpha(c, cmin=1.0, method="exact", **kwargs):
 
     Returns
     -------
-    float
-        estimated power-law exponent
+    estimated power-law exponent
     """
     if not method in ["simple", "continuitycorrection", "exact"]:
         raise ValueError("Method not in ['simple', 'continuitycorrection', 'exact']")
@@ -125,7 +124,7 @@ def pc(array, array2=None):
         list of sampled elements
     array2: array-like
         second list of sampled elements: if provided probability
-        of cross-coincidences is calculated as :math:`p_C = (sum_i n_1i n_2i) / (N_1 N_2)`
+        of cross-coincidences is calculated as :math:`p_C = (\sum_i n_{1i} n_{2i}) / (N_1 N_2)`
 
     """
     array = np.asarray(array)
@@ -285,7 +284,8 @@ def jaccard_index(A, B):
 
     This measure is defined  defined as
 
-    :math:`J(A, B) = |A \cap B| / |A \union B|`
+    :math:`J(A, B) = |A \\cap B| / |A \\cup B|`
+
     A, B: iterables (will be converted to sets). If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
@@ -302,7 +302,7 @@ def overlap(A, B):
     Calculate the number of overlapping elements of two sets.
 
     This measure is defined as
-    :math:`|A \cap B|`
+    :math:`|A \\cap B|`
 
     A, B: iterables (will be converted to sets). na values will be dropped first
     """
@@ -322,7 +322,7 @@ def overlap_coefficient(A, B):
     Calculate the overlap coefficient for two sets.
 
     This measure is defined as
-    :math:`O(A, B) = |A \cap B| / min(|A|, |B|)`
+    :math:`O(A, B) = |A \\cap B| / min(|A|, |B|)`
 
     A, B: iterables (will be converted to sets). na values will be dropped first
     """
