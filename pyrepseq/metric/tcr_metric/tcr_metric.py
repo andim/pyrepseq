@@ -20,6 +20,24 @@ class TcrMetric(Metric):
     def calc_cdist_matrix(
         self, anchors: DataFrame, comparisons: DataFrame
     ) -> ndarray:
+        """
+        Calculates a cdist matrix between two DataFrames containing TCR data.
+
+        Parameters
+        ----------
+
+        anchors: DataFrame
+            A DataFrame containing data on TCRs to measure distances from.
+
+        comparisons: DataFrame
+            A DataFrame containing data on TCRs to measure distances to.
+
+        Returns
+        -------
+        numpy.ndarray
+            A matrix of shape (N,M) where N is the number of TCRs in `anchors` and M is the number of TCRs in `comparisons`.
+            The element in the ith row and jth column will contain the distance between the ith TCR of `anchors` and the jth TCR of `comparisons`.
+        """
         if not is_in_standard_format(anchors):
             raise ValueError("`anchors` must be a DataFrame in standard pyrepseq format (see https://pyrepseq.readthedocs.io/en/latest/api.html#pyrepseq.io.standardize_dataframe).")
         if not is_in_standard_format(comparisons):
@@ -27,6 +45,21 @@ class TcrMetric(Metric):
 
     @abstractmethod
     def calc_pdist_vector(self, instances: DataFrame) -> ndarray:
+        """
+        Calculates a pdist vector given a DataFrame of TCRs.
+
+        Parameters
+        ----------
+
+        instances: DataFrame
+            A DataFrame of TCRs to measure distances between.
+
+        Returns
+        -------
+        numpy.ndarray
+            A vector of shape (N*(N-1)/2,) where N is the number of TCRs in `instances`.
+            The vector contains all distances that are possible between each possible pair of TCRs in `instances`.
+        """
         if not is_in_standard_format(instances):
             raise ValueError("`instances` must be a DataFrame in standard pyrepseq format (see https://pyrepseq.readthedocs.io/en/latest/api.html#pyrepseq.io.standardize_dataframe).")
 

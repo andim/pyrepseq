@@ -140,6 +140,24 @@ class TcrLevenshtein(TcrMetric):
 
 
 class AlphaCdr3Levenshtein(TcrLevenshtein):
+    """
+    A TcrMetric that measures the Levenshtein distance between the alpha chain CDR3 sequences.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+    """
+
     name = "Alpha CDR3 Levenshtein"
     distance_bins = range(25 + 1)
     _columns_to_compare = ["CDR3A"]
@@ -158,6 +176,24 @@ class AlphaCdr3Levenshtein(TcrLevenshtein):
 
 
 class BetaCdr3Levenshtein(TcrLevenshtein):
+    """
+    A TcrMetric that measures the Levenshtein distance between the beta chain CDR3 sequences.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+    """
+
     name = "Beta CDR3 Levenshtein"
     distance_bins = range(25 + 1)
     _columns_to_compare = ["CDR3B"]
@@ -176,6 +212,32 @@ class BetaCdr3Levenshtein(TcrLevenshtein):
 
 
 class Cdr3Levenshtein(TcrLevenshtein):
+    """
+    A TcrMetric that measures the Levenshtein distance between the alpha and beta chain CDR3 sequences.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+
+    alpha_weight: int
+        An integer multiplier for edits on the alpha chain.
+        Defaults to 1.
+
+    beta_weight: int
+        An integer multiplier for edits on the beta chain.
+        Defaults to 1.
+    """
+
     name = "CDR3 Levenshtein"
     distance_bins = range(50 + 1)
     _columns_to_compare = ["CDR3A", "CDR3B"]
@@ -198,6 +260,36 @@ class Cdr3Levenshtein(TcrLevenshtein):
 
 
 class AlphaCdrLevenshtein(TcrLevenshtein):
+    """
+    A TcrMetric that measures the Levenshtein distance between the alpha chain CDR1, CDR2, and CDR3 sequences.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+
+    cdr1_weight: int
+        An integer multiplier for edits on the CDR1.
+        Defaults to 1.
+
+    cdr2_weight: int
+        An integer multiplier for edits on the CDR2.
+        Defaults to 1.
+
+    cdr3_weight: int
+        An integer multiplier for edits on the CDR3.
+        Defaults to 1.
+    """
+
     name = "Alpha CDR Levenshtein"
     distance_bins = range(35 + 1)
     _columns_to_compare = ["CDR1A", "CDR2A", "CDR3A"]
@@ -222,6 +314,36 @@ class AlphaCdrLevenshtein(TcrLevenshtein):
 
 
 class BetaCdrLevenshtein(TcrLevenshtein):
+    """
+    A TcrMetric that measures the Levenshtein distance between the beta chain CDR1, CDR2, and CDR3 sequences.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+
+    cdr1_weight: int
+        An integer multiplier for edits on the CDR1.
+        Defaults to 1.
+
+    cdr2_weight: int
+        An integer multiplier for edits on the CDR2.
+        Defaults to 1.
+
+    cdr3_weight: int
+        An integer multiplier for edits on the CDR3.
+        Defaults to 1.
+    """
+
     name = "Beta CDR Levenshtein"
     distance_bins = range(35 + 1)
     _columns_to_compare = ["CDR1B", "CDR2B", "CDR3B"]
@@ -246,6 +368,44 @@ class BetaCdrLevenshtein(TcrLevenshtein):
 
 
 class CdrLevenshtein(TcrLevenshtein):
+    """
+    A TcrMetric that measures the Levenshtein distance between the alpha and beta chain CDR1, CDR2, and CDR3 sequences.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+
+    cdr1_weight: int
+        An integer multiplier for edits on the CDR1.
+        Defaults to 1.
+
+    cdr2_weight: int
+        An integer multiplier for edits on the CDR2.
+        Defaults to 1.
+
+    cdr3_weight: int
+        An integer multiplier for edits on the CDR3.
+        Defaults to 1.
+
+    alpha_weight: int
+        An integer multiplier for edits on the alpha chain.
+        Defaults to 1.
+
+    beta_weight: int
+        An integer multiplier for edits on the beta chain.
+        Defaults to 1.
+    """
+
     name = "CDR Levenshtein"
     distance_bins = range(70 + 1)
     _columns_to_compare = ["CDR1A", "CDR2A", "CDR3A", "CDR1B", "CDR2B", "CDR3B"]

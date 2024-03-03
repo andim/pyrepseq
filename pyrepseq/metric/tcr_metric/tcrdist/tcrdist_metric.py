@@ -85,6 +85,10 @@ class AbstractTcrdist(TcrMetric):
 
 
 class AlphaCdr3Tcrdist(AbstractTcrdist):
+    """
+    TcrDist applied to the alpha chain CDR3 sequences.
+    """
+
     name = "Alpha CDR3 tcrdist"
     distance_bins = range(0, 80 + 1, 2)
     _chains_to_compare = [TcrChain.ALPHA]
@@ -92,6 +96,10 @@ class AlphaCdr3Tcrdist(AbstractTcrdist):
 
 
 class BetaCdr3Tcrdist(AbstractTcrdist):
+    """
+    TcrDist applied to the beta chain CDR3 sequences.
+    """
+
     name = "Beta CDR3 tcrdist"
     distance_bins = range(0, 80 + 1, 2)
     _chains_to_compare = [TcrChain.BETA]
@@ -99,6 +107,10 @@ class BetaCdr3Tcrdist(AbstractTcrdist):
 
 
 class Cdr3Tcrdist(AbstractTcrdist):
+    """
+    TcrDist applied to the alpha and beta chain CDR3 sequences.
+    """
+
     name = "CDR3 tcrdist"
     distance_bins = range(0, 160 + 1, 2)
     _chains_to_compare = [TcrChain.ALPHA, TcrChain.BETA]
@@ -106,6 +118,10 @@ class Cdr3Tcrdist(AbstractTcrdist):
 
 
 class AlphaTcrdist(AbstractTcrdist):
+    """
+    TcrDist applied to the alpha chain.
+    """
+
     name = "Alpha tcrdist"
     distance_bins = range(0, 300 + 1, 5)
     _chains_to_compare = [TcrChain.ALPHA]
@@ -113,6 +129,10 @@ class AlphaTcrdist(AbstractTcrdist):
 
 
 class BetaTcrdist(AbstractTcrdist):
+    """
+    TcrDist applied to the beta chain.
+    """
+
     name = "Beta tcrdist"
     distance_bins = range(0, 300 + 1, 5)
     _chains_to_compare = [TcrChain.BETA]
@@ -120,6 +140,10 @@ class BetaTcrdist(AbstractTcrdist):
 
 
 class Tcrdist(AbstractTcrdist):
+    """
+    TcrDist applied to the alpha and beta chain.
+    """
+
     name = "tcrdist"
     distance_bins = range(0, 600 + 1, 5)
     _chains_to_compare = [TcrChain.ALPHA, TcrChain.BETA]

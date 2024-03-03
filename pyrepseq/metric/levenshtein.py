@@ -12,6 +12,24 @@ from typing import Iterable, Tuple
 
 
 class WeightedLevenshtein(Metric):
+    """
+    A generalised Levenshtein distance which supports different weights for insertions, deletions, and substitutions.
+
+    Parameters
+    ----------
+    insertion_weight: int
+        An integer multiplier for insertions
+        Defaults to 1.
+        
+    deletion_weight: int
+        An integer multiplier for deletions
+        Defaults to 1.
+
+    substitution_weight: int
+        An integer multiplier for substitutions
+        Defaults to 1.
+    """
+
     name = "WeightedLevenshtein"
     _edit_type_weights: Tuple[int]
 
@@ -38,6 +56,10 @@ class WeightedLevenshtein(Metric):
     
 
 class Levenshtein(Metric):
+    """
+    Levenshtein distance, also known as edit distance.
+    """
+
     name = "Levenshtein"
 
     def __init__(self) -> None:
