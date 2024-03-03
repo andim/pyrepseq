@@ -10,8 +10,8 @@ _aminoacids_set = set(aminoacids)
 
 
 def standardize_dataframe(
-    df_old: DataFrame,
-    col_mapper: Mapping,
+    df: DataFrame = None,
+    col_mapper: Mapping = None,
     standardize: bool = True,
     species: str = "HomoSapiens",
     tcr_enforce_functional: bool = True,
@@ -19,28 +19,59 @@ def standardize_dataframe(
     mhc_precision: str = "gene",
     strict_cdr3_standardization: bool = False,
     suppress_warnings: bool = False,
+    df_old: DataFrame = None
 ):
     """
-    Utility function to organise TCR data into a standardized format.
+    This is a utility function to organise a table of TCR-pMHC data into the standard pyrepseq format and perform data cleaning/standardization to ensure that the TCR/MHC gene symbols are IMGT-compliant, the epitopes are all valid amino acid strings, and the CDR3s look valid.
+    For further notes on data standardization, see below.
+    The standard format is a table with at least the following columns (not necessarily in order):
+
+    +-----------------+------------------------------------------+-----------+
+    | Column Name     | Column should contain                    | Data type |
+    +=================+==========================================+===========+
+    | TRAV            | TRAV gene symbol                         | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | CDR3A           | TCR alpha chain CDR3 amino acid sequence | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | TRAJ            | TRAJ gene symbol                         | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | TRBV            | TRBV gene symbol                         | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | CDR3B           | TCR beta chain CDR3 amino acid sequence  | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | TRBJ            | TRBJ gene symbol                         | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | Epitope         | Epitope amino acid sequence              | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | MHCA            | MHC alpha chain gene symbol              | `str`     |
+    +-----------------+------------------------------------------+-----------+
+    | MHCB            | MHC beta chain gene symbol               | `str`     |
+    +-----------------+------------------------------------------+-----------+
+
+    If the input DataFrame contains the necessary data in columns that are named differently, this can be resolved by providing the mapping to the col_mapper argument (see parameters and examples).
 
     If standardization is enabled (True by default), the function will additionally attempt to standardize the TCR and MHC gene symbols to be IMGT-compliant, and CDR3/Epitope amino acid sequences to be valid.
+    However, for the standardization to happen, the columns with the relevant data must either be correctly named, or the necessary re-naming scheme must be specified by supplying an argument to the `col_mapper` parameter.
     During standardization, most non-standardizable/nonsensical values will be removed, replaced with `None`.
     However, since epitopes are not necessarily always amino acid sequences, values in the Epitope column that fail standardization will be kept as their original value.
-    The appropriate standardization procedures will be applied for columns with the following names:
-        - TRAV / TRBV
-        - TRAJ / TRBJ
-        - CDR3A / CDR3B
-        - MHCA / MHCB
-        - Epitope
+
+    .. deprecated:: 1.4
+        `df_old` will be removed in pyrepseq 2.0, with the more simply named `df` parameter.
 
     Parameters
     ----------
 
-    df_old: pandas.DataFrame
+    df: pandas.DataFrame
         Source ``DataFrame`` from which to pull data.
+
+    df_old: pandas.DataFrame
+        Alias for ``df``.
+        Now deprecated and will be removed in version 2.0.
 
     col_mapper: Mapping
         A mapping object, such as a dictionary, which maps the old column names to the new column names.
+        This should not be set if no column re-naming is necessary.
+        Defaults to ``None``.
 
     standardize: bool
         When set to ``False``, gene name standardisation is not attempted.
@@ -75,16 +106,97 @@ def standardize_dataframe(
     -------
     pandas.DataFrame
         Standardized ``DataFrame`` containing the original data, cleaned.
+
+    Examples
+    --------
+    If you already have a DataFrame in the standard format, `standardize_dataframe` can perform data standardization for you.
+    In the examples shown here, we omit any standardization warnings for ease of reading.
+
+    Say you have the following DataFrame:
+
+    >>> from pyrepseq import io
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(
+    ...     data=[
+    ...         ["av26.1*1",  "CIVRAPGRADMRF", "aj43*1",    "bv13*1",      "CASSYLPGQGDHYSNQPQHF","bj1.5*1",    "FLKEKGGL",       "b8",         "b2m"],
+    ...         ["TCRAV20*01","CAVPSGAGSYQLTF","TCRAJ28*01","TCRBV28S1*01","CASSLGQSGANVLTF",     "TCRBJ2S6*01","LQPFPQPELPYPQPQ","HLA-DQA1*05","HLA-DQB1*02"],
+    ...         ["unknown",   "unknown",       "unknown",   "TRBV7-2*01",  "CASSDWGSQNTLYF",      "TRBJ2-4*01", "YMPYFFTLL",      "HLA-A*02",   "B2M"]
+    ...     ],
+    ...     columns=["TRAV","CDR3A","TRAJ","TRBV","CDR3B","TRBJ","Epitope","MHCA","MHCB"]
+    ... )
+    >>> df
+             TRAV           CDR3A        TRAJ          TRBV                 CDR3B         TRBJ          Epitope         MHCA         MHCB  
+    0    av26.1*1   CIVRAPGRADMRF      aj43*1        bv13*1  CASSYLPGQGDHYSNQPQHF      bj1.5*1         FLKEKGGL           b8          b2m  
+    1  TCRAV20*01  CAVPSGAGSYQLTF  TCRAJ28*01  TCRBV28S1*01       CASSLGQSGANVLTF  TCRBJ2S6*01  LQPFPQPELPYPQPQ  HLA-DQA1*05  HLA-DQB1*02  
+    2     unknown         unknown     unknown    TRBV7-2*01        CASSDWGSQNTLYF   TRBJ2-4*01        YMPYFFTLL     HLA-A*02          B2M
+
+    By passing this to `standardize_dataframe, you will get a cleaned version of the data.
+
+    >>> io.standardize_dataframe(df, suppress_warnings=True)
+           TRAV           CDR3A    TRAJ     TRBV                 CDR3B     TRBJ          Epitope      MHCA      MHCB  
+    0  TRAV26-1   CIVRAPGRADMRF  TRAJ43   TRBV13  CASSYLPGQGDHYSNQPQHF  TRBJ1-5         FLKEKGGL     HLA-B       B2M  
+    1    TRAV20  CAVPSGAGSYQLTF  TRAJ28   TRBV28       CASSLGQSGANVLTF  TRBJ2-6  LQPFPQPELPYPQPQ  HLA-DQA1  HLA-DQB1  
+    2      None            None    None  TRBV7-2        CASSDWGSQNTLYF  TRBJ2-4        YMPYFFTLL     HLA-A       B2M
+
+    If you want to have extra columns on the DataFrame, that is allowed.
+
+    >>> extended_df = df.copy()
+    >>> extended_df["clone_count"] = [1,2,3]
+    >>> io.standardize_dataframe(extended_df, suppress_warnings=True)
+           TRAV           CDR3A    TRAJ     TRBV                 CDR3B     TRBJ          Epitope      MHCA      MHCB  clone_count  
+    0  TRAV26-1   CIVRAPGRADMRF  TRAJ43   TRBV13  CASSYLPGQGDHYSNQPQHF  TRBJ1-5         FLKEKGGL     HLA-B       B2M            1
+    1    TRAV20  CAVPSGAGSYQLTF  TRAJ28   TRBV28       CASSLGQSGANVLTF  TRBJ2-6  LQPFPQPELPYPQPQ  HLA-DQA1  HLA-DQB1            2
+    2      None            None    None  TRBV7-2        CASSDWGSQNTLYF  TRBJ2-4        YMPYFFTLL     HLA-A       B2M            3
+
+    Having only a subset of the standard columns is also allowed.
+
+    >>> beta_only_df = df.copy()
+    >>> beta_only_df = beta_only_df[["TRBV","CDR3B","TRBJ"]]
+    >>> io.standardize_dataframe(beta_only_df, suppress_warnings=True)
+          TRBV                 CDR3B     TRBJ
+    0   TRBV13  CASSYLPGQGDHYSNQPQHF  TRBJ1-5
+    1   TRBV28       CASSLGQSGANVLTF  TRBJ2-6
+    2  TRBV7-2        CASSDWGSQNTLYF  TRBJ2-4
+
+    Columns can be renamed by suppling a mapping to the `col_mapper` parameter.
+
+    >>> beta_only_misnamed = beta_only_df.copy()
+    >>> beta_only_misnamed.columns = ["foo", "bar", "baz"]
+    >>> beta_only_misnamed
+                foo                   bar          baz
+    0        bv13*1  CASSYLPGQGDHYSNQPQHF      bj1.5*1
+    1  TCRBV28S1*01       CASSLGQSGANVLTF  TCRBJ2S6*01
+    2    TRBV7-2*01        CASSDWGSQNTLYF   TRBJ2-4*01
+    >>> col_mapper = {
+    ...     "foo": "TRBV",
+    ...     "bar": "CDR3B",
+    ...     "baz": "TRBJ"
+    ... }
+    >>> io.standardize_dataframe(beta_only_misnamed, col_mapper=col_mapper)
+          TRBV                 CDR3B     TRBJ
+    0   TRBV13  CASSYLPGQGDHYSNQPQHF  TRBJ1-5
+    1   TRBV28       CASSLGQSGANVLTF  TRBJ2-6
+    2  TRBV7-2        CASSDWGSQNTLYF  TRBJ2-4
     """
-    df = df_old[list(col_mapper.keys())]
-    df.rename(columns=col_mapper, inplace=True)
+    if df_old is not None:
+        if df is not None:
+            raise ValueError("`df` and `df_old` are mutually exclusive.")
+        df = df_old
+    
+    if df is None:
+        raise ValueError("Missing argument for parameter `df`.")
+    
+    df_standardized = df.copy()
+
+    if col_mapper is not None:
+        df_standardized = df_standardized.rename(columns=col_mapper)
 
     # Standardize TCR genes and MHC genes
     if standardize:
         for chain in ("A", "B"):
             cdr3 = f"CDR3{chain}"
-            if cdr3 in df.columns:
-                df[cdr3] = df[cdr3].map(
+            if cdr3 in df_standardized.columns:
+                df_standardized[cdr3] = df_standardized[cdr3].map(
                     lambda x: None
                     if pd.isna(x)
                     else tt.junction.standardize(
@@ -96,8 +208,8 @@ def standardize_dataframe(
 
             for gene in ("V", "J"):
                 col = f"TR{chain}{gene}"
-                if col in df.columns:
-                    df[col] = df[col].map(
+                if col in df_standardized.columns:
+                    df_standardized[col] = df_standardized[col].map(
                         lambda x: None
                         if pd.isna(x)
                         else tt.tr.standardize(
@@ -110,8 +222,8 @@ def standardize_dataframe(
                     )
 
             mhc = f"MHC{chain}"
-            if mhc in df.columns:
-                df[mhc] = df[mhc].map(
+            if mhc in df_standardized.columns:
+                df_standardized[mhc] = df_standardized[mhc].map(
                     lambda x: None
                     if pd.isna(x)
                     else tt.mh.standardize(
@@ -122,16 +234,16 @@ def standardize_dataframe(
                     )
                 )
 
-            if "Epitope" in df.columns:
-                df["Epitope"] = df["Epitope"].map(
-                    lambda x: None
-                    if pd.isna(x)
-                    else tt.aa.standardize(
-                        seq=x, on_fail="keep", suppress_warnings=suppress_warnings
-                    )
+        if "Epitope" in df_standardized.columns:
+            df_standardized["Epitope"] = df_standardized["Epitope"].map(
+                lambda x: None
+                if pd.isna(x)
+                else tt.aa.standardize(
+                    seq=x, on_fail="keep", suppress_warnings=suppress_warnings
                 )
+            )
 
-    return df
+    return df_standardized
 
 
 def isvalidaa(string):
