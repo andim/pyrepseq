@@ -6,12 +6,13 @@ __all__ = [
 from numpy import ndarray
 from pyrepseq.metric import Metric
 from rapidfuzz import process
-from rapidfuzz.distance import Levenshtein
+from rapidfuzz.distance import Levenshtein as RapidFuzzLevenshtein
 from scipy.spatial import distance
 from typing import Iterable, Tuple
 
 
 class WeightedLevenshtein(Metric):
+    name = "WeightedLevenshtein"
     _edit_type_weights: Tuple[int]
 
     def __init__(
@@ -26,7 +27,7 @@ class WeightedLevenshtein(Metric):
         return process.cdist(anchors, comparisons, scorer=self._levenshtein_scorer)
 
     def _levenshtein_scorer(self, *args, **kwargs) -> int:
-        return Levenshtein.distance(
+        return RapidFuzzLevenshtein.distance(
             *args, **kwargs, weights=self._edit_type_weights
         )
 
@@ -37,6 +38,8 @@ class WeightedLevenshtein(Metric):
     
 
 class Levenshtein(Metric):
+    name = "Levenshtein"
+
     def __init__(self) -> None:
         self._weighted_levenshtein = WeightedLevenshtein()
     
