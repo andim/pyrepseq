@@ -80,16 +80,14 @@ class TestStandardizeDataFrame:
     def test_standardize_df(self):
         with pytest.warns(UserWarning, match="Failed to standardize"):
             result = standardize_dataframe(
-                df_old=self.df_old,
+                df=self.df_old,
                 col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
             )
 
         assert result.equals(self.df_standardized)
 
     def test_no_standardization(self):
-        result = standardize_dataframe(
-            df_old=self.df_old, col_mapper={i: i for i in range(10)}, standardize=False
-        )
+        result = standardize_dataframe(df=self.df_old)
 
         assert result.equals(self.df_old)
 
@@ -97,7 +95,7 @@ class TestStandardizeDataFrame:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             result = standardize_dataframe(
-                df_old=self.df_old,
+                df=self.df_old,
                 col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
                 suppress_warnings=True,
             )
