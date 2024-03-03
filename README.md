@@ -9,7 +9,7 @@ Pyrepseq is `scipy` & `seaborn` for studying adaptive immunity: modular implemen
 
 ## Documentation and examples
 
-You can find API documentation on [readthedocs](https://pyrepseq.readthedocs.io/en/latest/?badge=latest)
+You can find API documentation on [readthedocs](https://pyrepseq.readthedocs.io/en/latest/?badge=latest). You can also create a local copy of the API documentation by running `make html` in the docs folder.
 
 There are jupyter notebooks illustrating some of the functionality in the 'examples' folder.
 

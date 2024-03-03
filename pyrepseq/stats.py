@@ -285,7 +285,7 @@ def jaccard_index(A, B):
 
     This measure is defined  defined as
 
-    math:`J(A, B) = |A intersection B| / |A union B|`
+    :math:`J(A, B) = |A \cap B| / |A \union B|`
     A, B: iterables (will be converted to sets). If A, B are pd.Series na values will be dropped first
     """
     if type(A) == pd.Series:
@@ -302,7 +302,7 @@ def overlap(A, B):
     Calculate the number of overlapping elements of two sets.
 
     This measure is defined as
-    :math:`|A intersection B|`
+    :math:`|A \cap B|`
 
     A, B: iterables (will be converted to sets). na values will be dropped first
     """
@@ -322,7 +322,7 @@ def overlap_coefficient(A, B):
     Calculate the overlap coefficient for two sets.
 
     This measure is defined as
-    :math:`O(A, B) = |A intersection B| / min(|A|, |B|)`
+    :math:`O(A, B) = |A \cap B| / min(|A|, |B|)`
 
     A, B: iterables (will be converted to sets). na values will be dropped first
     """
