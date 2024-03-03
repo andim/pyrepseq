@@ -157,7 +157,7 @@ def kdtree(
                 "triplets",
                 compression,
             )
-        return _make_output(ans, output_type, seqs, seqs)
+        return _make_output(ans, output_type, seqs)
     return _kdtree_leven(
         seqs,
         max_edits,
@@ -197,7 +197,7 @@ def _kdtree_leven(
         custom_distance,
         max_custom_distance,
     )
-    return _make_output(triplets, output_type, seqs, seqs)
+    return _make_output(triplets, output_type, seqs)
 
 
 # ===================================
@@ -314,7 +314,7 @@ def hash_based(
     triplets = lookup(
         index, seqs, max_edits, max_returns, n_cpu, custom_distance, max_custom_distance
     )
-    return _make_output(triplets, output_type, seqs, seqs)
+    return _make_output(triplets, output_type, seqs)
 
 
 # ===================================
@@ -438,11 +438,10 @@ def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
         seqs2
     )
     single_seqs_mode = seqs2 is None
-    if single_seqs_mode:
-        seqs2 = seqs
+    seqs2_patch = seqs if single_seqs_mode else seqs2
     index = _generate_index(seqs, max_edits)
     triplets = _symspell_lookup(index, seqs, max_edits, max_returns,
-                               custom_distance, max_custom_distance, seqs2, single_seqs_mode)
+                               custom_distance, max_custom_distance, seqs2_patch, single_seqs_mode)
     return _make_output(triplets, output_type, seqs, seqs2)
 
 
@@ -592,15 +591,16 @@ def _check_common_input(
         assert seqs2 is None, "sequences2 must be an iterable of string or None"
 
 
-def _make_output(triplets, output_type, seqs, seqs2):
+def _make_output(triplets, output_type, seqs, seqs2=None):
     if output_type == "triplets":
         return triplets
 
     row, col, data = [], [], []
     for triplet in triplets:
-        row += [triplet[0], triplet[1]]
-        col += [triplet[1], triplet[0]]
-        data += [triplet[2], triplet[2]]
-    coo_result = coo_matrix((data, (row, col)), shape=(len(seqs), len(seqs2)))
+        row += [triplet[1]]
+        col += [triplet[0]]
+        data += [triplet[2]]
 
+    shape = (len(seqs), len(seqs)) if seqs2 is None else (len(seqs), len(seqs2))
+    coo_result = coo_matrix((data, (row, col)), shape=shape)
     return coo_result if output_type == "coo_matrix" else coo_result.toarray()

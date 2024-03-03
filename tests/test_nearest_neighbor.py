@@ -93,6 +93,22 @@ def test_custom_distance(algorithm):
                                custom_distance=distance,
                                max_custom_distance=0), test_output)
 
+# symspell is the only algorithm supporting 2-seq mode
+def test_two_sequence():
+    seq1 = ["CAAA", "CDDD", "CADA", "CAAK"]
+    seq2 = ["CIAA","CIAA"]
+    output = np.array([[1,1],[0,0],[0,0],[0,0]])
+    assert np.array_equal(output,symspell(seq1, seqs2=seq2, output_type='ndarray'))
+
+    seq2 = ["CIII"]
+    output = np.array([[0],[0],[0],[0]])
+    assert np.array_equal(output,symspell(seq1, seqs2=seq2, output_type='ndarray'))
+
+    output = np.array([[0,0,1,1],[0,0,0,0],[1,0,0,0],[1,0,0,0]])
+    assert np.array_equal(output,symspell(seq1, output_type='ndarray'))
+    assert np.array_equal(output,hash_based(seq1, output_type='ndarray'))
+    assert np.array_equal(output,kdtree(seq1, output_type='ndarray'))
+
 
 def test_seq2():
     test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
