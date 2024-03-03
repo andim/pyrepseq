@@ -1,4 +1,4 @@
-from pyrepseq import tcr_metric
+from pyrepseq.metric import tcr_metric
 import numpy as np
 from pandas import DataFrame
 import pytest

@@ -1,9 +1,19 @@
+__all__ = [
+    "AlphaCdr3Tcrdist",
+    "BetaCdr3Tcrdist",
+    "Cdr3Tcrdist",
+    "AlphaTcrdist",
+    "BetaTcrdist",
+    "Tcrdist"
+]
+
+
 from abc import abstractmethod
 from enum import Enum
 from numpy import ndarray
 from pandas import DataFrame
-from pyrepseq.tcr_metric.tcr_metric import TcrMetric
-from pyrepseq.tcr_metric.tcrdist.simplified_tcrdist_interface import TcrdistInterface
+from pyrepseq.metric.tcr_metric import TcrMetric
+from pyrepseq.metric.tcr_metric.tcrdist.simplified_tcrdist_interface import TcrdistInterface
 from scipy.spatial import distance
 from typing import Iterable
 
