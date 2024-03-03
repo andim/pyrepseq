@@ -5,87 +5,11 @@ import itertools
 
 import numpy as np
 import pandas as pd
+from pyrepseq.metric import Metric, Levenshtein
 
 from scipy.spatial.distance import squareform
 import scipy.cluster.hierarchy as hc
-
-from Levenshtein import hamming as hamming_distance
-from Levenshtein import distance as levenshtein_distance
-
-
-def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
-    """Pairwise distances between collection of strings.
-       (`scipy.spatial.distance.pdist` equivalent for strings)
-
-    Parameters
-    ----------
-    strings : iterable of strings
-        An m-length iterable.
-    metric : function, optional
-        The distance metric to use. Default: Levenshtein distance.
-    dtype : np.dtype
-        data type of the distance matrix, default: np.uint8
-        Note: make sure to change the dtype, if the metric does not return integers
-
-    Returns
-    -------
-    Y : ndarray
-        Returns a condensed distance matrix Y.  For
-        each :math:`i` and :math:`j` (where :math:`i<j<m`), where m is the number
-        of original observations. The metric ``dist(u=X[i], v=X[j])``
-        is computed and stored in entry
-        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
-
-    """
-    if metric is None:
-        metric = levenshtein_distance
-    strings = list(strings)
-    m = len(strings)
-    dm = np.empty((m * (m - 1)) // 2, dtype=dtype)
-    k = 0
-    for i in range(0, m - 1):
-        for j in range(i + 1, m):
-            dm[k] = metric(strings[i], strings[j], **kwargs)
-            k += 1
-    return dm
-
-
-def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
-    """Compute distance between each pair of the two collections of strings.
-        (`scipy.spatial.distance.cdist` equivalent for strings)
-
-    Parameters
-    ----------
-    stringsA : iterable of strings
-        An mA-length iterable.
-    stringsB : iterable of strings
-        An mB-length iterable.
-    metric : function, optional
-        The distance metric to use. Default: Levenshtein distance.
-    dtype : np.dtype
-        data type of the distance matrix, default: np.uint8
-        Note: make sure to change the dtype, if the metric does not return integers
-
-    Returns
-    -------
-    Y : ndarray
-        A :math:`m_A` by :math:`m_B` distance matrix is returned.
-        For each :math:`i` and :math:`j`, the metric
-        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
-        :math:`ij` th entry.
-    """
-    if metric is None:
-        metric = levenshtein_distance
-    stringA = list(stringsA)
-    stringB = list(stringsB)
-    mA = len(stringA)
-    mB = len(stringB)
-
-    dm = np.empty((mA, mB), dtype=dtype)
-    for i in range(0, mA):
-        for j in range(0, mB):
-            dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
-    return dm
+from typing import Iterable
 
 
 def downsample(seqs, maxseqs):
@@ -108,7 +32,7 @@ def downsample(seqs, maxseqs):
 
 
 def pcDelta(
-    seqs, seqs2=None, bins=None, normalize=True, pseudocount=0.0, maxseqs=None, **kwargs
+    seqs: Iterable, seqs2: Iterable = None, metric: Metric = None, bins: Iterable = None, normalize = True, pseudocount = 0.0, maxseqs = None
 ):
     r"""
     Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
@@ -116,30 +40,41 @@ def pcDelta(
 
     Parameters
     ----------
-    seqs: [list of strings | tuple of lists]
-        sequences, or (seqs_alpha, seqs_beta)
-    seqs2: [list of strings | tuple of lists] (optional)
-        second list of sequences for cross-comparisons
-    bins: iterable
+    seqs: Iterable
+        A collection of elements to measure distances between.
+
+    seqs2: Iterable
+        A second collection of elements for cross-comparisons.
+        
+    metric: pyrepseq.metric.Metric
+        The metric used to compute distances between elements.
+        Defaults to Levenshtein.
+
+    bins: Iterable
         bins for the distances Delta. (Default: range(0, 25))
         bins=0: Calculate exact coincidence probability
+
     normalize: bool
         whether to return pc (normalized) or raw counts
+
     pseudocount : float
        for a Bayesian estimation of coincidence frequencies
        e.g. can use Jeffrey's prior value of 0.5
+
     maxseqs: int
         maximal number of sequences to keep by random downsampling
-    **kwargs: dict
-        passed on to `pdist` or `cdist`
 
     Returns
     -------
     np.ndarray
         (normalized) histogram of sequence distances
     """
+    if metric is None:
+        metric = Levenshtein()
+
     if bins is None:
         bins = np.arange(0, 25)
+    
     if isinstance(bins, int) and bins == 0:
         return pc(seqs, seqs2)
 
@@ -151,7 +86,7 @@ def pcDelta(
             seqs_alpha, seqs_beta = seqs.iloc[:, 0], seqs.iloc[:, 1]
         if seqs2 is None:
             hist, _ = np.histogram(
-                pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins
+                metric.calc_pdist_vector(seqs_alpha) + metric.calc_pdist_vector(seqs_beta), bins=bins
             )
         else:
             if type(seqs2) is tuple:
@@ -159,19 +94,22 @@ def pcDelta(
             if type(seqs2) is pd.DataFrame:
                 seqs_alpha2, seqs_beta2 = seqs2.iloc[:, 0], seqs2.iloc[:, 1]
             hist, _ = np.histogram(
-                cdist(seqs_alpha, seqs_alpha2, **kwargs)
-                + cdist(seqs_beta, seqs_beta2, **kwargs),
+                metric.calc_cdist_matrix(seqs_alpha, seqs_alpha2)
+                + metric.calc_cdist_matrix(seqs_beta, seqs_beta2),
                 bins=bins,
             )
     else:
         if seqs2 is None:
-            hist, _ = np.histogram(pdist(seqs, **kwargs), bins=bins)
+            hist, _ = np.histogram(metric.calc_pdist_vector(seqs), bins=bins)
         else:
-            hist, _ = np.histogram(cdist(seqs, seqs2, **kwargs), bins=bins)
+            hist, _ = np.histogram(metric.calc_cdist_matrix(seqs, seqs2), bins=bins)
+
     if not normalize:
         return hist
+    
     if not pseudocount:
         return hist / np.sum(hist)
+    
     hist_sum = np.sum(hist) + 2 * pseudocount
     hist = hist.astype(np.float64) + pseudocount
     return hist / hist_sum
@@ -481,25 +419,39 @@ def nndist_hamming(seq, reference, maxdist=4):
 
 
 def hierarchical_clustering(
-    seqs,
-    pdist_kws=dict(),
+    seqs: Iterable,
+    metric: Metric = None,
     linkage_kws=dict(method="average", optimal_ordering=True),
     cluster_kws=dict(t=6, criterion="distance"),
 ):
     """
     Hierarchical clustering by sequence similarity.
 
-    pdist_kws: keyword arguments for distance calculation
-    linkage_kws: keyword arguments for linkage algorithm
-    cluster_kws: keyword arguments for clustering algorithm
+    Parameters
+    ----------
+    seqs: Iterable
+        A collection of elements to cluster.
+
+    metric: Metric
+        The metric to use when measuring distances.
+        Defaults to Levenshtein.
+
+    linkage_kws:
+        keyword arguments for linkage algorithm
+    
+    cluster_kws:
+        keyword arguments for clustering algorithm
     """
+    if metric is None:
+        metric = Levenshtein()
+
     if type(seqs) is tuple:
         seqs_alpha, seqs_beta = seqs
-        distances_alpha = pdist(seqs_alpha, **pdist_kws)
-        distances_beta = pdist(seqs_beta, **pdist_kws)
+        distances_alpha = metric.calc_pdist_vector(seqs_alpha)
+        distances_beta = metric.calc_pdist_vector(seqs_beta)
         distances = distances_alpha + distances_beta
     else:
-        distances = pdist(seqs, **pdist_kws)
+        distances = metric.calc_pdist_vector(seqs)
     linkage = hc.linkage(distances, **linkage_kws)
     cluster = hc.fcluster(linkage, **cluster_kws)
     return linkage, cluster
