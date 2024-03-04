@@ -7,6 +7,7 @@ from Levenshtein import distance as levenshtein_distance
 import pandas as pd
 from pandas import DataFrame
 from pyrepseq.metric import Metric, Levenshtein
+from pyrepseq.metric.tcr_metric import AlphaCdr3Levenshtein, BetaCdr3Levenshtein, Cdr3Levenshtein
 from pyrepseq.util import convert_tuple_to_dataframe_if_necessary
 from scipy.spatial.distance import squareform
 import scipy.cluster.hierarchy as hc
@@ -152,7 +153,9 @@ def pcDelta(
         
     metric: :py:class:`pyrepseq.metric.Metric`
         The metric used to compute distances between elements.
-        Defaults to Levenshtein.
+        If not set, a default is inferred from the input data type of `seqs`.
+        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
+        In all other cases, the metric defaults to :py:class:`pyrepseq.metric.Levenshtein`.
 
     bins: Union[int, Iterable]
         bins for the distances Delta. (Default: range(0, 25))
@@ -183,7 +186,7 @@ def pcDelta(
     seqs2 = downsample(seqs2, maxseqs)
 
     if metric is None:
-        metric = Levenshtein()
+        metric = get_default_metric_for_input_data(seqs)
 
     if bins is None:
         bins = np.arange(0, 25)
@@ -202,6 +205,17 @@ def pcDelta(
     hist_sum = np.sum(hist) + 2 * pseudocount
     hist = hist.astype(np.float64) + pseudocount
     return hist / hist_sum
+
+
+def get_default_metric_for_input_data(input_data: Union[Iterable[str], DataFrame]) -> Metric:
+    if isinstance(input_data, DataFrame):
+        if "CDR3A" in input_data and "CDR3B" in input_data:
+            return Cdr3Levenshtein()
+        elif "CDR3A" in input_data:
+            return AlphaCdr3Levenshtein()
+        elif "CDR3B" in input_data:
+            return BetaCdr3Levenshtein()
+    return Levenshtein()
 
 
 def pcDelta_grouped(df, by, seq_columns, **kwargs):
@@ -522,8 +536,10 @@ def hierarchical_clustering(
         A collection of elements to cluster.
 
     metric: Metric
-        The metric to use when measuring distances.
-        Defaults to Levenshtein.
+        The metric used to compute distances between elements.
+        If not set, a default is inferred from the input data type of `seqs`.
+        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
+        In all other cases, the metric defaults to :py:class:`pyrepseq.metric.Levenshtein`.
 
     linkage_kws:
         keyword arguments for linkage algorithm
@@ -531,16 +547,12 @@ def hierarchical_clustering(
     cluster_kws:
         keyword arguments for clustering algorithm
     """
+    seqs = convert_tuple_to_dataframe_if_necessary(seqs)
+    
     if metric is None:
-        metric = Levenshtein()
+        metric = get_default_metric_for_input_data(seqs)
 
-    if type(seqs) is tuple:
-        seqs_alpha, seqs_beta = seqs
-        distances_alpha = metric.calc_pdist_vector(seqs_alpha)
-        distances_beta = metric.calc_pdist_vector(seqs_beta)
-        distances = distances_alpha + distances_beta
-    else:
-        distances = metric.calc_pdist_vector(seqs)
+    distances = metric.calc_pdist_vector(seqs)
     linkage = hc.linkage(distances, **linkage_kws)
     cluster = hc.fcluster(linkage, **cluster_kws)
     return linkage, cluster
