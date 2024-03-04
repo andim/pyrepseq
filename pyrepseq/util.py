@@ -1,10 +1,10 @@
 import numpy as np
-
 import subprocess
 from io import StringIO
 from Bio import SeqIO
-
 import logomaker as lm
+from pandas import DataFrame
+from warnings import warn
 
 def align_seqs(seqs):
     """Align multiple sequences using mafft-linsi with default parameters.
@@ -58,3 +58,11 @@ def ensure_numpy(arr_like):
     if module == "numpy":
         return arr_like
     return np.array(arr_like)
+
+def convert_tuple_to_dataframe_if_necessary(seqs):
+    if not (isinstance(seqs, tuple) and len(seqs) == 2):
+        return seqs
+
+    warn("Inputting paired-chain CDR3 data as a tuple of Iterable[str]s is now deprecated. Please use the standard pyrepseq TCR DataFrame format instead (https://pyrepseq.readthedocs.io/en/latest/api.html#pyrepseq.io.standardize_dataframe).")
+    seqs_rowwise = zip(*seqs)
+    return DataFrame(data=seqs_rowwise, columns=("CDR3A", "CDR3B"))

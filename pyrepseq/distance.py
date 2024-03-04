@@ -5,10 +5,12 @@ import itertools
 import numpy as np
 from Levenshtein import distance as levenshtein_distance
 import pandas as pd
+from pandas import DataFrame
 from pyrepseq.metric import Metric, Levenshtein
+from pyrepseq.util import convert_tuple_to_dataframe_if_necessary
 from scipy.spatial.distance import squareform
 import scipy.cluster.hierarchy as hc
-from typing import Iterable
+from typing import Iterable, Optional, Union
 from warnings import warn
 
 
@@ -103,45 +105,56 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
     return dm
 
 
-def downsample(seqs, maxseqs):
+def downsample(seqs: Union[Iterable[str], DataFrame], maxseqs: Optional[int] = None):
     """
     Random downsampling of a list of sequences.
+    Also works for standard pyrepseq TCR DataFrames (see :py:func:`pyrepseq.standardize_dataframe`).
 
-    Also works for tuples (seqs_alpha, seqs_beta).
+    Parameters
+    ----------
+    seqs: Union[Iterable[str], DataFrame]
+        Input Iterable of strings, or TCR DataFrame.
+
+    maxseqs: Optional[int]
+        Max number of sequences to keep.
+        Defaults to None.
+
+    Returns
+    -------
+    Random subset of maxseqs elements from the input collection.
+    If maxseqs is None, returns the input collection without modification.
     """
     if maxseqs is None:
         return seqs
-    if type(seqs) is tuple:
-        seqs_alpha, seqs_beta = seqs
-        if len(seqs_alpha) <= maxseqs:
-            return seqs
-        indices = np.random.choice(np.arange(len(seqs_alpha)), maxseqs, replace=False)
-        return np.asarray(seqs_alpha)[indices], np.asarray(seqs_beta)[indices]
-    if len(seqs) > maxseqs:
-        return np.random.choice(seqs, maxseqs, replace=False)
-    return seqs
+
+    if len(seqs) <= maxseqs:
+        return seqs
+
+    if isinstance(seqs, DataFrame):
+        return seqs.sample(n=maxseqs)
+    
+    return np.random.choice(seqs, maxseqs, replace=False)
 
 
 def pcDelta(
-    seqs: Iterable, seqs2: Iterable = None, metric: Metric = None, bins: Iterable = None, normalize = True, pseudocount = 0.0, maxseqs = None
+    seqs: Iterable, seqs2: Optional[Iterable] = None, metric: Metric = None, bins: Union[int, Iterable] = None, normalize: bool = True, pseudocount: float = 0.0, maxseqs: Optional[int] = None
 ):
     r"""
-    Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
-    among input sequences.
+    Calculates binned near-coincidence probabilities :math:`p_C(\Delta)` among input sequences.
 
     Parameters
     ----------
     seqs: Iterable
         A collection of elements to measure distances between.
 
-    seqs2: Iterable
+    seqs2: Optional[Iterable]
         A second collection of elements for cross-comparisons.
         
-    metric: pyrepseq.metric.Metric
+    metric: :py:class:`pyrepseq.metric.Metric`
         The metric used to compute distances between elements.
         Defaults to Levenshtein.
 
-    bins: Iterable
+    bins: Union[int, Iterable]
         bins for the distances Delta. (Default: range(0, 25))
         bins=0: Calculate exact coincidence probability
 
@@ -152,7 +165,7 @@ def pcDelta(
        for a Bayesian estimation of coincidence frequencies
        e.g. can use Jeffrey's prior value of 0.5
 
-    maxseqs: int
+    maxseqs: Optional[int]
         maximal number of sequences to keep by random downsampling
 
     Returns
@@ -160,44 +173,29 @@ def pcDelta(
     np.ndarray
         (normalized) histogram of sequence distances
     """
+    if bins == 0:
+        return pc(seqs, seqs2)
+   
+    seqs = convert_tuple_to_dataframe_if_necessary(seqs)
+    seqs2 = convert_tuple_to_dataframe_if_necessary(seqs2)
+
+    seqs = downsample(seqs, maxseqs)
+    seqs2 = downsample(seqs2, maxseqs)
+
     if metric is None:
         metric = Levenshtein()
 
     if bins is None:
         bins = np.arange(0, 25)
-    
-    if isinstance(bins, int) and bins == 0:
-        return pc(seqs, seqs2)
 
-    seqs = downsample(seqs, maxseqs)
-    if (type(seqs) is tuple) or ((type(seqs) is pd.DataFrame) and seqs.shape[1] == 2):
-        if type(seqs) is tuple:
-            seqs_alpha, seqs_beta = seqs
-        if type(seqs) is pd.DataFrame:
-            seqs_alpha, seqs_beta = seqs.iloc[:, 0], seqs.iloc[:, 1]
-        if seqs2 is None:
-            hist, _ = np.histogram(
-                metric.calc_pdist_vector(seqs_alpha) + metric.calc_pdist_vector(seqs_beta), bins=bins
-            )
-        else:
-            if type(seqs2) is tuple:
-                seqs_alpha2, seqs_beta2 = seqs2
-            if type(seqs2) is pd.DataFrame:
-                seqs_alpha2, seqs_beta2 = seqs2.iloc[:, 0], seqs2.iloc[:, 1]
-            hist, _ = np.histogram(
-                metric.calc_cdist_matrix(seqs_alpha, seqs_alpha2)
-                + metric.calc_cdist_matrix(seqs_beta, seqs_beta2),
-                bins=bins,
-            )
+    if seqs2 is None:
+        hist, _ = np.histogram(metric.calc_pdist_vector(seqs), bins=bins)
     else:
-        if seqs2 is None:
-            hist, _ = np.histogram(metric.calc_pdist_vector(seqs), bins=bins)
-        else:
-            hist, _ = np.histogram(metric.calc_cdist_matrix(seqs, seqs2), bins=bins)
+        hist, _ = np.histogram(metric.calc_cdist_matrix(seqs, seqs2), bins=bins)
 
     if not normalize:
         return hist
-    
+
     if not pseudocount:
         return hist / np.sum(hist)
     
