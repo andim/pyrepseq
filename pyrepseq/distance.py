@@ -109,7 +109,7 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
 def downsample(seqs: Union[Iterable[str], DataFrame], maxseqs: Optional[int] = None):
     """
     Random downsampling of a list of sequences.
-    Also works for standard pyrepseq TCR DataFrames (see :py:func:`pyrepseq.standardize_dataframe`).
+    Also works for standard pyrepseq TCR DataFrames (see :py:func:`pyrepseq.io.standardize_dataframe`).
 
     Parameters
     ----------
@@ -154,7 +154,7 @@ def pcDelta(
     metric: :py:class:`pyrepseq.metric.Metric`
         The metric used to compute distances between elements.
         If not set, a default is inferred from the input data type of `seqs`.
-        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
+        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.io.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
         In all other cases, the metric defaults to :py:class:`pyrepseq.metric.Levenshtein`.
 
     bins: Union[int, Iterable]
@@ -538,7 +538,7 @@ def hierarchical_clustering(
     metric: Metric
         The metric used to compute distances between elements.
         If not set, a default is inferred from the input data type of `seqs`.
-        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
+        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.io.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
         In all other cases, the metric defaults to :py:class:`pyrepseq.metric.Levenshtein`.
 
     linkage_kws:
