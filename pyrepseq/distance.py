@@ -2,14 +2,105 @@ from .io import aminoacids
 from .stats import pc
 import os.path
 import itertools
-
 import numpy as np
+from Levenshtein import distance as levenshtein_distance
 import pandas as pd
 from pyrepseq.metric import Metric, Levenshtein
-
 from scipy.spatial.distance import squareform
 import scipy.cluster.hierarchy as hc
 from typing import Iterable
+from warnings import warn
+
+
+def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
+    """
+    Pairwise distances between collection of strings.
+    (`scipy.spatial.distance.pdist` equivalent for strings)
+
+    .. deprecated:: 1.4
+        :py:func:`pyrepseq.pdist` is now deprecated in favour of the ``Metric`` object system (see :py:class:`pyrepseq.metric.Metric`).
+        ``Metric`` objects implement the ``calc_pdist_vector`` method which will perform the pdist computation.
+        :py:func:`pyrepseq.pdist` will be removed in version 2.0.
+
+    Parameters
+    ----------
+    strings : iterable of strings
+        An m-length iterable.
+    metric : function, optional
+        The distance metric to use. Default: Levenshtein distance.
+    dtype : np.dtype
+        data type of the distance matrix, default: np.uint8
+        Note: make sure to change the dtype, if the metric does not return integers
+
+    Returns
+    -------
+    Y : ndarray
+        Returns a condensed distance matrix Y.  For
+        each :math:`i` and :math:`j` (where :math:`i<j<m`), where m is the number
+        of original observations. The metric ``dist(u=X[i], v=X[j])``
+        is computed and stored in entry
+        ``m * i + j - ((i + 2) * (i + 1)) // 2``.
+
+    """
+    warn("pyrepseq.pdist is now deprecated in favour of pyrepseq.metric.Levenshtein.calc_pdist_vector and will be removed in version 2.0.")
+    
+    if metric is None:
+        metric = levenshtein_distance
+    strings = list(strings)
+    m = len(strings)
+    dm = np.empty((m * (m - 1)) // 2, dtype=dtype)
+    k = 0
+    for i in range(0, m - 1):
+        for j in range(i + 1, m):
+            dm[k] = metric(strings[i], strings[j], **kwargs)
+            k += 1
+    return dm
+
+
+def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
+    """
+    Compute distance between each pair of the two collections of strings.
+    (`scipy.spatial.distance.cdist` equivalent for strings)
+
+    .. deprecated:: 1.4
+        :py:func:`pyrepseq.cdist` is now deprecated in favour of the ``Metric`` object system (see :py:class:`pyrepseq.metric.Metric`).
+        ``Metric`` objects implement the ``calc_cdist_matrix`` method which will perform the cdist computation.
+        :py:func:`pyrepseq.cdist` will be removed in version 2.0.
+
+    Parameters
+    ----------
+    stringsA : iterable of strings
+        An mA-length iterable.
+    stringsB : iterable of strings
+        An mB-length iterable.
+    metric : function, optional
+        The distance metric to use. Default: Levenshtein distance.
+    dtype : np.dtype
+        data type of the distance matrix, default: np.uint8
+        Note: make sure to change the dtype, if the metric does not return integers
+
+    Returns
+    -------
+    Y : ndarray
+        A :math:`m_A` by :math:`m_B` distance matrix is returned.
+        For each :math:`i` and :math:`j`, the metric
+        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
+        :math:`ij` th entry.
+    """
+    warn("pyrepseq.cdist is now deprecated in favour of pyrepseq.metric.Levenshtein.calc_cdist_matrix and will be removed in version 2.0.")
+
+    if metric is None:
+        metric = levenshtein_distance
+    stringA = list(stringsA)
+    stringB = list(stringsB)
+    mA = len(stringA)
+    mB = len(stringB)
+
+    dm = np.empty((mA, mB), dtype=dtype)
+    for i in range(0, mA):
+        for j in range(0, mB):
+            dm[i, j] = metric(stringA[i], stringB[j], **kwargs)
+    return dm
 
 
 def downsample(seqs, maxseqs):
