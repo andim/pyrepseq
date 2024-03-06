@@ -20,5 +20,5 @@ def test_pcDelta():
     assert p == 1 / 4.0
     p = pcDelta((["bar","bar"], ["buzz","buzz"]), bins=0)
     assert p == 1
-    p = pcDelta((["bar","baz"], ["fizz","buzz"]), bins=0)
-    assert p == 0
+    p = pcDelta((["foo","bar","bar"], ["fizz","fuzz","fuzz"]), bins=0)
+    assert p == 1 / 3.0
