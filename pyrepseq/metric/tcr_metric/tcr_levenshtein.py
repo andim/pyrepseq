@@ -142,10 +142,10 @@ class TcrLevenshtein(TcrMetric):
         return columns_to_compare
             
     def _calc_cdist_matrix_for_column(
-        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame, column: str
+        self, anchors: DataFrame, comparisons: DataFrame, column: str
     ) -> ndarray:
-        anchors = anchor_tcrs[column]
-        comparisons = comparison_tcrs[column]
+        anchors = anchors[column]
+        comparisons = comparisons[column]
         cdist = process.cdist(anchors, comparisons, scorer=self._levenshtein_scorer)
 
         if "A" in column:
