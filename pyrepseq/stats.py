@@ -1,10 +1,12 @@
 import numpy as np
+from numpy import ndarray
 import pandas as pd
+from pandas import DataFrame
 import scipy.optimize
 import scipy.special
 import warnings
 from pyrepseq.util import convert_tuple_to_dataframe_if_necessary, ensure_numpy
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
@@ -129,14 +131,25 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
     """
     array = convert_tuple_to_dataframe_if_necessary(array)
     array2 = convert_tuple_to_dataframe_if_necessary(array2)
+
+    def convert_to_array(array: Union[Iterable, DataFrame]) -> ndarray:
+        if not isinstance(array, DataFrame):
+            return np.asarray(array)
+        
+        df = array.fillna("")
+        unique_strings = df.apply(
+            lambda row: ".".join(str(val) for val in row),
+            axis=1
+        )
+        return unique_strings.to_numpy()
     
-    array = np.asarray(array)
+    array = convert_to_array(array)
     if array2 is None:
         N = array.shape[0]
         _, counts = np.unique(array, return_counts=True)
         return np.sum(counts * (counts - 1)) / (N * (N - 1))
 
-    array2 = np.asarray(array2)
+    array2 = convert_to_array(array2)
     v, c = np.unique(array, return_counts=True)
     v2, c2 = np.unique(array2, return_counts=True)
     v_int, ind1_int, ind2_int = np.intersect1d(
