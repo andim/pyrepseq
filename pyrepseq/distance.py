@@ -2,20 +2,28 @@ from .io import aminoacids
 from .stats import pc
 import os.path
 import itertools
-
 import numpy as np
+from Levenshtein import distance as levenshtein_distance
 import pandas as pd
-
+from pandas import DataFrame
+from pyrepseq.metric import Metric, Levenshtein
+from pyrepseq.metric.tcr_metric import AlphaCdr3Levenshtein, BetaCdr3Levenshtein, Cdr3Levenshtein
+from pyrepseq.util import convert_tuple_to_dataframe_if_necessary
 from scipy.spatial.distance import squareform
 import scipy.cluster.hierarchy as hc
-
-from Levenshtein import hamming as hamming_distance
-from Levenshtein import distance as levenshtein_distance
+from typing import Iterable, Optional, Union
+from warnings import warn
 
 
 def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
-    """Pairwise distances between collection of strings.
-       (`scipy.spatial.distance.pdist` equivalent for strings)
+    """
+    Pairwise distances between collection of strings.
+    (`scipy.spatial.distance.pdist` equivalent for strings)
+
+    .. deprecated:: 1.4
+        :py:func:`pyrepseq.pdist` is now deprecated in favour of the ``Metric`` object system (see :py:class:`pyrepseq.metric.Metric`).
+        ``Metric`` objects implement the ``calc_pdist_vector`` method which will perform the pdist computation.
+        :py:func:`pyrepseq.pdist` will be removed in version 2.0.
 
     Parameters
     ----------
@@ -37,6 +45,8 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     """
+    warn("pyrepseq.pdist is now deprecated in favour of pyrepseq.metric.Levenshtein.calc_pdist_vector and will be removed in version 2.0.")
+    
     if metric is None:
         metric = levenshtein_distance
     strings = list(strings)
@@ -51,8 +61,14 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
 
 
 def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
-    """Compute distance between each pair of the two collections of strings.
-        (`scipy.spatial.distance.cdist` equivalent for strings)
+    """
+    Compute distance between each pair of the two collections of strings.
+    (`scipy.spatial.distance.cdist` equivalent for strings)
+
+    .. deprecated:: 1.4
+        :py:func:`pyrepseq.cdist` is now deprecated in favour of the ``Metric`` object system (see :py:class:`pyrepseq.metric.Metric`).
+        ``Metric`` objects implement the ``calc_cdist_matrix`` method which will perform the cdist computation.
+        :py:func:`pyrepseq.cdist` will be removed in version 2.0.
 
     Parameters
     ----------
@@ -74,6 +90,8 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
         ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
         :math:`ij` th entry.
     """
+    warn("pyrepseq.cdist is now deprecated in favour of pyrepseq.metric.Levenshtein.calc_cdist_matrix and will be removed in version 2.0.")
+
     if metric is None:
         metric = levenshtein_distance
     stringA = list(stringsA)
@@ -88,93 +106,116 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
     return dm
 
 
-def downsample(seqs, maxseqs):
+def downsample(seqs: Union[Iterable[str], DataFrame], maxseqs: Optional[int] = None):
     """
     Random downsampling of a list of sequences.
-
-    Also works for tuples (seqs_alpha, seqs_beta).
-    """
-    if maxseqs is None:
-        return seqs
-    if type(seqs) is tuple:
-        seqs_alpha, seqs_beta = seqs
-        if len(seqs_alpha) <= maxseqs:
-            return seqs
-        indices = np.random.choice(np.arange(len(seqs_alpha)), maxseqs, replace=False)
-        return np.asarray(seqs_alpha)[indices], np.asarray(seqs_beta)[indices]
-    if len(seqs) > maxseqs:
-        return np.random.choice(seqs, maxseqs, replace=False)
-    return seqs
-
-
-def pcDelta(
-    seqs, seqs2=None, bins=None, normalize=True, pseudocount=0.0, maxseqs=None, **kwargs
-):
-    r"""
-    Calculates binned near-coincidence probabilities :math:`p_C(\Delta)`
-    among input sequences.
+    Also works for standard pyrepseq TCR DataFrames (see :py:func:`pyrepseq.io.standardize_dataframe`).
 
     Parameters
     ----------
-    seqs: [list of strings | tuple of lists]
-        sequences, or (seqs_alpha, seqs_beta)
-    seqs2: [list of strings | tuple of lists] (optional)
-        second list of sequences for cross-comparisons
-    bins: iterable
+    seqs: Union[Iterable[str], DataFrame]
+        Input Iterable of strings, or TCR DataFrame.
+
+    maxseqs: Optional[int]
+        Max number of sequences to keep.
+        Defaults to None.
+
+    Returns
+    -------
+    Random subset of maxseqs elements from the input collection.
+    If maxseqs is None, returns the input collection without modification.
+    """
+    if maxseqs is None:
+        return seqs
+
+    if len(seqs) <= maxseqs:
+        return seqs
+
+    if isinstance(seqs, DataFrame):
+        return seqs.sample(n=maxseqs)
+    
+    return np.random.choice(seqs, maxseqs, replace=False)
+
+
+def pcDelta(
+    seqs: Iterable, seqs2: Optional[Iterable] = None, metric: Metric = None, bins: Union[int, Iterable] = None, normalize: bool = True, pseudocount: float = 0.0, maxseqs: Optional[int] = None
+):
+    r"""
+    Calculates binned near-coincidence probabilities :math:`p_C(\Delta)` among input sequences.
+
+    Parameters
+    ----------
+    seqs: Iterable
+        A collection of elements to measure distances between.
+
+    seqs2: Optional[Iterable]
+        A second collection of elements for cross-comparisons.
+        
+    metric: :py:class:`pyrepseq.metric.Metric`
+        The metric used to compute distances between elements.
+        If not set, a default is inferred from the input data type of `seqs`.
+        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.io.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
+        In all other cases, the metric defaults to :py:class:`pyrepseq.metric.Levenshtein`.
+
+    bins: Union[int, Iterable]
         bins for the distances Delta. (Default: range(0, 25))
         bins=0: Calculate exact coincidence probability
+
     normalize: bool
         whether to return pc (normalized) or raw counts
+
     pseudocount : float
        for a Bayesian estimation of coincidence frequencies
        e.g. can use Jeffrey's prior value of 0.5
-    maxseqs: int
+
+    maxseqs: Optional[int]
         maximal number of sequences to keep by random downsampling
-    **kwargs: dict
-        passed on to `pdist` or `cdist`
 
     Returns
     -------
     np.ndarray
         (normalized) histogram of sequence distances
     """
-    if bins is None:
-        bins = np.arange(0, 25)
-    if isinstance(bins, int) and bins == 0:
+    if bins == 0:
         return pc(seqs, seqs2)
+   
+    seqs = convert_tuple_to_dataframe_if_necessary(seqs)
+    seqs2 = convert_tuple_to_dataframe_if_necessary(seqs2)
 
     seqs = downsample(seqs, maxseqs)
-    if (type(seqs) is tuple) or ((type(seqs) is pd.DataFrame) and seqs.shape[1] == 2):
-        if type(seqs) is tuple:
-            seqs_alpha, seqs_beta = seqs
-        if type(seqs) is pd.DataFrame:
-            seqs_alpha, seqs_beta = seqs.iloc[:, 0], seqs.iloc[:, 1]
-        if seqs2 is None:
-            hist, _ = np.histogram(
-                pdist(seqs_alpha, **kwargs) + pdist(seqs_beta, **kwargs), bins=bins
-            )
-        else:
-            if type(seqs2) is tuple:
-                seqs_alpha2, seqs_beta2 = seqs2
-            if type(seqs2) is pd.DataFrame:
-                seqs_alpha2, seqs_beta2 = seqs2.iloc[:, 0], seqs2.iloc[:, 1]
-            hist, _ = np.histogram(
-                cdist(seqs_alpha, seqs_alpha2, **kwargs)
-                + cdist(seqs_beta, seqs_beta2, **kwargs),
-                bins=bins,
-            )
+    seqs2 = downsample(seqs2, maxseqs)
+
+    if metric is None:
+        metric = get_default_metric_for_input_data(seqs)
+
+    if bins is None:
+        bins = np.arange(0, 25)
+
+    if seqs2 is None:
+        hist, _ = np.histogram(metric.calc_pdist_vector(seqs), bins=bins)
     else:
-        if seqs2 is None:
-            hist, _ = np.histogram(pdist(seqs, **kwargs), bins=bins)
-        else:
-            hist, _ = np.histogram(cdist(seqs, seqs2, **kwargs), bins=bins)
+        hist, _ = np.histogram(metric.calc_cdist_matrix(seqs, seqs2), bins=bins)
+
     if not normalize:
         return hist
+
     if not pseudocount:
         return hist / np.sum(hist)
+    
     hist_sum = np.sum(hist) + 2 * pseudocount
     hist = hist.astype(np.float64) + pseudocount
     return hist / hist_sum
+
+
+def get_default_metric_for_input_data(input_data: Union[Iterable[str], DataFrame]) -> Metric:
+    if isinstance(input_data, DataFrame):
+        if "CDR3A" in input_data and "CDR3B" in input_data:
+            return Cdr3Levenshtein()
+        elif "CDR3A" in input_data:
+            return AlphaCdr3Levenshtein()
+        elif "CDR3B" in input_data:
+            return BetaCdr3Levenshtein()
+    return Levenshtein()
 
 
 def pcDelta_grouped(df, by, seq_columns, **kwargs):
@@ -481,25 +522,37 @@ def nndist_hamming(seq, reference, maxdist=4):
 
 
 def hierarchical_clustering(
-    seqs,
-    pdist_kws=dict(),
+    seqs: Iterable,
+    metric: Metric = None,
     linkage_kws=dict(method="average", optimal_ordering=True),
     cluster_kws=dict(t=6, criterion="distance"),
 ):
     """
     Hierarchical clustering by sequence similarity.
 
-    pdist_kws: keyword arguments for distance calculation
-    linkage_kws: keyword arguments for linkage algorithm
-    cluster_kws: keyword arguments for clustering algorithm
+    Parameters
+    ----------
+    seqs: Iterable
+        A collection of elements to cluster.
+
+    metric: Metric
+        The metric used to compute distances between elements.
+        If not set, a default is inferred from the input data type of `seqs`.
+        If `seqs` is a standard pyrepseq TCR DataFrame (see :py:func:`pyrepseq.io.standardize_dataframe`), then the metric can default to either a :py:class:`pyrepseq.metric.tcr_metric.Cdr3Levenshtein`, :py:class:`pyrepseq.metric.tcr_metric.AlphaCdr3Levenshtein`, or :py:class:`pyrepseq.metric.tcr_metric.BetaCdr3Levenshtein`, depending on what columns are available.
+        In all other cases, the metric defaults to :py:class:`pyrepseq.metric.Levenshtein`.
+
+    linkage_kws:
+        keyword arguments for linkage algorithm
+    
+    cluster_kws:
+        keyword arguments for clustering algorithm
     """
-    if type(seqs) is tuple:
-        seqs_alpha, seqs_beta = seqs
-        distances_alpha = pdist(seqs_alpha, **pdist_kws)
-        distances_beta = pdist(seqs_beta, **pdist_kws)
-        distances = distances_alpha + distances_beta
-    else:
-        distances = pdist(seqs, **pdist_kws)
+    seqs = convert_tuple_to_dataframe_if_necessary(seqs)
+    
+    if metric is None:
+        metric = get_default_metric_for_input_data(seqs)
+
+    distances = metric.calc_pdist_vector(seqs)
     linkage = hc.linkage(distances, **linkage_kws)
     cluster = hc.fcluster(linkage, **cluster_kws)
     return linkage, cluster

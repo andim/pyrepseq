@@ -3,7 +3,8 @@ import pandas as pd
 import scipy.optimize
 import scipy.special
 import warnings
-from .util import ensure_numpy
+from pyrepseq.util import convert_tuple_to_dataframe_if_necessary, ensure_numpy
+from typing import Iterable, Optional
 
 
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
@@ -109,8 +110,9 @@ def pc_n(n):
     return np.sum(n * (n - 1)) / (N * (N - 1))
 
 
-def pc(array, array2=None):
-    r"""Estimate the coincidence probability :math:`p_C` from a sample.
+def pc(array: Iterable, array2: Optional[Iterable] = None):
+    r"""
+    Estimate the coincidence probability :math:`p_C` from a sample.
     :math:`p_C` is equal to the probability that two distinct sampled elements are the same.
     If :math:`n_i` are the counts of the i-th unique element and
     :math:`N = \sum_i n_i` the length of the array, then:
@@ -120,13 +122,14 @@ def pc(array, array2=None):
 
     Parameters
     ----------
-    array : array-like
-        list of sampled elements
-    array2: array-like
-        second list of sampled elements: if provided probability
-        of cross-coincidences is calculated as :math:`p_C = (\sum_i n_{1i} n_{2i}) / (N_1 N_2)`
-
+    array: Iterable
+        Iterable of sampled elements
+    array2: Optional[Iterable]
+        Second Iterable of sampled elements: if provided probability of cross-coincidences is calculated as :math:`p_C = (\sum_i n_{1i} n_{2i}) / (N_1 N_2)`
     """
+    array = convert_tuple_to_dataframe_if_necessary(array)
+    array2 = convert_tuple_to_dataframe_if_necessary(array2)
+    
     array = np.asarray(array)
     if array2 is None:
         N = array.shape[0]
