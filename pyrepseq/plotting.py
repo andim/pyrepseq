@@ -7,13 +7,10 @@ import matplotlib as mpl
 import seaborn as sns
 import scipy.cluster.hierarchy as hc
 from scipy.interpolate import interpn
-
 import logomaker as lm
-
-
-
-from .distance import *
-from .util import *
+from pyrepseq.distance import *
+from pyrepseq.util import *
+from pyrepseq.metric import Levenshtein
 
 
 def rankfrequency(
@@ -286,6 +283,7 @@ def similarity_clustermap(
     kws: keyword arguments passed on to the clustermap.
 
     """
+    metric = Levenshtein() # TODO: refactor code to generalise to non-Levenshtein metrics
 
     if meta_to_colors is None:
         if meta_columns is None:
@@ -297,13 +295,13 @@ def similarity_clustermap(
     if is_single_chain: 
         chain = beta_column if alpha_column is None else alpha_column
         sequences = df[chain]
-        distances = pdist(sequences)
+        distances = metric.calc_pdist_vector(sequences)
     else:
         sequences_alpha = df[alpha_column]
         sequences_beta = df[beta_column]
         sequences = sequences_alpha + "_" + sequences_beta
-        distances_alpha = pdist(sequences_alpha)
-        distances_beta = pdist(sequences_beta)
+        distances_alpha = metric.calc_pdist_vector(sequences_alpha)
+        distances_beta = metric.calc_pdist_vector(sequences_beta)
         distances = distances_alpha + distances_beta
 
     linkage = hc.linkage(distances, **linkage_kws)

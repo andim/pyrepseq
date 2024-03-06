@@ -1,9 +1,9 @@
 from functools import reduce
-
 import pandas as pd
 from pandas import DataFrame
 import tidytcells as tt
 from typing import Mapping
+from warnings import warn
 
 aminoacids = "ACDEFGHIKLMNPQRSTVWY"
 _aminoacids_set = set(aminoacids)
@@ -181,6 +181,7 @@ def standardize_dataframe(
     if df_old is not None:
         if df is not None:
             raise ValueError("`df` and `df_old` are mutually exclusive.")
+        warn("The parameter df_old is now deprecated in favour of df. This will be removed in version 2.0.")
         df = df_old
     
     if df is None:

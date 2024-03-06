@@ -5,4 +5,5 @@ from .nn import *
 from .util import *
 from .clustering import *
 from . import plotting 
+from . import metric
 from .version import __version__
