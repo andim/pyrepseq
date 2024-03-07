@@ -54,6 +54,7 @@ REQUIRES = [
 DEV_DEPENDENCIES = [
     "pytest",
     "pytest-cov",
+    "sphinx",
     "sphinx-rtd-theme",
 ]
 
