@@ -43,24 +43,26 @@ class AbstractTcrdist(TcrMetric):
         pass
 
     def calc_cdist_matrix(
-        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
+        self, anchors: DataFrame, comparisons: DataFrame
     ) -> ndarray:
+        super().calc_cdist_matrix(anchors, comparisons)
+        
         cdist_matrices = []
 
         if TcrChain.ALPHA in self._chains_to_compare:
-            alpha_result = self._calc_alpha_cdist(anchor_tcrs, comparison_tcrs)
+            alpha_result = self._calc_alpha_cdist(anchors, comparisons)
             cdist_matrices.append(alpha_result)
         if TcrChain.BETA in self._chains_to_compare:
-            beta_result = self._calc_beta_cdist(anchor_tcrs, comparison_tcrs)
+            beta_result = self._calc_beta_cdist(anchors, comparisons)
             cdist_matrices.append(beta_result)
 
         return sum(cdist_matrices)
 
     def _calc_alpha_cdist(
-        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
+        self, anchors: DataFrame, comparisons: DataFrame
     ) -> ndarray:
         result = tcrdist_interface.calc_alpha_cdist_matrices(
-            anchor_tcrs, comparison_tcrs
+            anchors, comparisons
         )
         if self._tcrdist_type is TcrdistType.CDR3:
             return result["cdr3_a_aa"]
@@ -68,18 +70,19 @@ class AbstractTcrdist(TcrMetric):
             return result["tcrdist"]
 
     def _calc_beta_cdist(
-        self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
+        self, anchors: DataFrame, comparisons: DataFrame
     ) -> ndarray:
         result = tcrdist_interface.calc_beta_cdist_matrices(
-            anchor_tcrs, comparison_tcrs
+            anchors, comparisons
         )
         if self._tcrdist_type is TcrdistType.CDR3:
             return result["cdr3_b_aa"]
         else:
             return result["tcrdist"]
 
-    def calc_pdist_vector(self, tcrs: DataFrame) -> ndarray:
-        pdist_matrix = self.calc_cdist_matrix(tcrs, tcrs)
+    def calc_pdist_vector(self, instances: DataFrame) -> ndarray:
+        super().calc_pdist_vector(instances)
+        pdist_matrix = self.calc_cdist_matrix(instances, instances)
         pdist_vector = distance.squareform(pdist_matrix, checks=False)
         return pdist_vector
 
