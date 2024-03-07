@@ -26,6 +26,7 @@ MAINTAINER = "Andreas Tiffeau-Mayer"
 MAINTAINER_EMAIL = "andimscience@gmail.com"
 DESCRIPTION = "Python library for immune repertoire analyses"
 LONG_DESCRIPTION = (PROJECT_ROOT/"README.md").read_text(encoding="utf-8")
+LONG_DESCRIPTION_CONTENT_TYPE = "text/markdown"
 URL = "http://pyrepseq.readthedocs.io/"
 DOWNLOAD_URL = "http://github.com/andim/pyrepseq"
 LICENSE = "MIT"
@@ -65,6 +66,7 @@ opts = dict(
     maintainer_email=MAINTAINER_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
+    long_description_content_type=LONG_DESCRIPTION_CONTENT_TYPE,
     url=URL,
     download_url=DOWNLOAD_URL,
     license=LICENSE,
