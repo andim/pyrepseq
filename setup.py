@@ -1,5 +1,4 @@
 import os
-
 from setuptools import find_packages, setup
 
 ver_file = os.path.join("pyrepseq", "version.py")
@@ -82,6 +81,11 @@ REQUIRES = [
     "tcrdist3",
     "tidytcells~=2.0",
 ]
+DEV_DEPENDENCIES = [
+    "pytest",
+    "pytest-cov",
+    "sphinx-rtd-theme",
+]
 
 opts = dict(
     name=NAME,
@@ -101,6 +105,9 @@ opts = dict(
     package_data=PACKAGE_DATA,
     include_package_data=True,
     install_requires=REQUIRES,
+    extras_require={
+        "dev": DEV_DEPENDENCIES
+    }
 )
 
 
