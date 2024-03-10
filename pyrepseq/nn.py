@@ -498,7 +498,8 @@ def _lookup(df, row_labels, col_labels):
     flat_index = ridx * len(df.columns) + cidx
     return values.flat[flat_index]
 
-def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, max_tcrdist=20, **kwargs):
+def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True,
+        max_tcrdist=20, tcrdist_kwargs={}, **kwargs):
     """
     List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
 
@@ -506,6 +507,8 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, max_tcrdist=20, **kw
     ----------
     chain: 'alpha' or 'beta'
     max_edits : only return neighbors up to <= this edit distance
+    edit_on_trimmed : boolean
+        apply TCRdist trimming on sequences before calculating edit distance
     max_tcrdist : only return neighbor up to <= this TCR distance
 
     **kwargs : passed on to nearest_neighbor function
@@ -516,7 +519,14 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, max_tcrdist=20, **kw
 
     """
     chain_letter = chain[0].upper()
-    neighbors = nearest_neighbor(list(df[f'CDR3{chain_letter}']),
+    if edit_on_trimmed:
+        ntrim = 3
+        ctrim = 2
+        seqs = list(df[f'CDR3{chain_letter}'].str[ntrim:-ctrim])
+        neighbors = nearest_neighbor(seqs,
+                                 max_edits=max_edits, **kwargs)
+    else:
+        neighbors = nearest_neighbor(list(df[f'CDR3{chain_letter}']),
                                  max_edits=max_edits, **kwargs)
 
     folder = os.path.dirname(__file__)
@@ -528,9 +538,16 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, max_tcrdist=20, **kw
     tcrdist_v = _lookup(vdists,
                         df[f'TR{chain_letter}V'].iloc[edges[:, 0]],
                         df[f'TR{chain_letter}V'].iloc[edges[:, 1]])
+
+    # to reproduce standard TCRdist we multiply the CDR3 distance with three
+    # we also need to multiply the gap penalty by this factor
+    tcrdist_kwargs_this = dict(use_numba=True, fixed_gappos=False,
+                               ntrim=3, ctrim=2, dist_weight=3,
+                               gap_penalty=4*3)
+    tcrdist_kwargs_this.update(tcrdist_kwargs)
     tcrdist_cdr3 = pwseqdist.apply_pairwise_sparse(metric=pwseqdist.metrics.nb_vector_tcrdist,
                                 seqs=np.asarray(df[f'CDR3{chain_letter}']), pairs=edges,
-                                use_numba=True)
+                                **tcrdist_kwargs_this)
     tcrdist = tcrdist_v + tcrdist_cdr3
     neighbors_arr[:, 2] = tcrdist
 
