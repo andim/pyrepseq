@@ -1,11 +1,11 @@
 import pytest
-from pyrepseq.nn import hash_based, kdtree, symspell
+from pyrepseq.nn import hash_based, kdtree, symdel
 from itertools import product
 from Levenshtein import distance
 import numpy as np
 import pandas as pd
 
-ALGORITHMS = [kdtree, hash_based, symspell]
+ALGORITHMS = [kdtree, hash_based, symdel]
 fallback_cache = None
 
 
@@ -93,19 +93,19 @@ def test_custom_distance(algorithm):
                                custom_distance=distance,
                                max_custom_distance=0), test_output)
 
-# symspell is the only algorithm supporting 2-seq mode
+# symdel is the only algorithm supporting 2-seq mode
 def test_two_sequence():
     seq1 = ["CAAA", "CDDD", "CADA", "CAAK"]
     seq2 = ["CIAA","CIAA"]
     output = np.array([[1,1],[0,0],[0,0],[0,0]])
-    assert np.array_equal(output,symspell(seq1, seqs2=seq2, output_type='ndarray'))
+    assert np.array_equal(output,symdel(seq1, seqs2=seq2, output_type='ndarray'))
 
     seq2 = ["CIII"]
     output = np.array([[0],[0],[0],[0]])
-    assert np.array_equal(output,symspell(seq1, seqs2=seq2, output_type='ndarray'))
+    assert np.array_equal(output,symdel(seq1, seqs2=seq2, output_type='ndarray'))
 
     output = np.array([[0,0,1,1],[0,0,0,0],[1,0,0,0],[1,0,0,0]])
-    assert np.array_equal(output,symspell(seq1, output_type='ndarray'))
+    assert np.array_equal(output,symdel(seq1, output_type='ndarray'))
     assert np.array_equal(output,hash_based(seq1, output_type='ndarray'))
     assert np.array_equal(output,kdtree(seq1, output_type='ndarray'))
 
@@ -114,7 +114,7 @@ def test_seq2():
     test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
     test_input2 = ["CDDD", "CAAK"]
     test_output = [(1,0,1), (1,2,1), (0,3,1),(1,4,0)]
-    assert set_equal(symspell(test_input1, max_edits=1,
+    assert set_equal(symdel(test_input1, max_edits=1,
                                seqs2=test_input2), test_output)
 
 
