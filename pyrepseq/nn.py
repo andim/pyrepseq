@@ -318,7 +318,7 @@ def hash_based(
 
 
 # ===================================
-# symspell
+# symdel
 # ===================================
 
 
@@ -353,7 +353,7 @@ def _hamming_replacement(seq_a, seq_b):
     return hamming(seq_a, seq_b)
 
 
-def _symspell_lookup(index, seqs, max_edits, max_returns,
+def _symdel_lookup(index, seqs, max_edits, max_returns,
                     custom_distance, max_custom_dist, seqs2, single_seqs_mode):
     ans = []
     threshold = max_custom_dist
@@ -389,7 +389,7 @@ def _symspell_lookup(index, seqs, max_edits, max_returns,
     return ans
 
 
-def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
+def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
              custom_distance=None, max_custom_distance=float('inf'),
              output_type='triplets', seqs2=None):
     """
@@ -440,7 +440,7 @@ def symspell(seqs, max_edits=1, max_returns=None, n_cpu=1,
     single_seqs_mode = seqs2 is None
     seqs2_patch = seqs if single_seqs_mode else seqs2
     index = _generate_index(seqs, max_edits)
-    triplets = _symspell_lookup(index, seqs, max_edits, max_returns,
+    triplets = _symdel_lookup(index, seqs, max_edits, max_returns,
                                custom_distance, max_custom_distance, seqs2_patch, single_seqs_mode)
     return _make_output(triplets, output_type, seqs, seqs2)
 
@@ -487,7 +487,7 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "ndarray" returns numpy's 2d array representing dense matrix
     """
 
-    return symspell(seqs, max_edits, max_returns, n_cpu,
+    return symdel(seqs, max_edits, max_returns, n_cpu,
                     custom_distance, max_custom_distance, output_type, seqs2)
 
 
@@ -510,21 +510,29 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
     edit_on_trimmed : boolean
         apply TCRdist trimming on sequences before calculating edit distance
     max_tcrdist : only return neighbor up to <= this TCR distance
-
+    tcrdist_kwargs: dict
+        customized parameters for TCRdist calculation
     **kwargs : passed on to nearest_neighbor function
 
     Returns
     --------
-    sparse (i, j, dist) matrix
+    sparse matrix in (i, j, dist) format
 
     """
     chain_letter = chain[0].upper()
+
+    # to reproduce standard TCRdist we multiply the CDR3 distance with three
+    # we also need to multiply the gap penalty by this factor
+    tcrdist_kwargs_this = dict(use_numba=True, fixed_gappos=False,
+                               ntrim=3, ctrim=2, dist_weight=3,
+                               gap_penalty=4*3)
+    tcrdist_kwargs_this.update(tcrdist_kwargs)
+
     if edit_on_trimmed:
-        ntrim = 3
-        ctrim = 2
+        ntrim = tcrdist_kwargs_this['ntrim']
+        ctrim = tcrdist_kwargs_this['ctrim']
         seqs = list(df[f'CDR3{chain_letter}'].str[ntrim:-ctrim])
-        neighbors = nearest_neighbor(seqs,
-                                 max_edits=max_edits, **kwargs)
+        neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
     else:
         neighbors = nearest_neighbor(list(df[f'CDR3{chain_letter}']),
                                  max_edits=max_edits, **kwargs)
@@ -539,12 +547,6 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
                         df[f'TR{chain_letter}V'].iloc[edges[:, 0]],
                         df[f'TR{chain_letter}V'].iloc[edges[:, 1]])
 
-    # to reproduce standard TCRdist we multiply the CDR3 distance with three
-    # we also need to multiply the gap penalty by this factor
-    tcrdist_kwargs_this = dict(use_numba=True, fixed_gappos=False,
-                               ntrim=3, ctrim=2, dist_weight=3,
-                               gap_penalty=4*3)
-    tcrdist_kwargs_this.update(tcrdist_kwargs)
     tcrdist_cdr3 = pwseqdist.apply_pairwise_sparse(metric=pwseqdist.metrics.nb_vector_tcrdist,
                                 seqs=np.asarray(df[f'CDR3{chain_letter}']), pairs=edges,
                                 **tcrdist_kwargs_this)
