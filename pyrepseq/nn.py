@@ -9,12 +9,11 @@ from multiprocessing import Pool
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
 from .util import ensure_numpy
+from .io import aminoacids
 import os
 import pwseqdist
 import re
 
-
-_AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
 
 # ===================================
 # kdtree
@@ -22,10 +21,10 @@ _AMINO_ACIDS = "ACDEFGHIKLMNPQRSTVWY"
 
 
 def _histogram_encode(cdr3, compression):
-    dimension = int(np.ceil(len(_AMINO_ACIDS) / compression))
+    dimension = int(np.ceil(len(aminoacids) / compression))
     position_map = {
         char: int(np.floor(index / compression))
-        for index, char in enumerate(_AMINO_ACIDS)
+        for index, char in enumerate(aminoacids)
     }
 
     ans = np.zeros(dimension, dtype="int")
