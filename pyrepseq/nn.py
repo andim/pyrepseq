@@ -12,7 +12,6 @@ from .util import ensure_numpy
 from .io import aminoacids
 import os
 import pwseqdist
-import re
 
 
 # ===================================
@@ -573,9 +572,6 @@ def _check_common_input(
                 str,
                 np.str_,
             }, "sequences must be an iterable of string"
-            assert re.match(
-                r"^[ACDEFGHIKLMNPQRSTVWY]+$", seq
-            ), "sequences must contain only valid amino acids"
     except TypeError:
         assert False, "sequences must be an iterable of string"
     assert (
@@ -608,9 +604,6 @@ def _check_common_input(
                 str,
                 np.str_,
             }, "sequences2 must be an iterable of string"
-            assert re.match(
-                r"^[ACDEFGHIKLMNPQRSTVWY]+$", seq
-            ), "sequences2 must contain only valid amino acids"
     except TypeError:
         assert seqs2 is None, "sequences2 must be an iterable of string or None"
 

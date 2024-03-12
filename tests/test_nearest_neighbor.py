@@ -1,5 +1,5 @@
 import pytest
-from pyrepseq.nn import hash_based, kdtree, symdel
+from pyrepseq.nn import hash_based, kdtree, symdel, nearest_neighbor_tcrdist
 from itertools import product
 from Levenshtein import distance
 import numpy as np
@@ -25,7 +25,7 @@ def fallback(seqs, max_edits=1):
 
 
 def set_equal(list_a, list_b):
-    # normal set equallity is slow in python, so we implement one
+    # normal set equality is slow in python, so we implement one
     set_a, set_b = set(list_a), set(list_b)
     return len(set_a) == len(set_b) == len(set_a & set_b)
 
@@ -92,6 +92,20 @@ def test_custom_distance(algorithm):
     assert set_equal(algorithm(test_input, max_edits=1, max_returns=1,
                                custom_distance=distance,
                                max_custom_distance=0), test_output)
+
+
+def test_tcrdist():
+    df = pd.DataFrame(columns=['CDR3B','TRBV'], data=
+        [
+        ['CASSGETGQPQHF','TRBV6-1*01'],
+        ['CASSTQGIHEQYF','TRBV9*01'],
+        ['CASSTQGIHEQYF','TRBV9*01'],
+        ['CAWSF','TRBV30*01'],
+        ['CSATGYNEQFF','TRBV20-1*01']
+        ])
+    results = nearest_neighbor_tcrdist(df, max_edits=2,
+                             max_tcrdist=0);
+    np.array_equal(results,np.array([[1, 2, 0],[2, 1, 0]]))
 
 # symdel is the only algorithm supporting 2-seq mode
 def test_two_sequence():
