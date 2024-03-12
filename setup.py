@@ -48,15 +48,20 @@ REQUIRES = [
     "scikit-learn",
     "logomaker",
     "biopython",
-    "tcrdist3",
     "tidytcells~=2.0",
 ]
+
 DEV_DEPENDENCIES = [
     "pytest",
     "pytest-cov",
     "sphinx",
     "sphinx-rtd-theme",
 ]
+
+# the parasail dependency of TCRdist3 is causing lots of issues so it is now optional
+FULL_DEPENDENCIES = [
+    "tcrdist3"
+        ]
 
 opts = dict(
     name=NAME,
@@ -78,7 +83,8 @@ opts = dict(
     include_package_data=True,
     install_requires=REQUIRES,
     extras_require={
-        "dev": DEV_DEPENDENCIES
+        "dev": DEV_DEPENDENCIES,
+        "full": FULL_DEPENDENCIES
     }
 )
 
