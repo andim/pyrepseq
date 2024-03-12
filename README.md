@@ -21,8 +21,11 @@ The quickest way to install Pyrepseq is via pip:
 
 `pip install pyrepseq[full]`
 
-This will install pyrepseq with support for TCRdist. As the TCRdist dependency on parasail is known to cause installation issues on Mac OSX, pyrepseq can also be installed without this dependency by running
+This will install pyrepseq with all optional dependencies. You can also install the leading edge development version using:
 
+`pip install git+https://github.com/andim/pyrepseq`
+
+As the TCRdist dependency on parasail is known to cause installation issues on Mac OSX, pyrepseq can also be installed without this dependency by running
 
 `pip install pyrepseq`
 
