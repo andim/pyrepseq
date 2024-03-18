@@ -11,7 +11,13 @@ from itertools import combinations, chain
 from .util import ensure_numpy
 from .io import aminoacids
 import os
-import pwseqdist
+
+import warnings
+try:
+    import pwseqdist
+except ImportError:
+    warnings.warn('optional dependency pwseqdist not installed', ImportWarning)
+
 
 
 # ===================================
