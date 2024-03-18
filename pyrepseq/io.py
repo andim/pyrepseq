@@ -24,7 +24,7 @@ def standardize_dataframe(
     """
     This is a utility function to organise a table of TCR-pMHC data into the standard pyrepseq format and perform data cleaning/standardization to ensure that the TCR/MHC gene symbols are IMGT-compliant, the epitopes are all valid amino acid strings, and the CDR3s look valid.
     For further notes on data standardization, see below.
-    The standard format is a table with at least the following columns (not necessarily in order):
+    The standard format is a table with some or all of the following columns (not necessarily in order):
 
     +-----------------+------------------------------------------+-----------+
     | Column Name     | Column should contain                    | Data type |

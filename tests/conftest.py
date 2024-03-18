@@ -3,11 +3,9 @@ from pathlib import Path
 import pytest
 
 
-@pytest.fixture
-def mock_data_path():
-    return Path("tests") / "resources" / "mock_data.csv"
+RESOURCES_DIR = Path("tests")/"resources"
 
 
 @pytest.fixture
-def mock_data_df(mock_data_path):
-    return pd.read_csv(mock_data_path)
+def mock_data_df():
+    return pd.read_csv(RESOURCES_DIR/"mock_data.csv")
