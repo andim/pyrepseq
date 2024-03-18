@@ -1,5 +1,5 @@
 import pandas as pd
-import pyrepseq
+import pyrepseq as prs
 from pytest import mark
 
 
@@ -15,7 +15,7 @@ from pytest import mark
     )
 )
 def test_with_one_arg(arg, expected):
-    result = pyrepseq.pc(arg)
+    result = prs.pc(arg)
     assert result == expected
 
 
@@ -23,7 +23,7 @@ def test_with_one_df(mock_data_df):
     # Do we want pc to detect clone count column and automatically compute based on that?
     # Currently it just looks for duplicate rows and calculates based on that.
     mock_data_df_with_coincidence = pd.concat([mock_data_df,mock_data_df.iloc[[-1]]])
-    result = pyrepseq.pc(mock_data_df_with_coincidence)
+    result = prs.pc(mock_data_df_with_coincidence)
     num_items = len(mock_data_df_with_coincidence)
     num_pairs = num_items * (num_items-1) / 2
     expected = 1.0 / num_pairs
@@ -41,11 +41,11 @@ def test_with_one_df(mock_data_df):
     )
 )
 def test_with_two_args(arg1, arg2, expected):
-    result = pyrepseq.pc(arg1, arg2)
+    result = prs.pc(arg1, arg2)
     assert result == expected
 
 
 def test_with_two_dfs(mock_data_df):
-    result = pyrepseq.pc(mock_data_df, mock_data_df)
+    result = prs.pc(mock_data_df, mock_data_df)
     expected = 1 / len(mock_data_df)
     assert result == expected
