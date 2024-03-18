@@ -3,6 +3,7 @@ import pyrepseq as prs
 from pytest import mark
 
 
+@mark.filterwarnings("ignore:Inputting paired-chain CDR3 data as a tuple")
 @mark.parametrize(
     ("arg", "expected"),
     (
