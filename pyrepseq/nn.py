@@ -16,7 +16,7 @@ import warnings
 try:
     import pwseqdist
 except ImportError:
-    warnings.warn('optional dependency pwseqdist not installed', ImportWarning)
+    warnings.warn('optional dependency pwseqdist not installed (tcrdist neighbor search not supported)', ImportWarning)
 
 
 
