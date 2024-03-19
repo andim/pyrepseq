@@ -507,6 +507,8 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
     """
     List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
 
+    [Requires optional dependency pwseqdist]
+
     Parameters
     ----------
     chain: 'alpha' or 'beta'
