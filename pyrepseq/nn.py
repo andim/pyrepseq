@@ -11,7 +11,13 @@ from itertools import combinations, chain
 from .util import ensure_numpy
 from .io import aminoacids
 import os
-import pwseqdist
+
+import warnings
+try:
+    import pwseqdist
+except ImportError:
+    warnings.warn('optional dependency pwseqdist not installed (tcrdist neighbor search not supported)', ImportWarning)
+
 
 
 # ===================================
@@ -500,6 +506,8 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
         max_tcrdist=20, tcrdist_kwargs={}, **kwargs):
     """
     List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
+
+    [Requires optional dependency pwseqdist]
 
     Parameters
     ----------

@@ -60,7 +60,8 @@ DEV_DEPENDENCIES = [
 
 # the parasail dependency of TCRdist3 is causing lots of issues so it is now optional
 FULL_DEPENDENCIES = [
-    "tcrdist3"
+    "tcrdist3",
+    "pwseqdist"
         ]
 
 opts = dict(
