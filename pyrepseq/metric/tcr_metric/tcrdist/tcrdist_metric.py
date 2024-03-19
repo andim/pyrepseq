@@ -90,6 +90,8 @@ class AbstractTcrdist(TcrMetric):
 class AlphaCdr3Tcrdist(AbstractTcrdist):
     """
     TcrDist applied to the alpha chain CDR3 sequences.
+
+    [Requires optional tcrdist dependency.]
     """
 
     name = "Alpha CDR3 tcrdist"
@@ -101,6 +103,8 @@ class AlphaCdr3Tcrdist(AbstractTcrdist):
 class BetaCdr3Tcrdist(AbstractTcrdist):
     """
     TcrDist applied to the beta chain CDR3 sequences.
+
+    [Requires optional tcrdist dependency.]
     """
 
     name = "Beta CDR3 tcrdist"
@@ -112,6 +116,8 @@ class BetaCdr3Tcrdist(AbstractTcrdist):
 class Cdr3Tcrdist(AbstractTcrdist):
     """
     TcrDist applied to the alpha and beta chain CDR3 sequences.
+
+    [Requires optional tcrdist dependency.]
     """
 
     name = "CDR3 tcrdist"
@@ -123,6 +129,8 @@ class Cdr3Tcrdist(AbstractTcrdist):
 class AlphaTcrdist(AbstractTcrdist):
     """
     TcrDist applied to the alpha chain.
+
+    [Requires optional tcrdist dependency.]
     """
 
     name = "Alpha tcrdist"
@@ -134,6 +142,8 @@ class AlphaTcrdist(AbstractTcrdist):
 class BetaTcrdist(AbstractTcrdist):
     """
     TcrDist applied to the beta chain.
+
+    [Requires optional tcrdist dependency.]
     """
 
     name = "Beta tcrdist"
@@ -145,6 +155,9 @@ class BetaTcrdist(AbstractTcrdist):
 class Tcrdist(AbstractTcrdist):
     """
     TcrDist applied to the alpha and beta chain.
+
+
+    [Requires optional tcrdist dependency.]
     """
 
     name = "tcrdist"
