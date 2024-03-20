@@ -160,6 +160,57 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
     return np.sum(c[ind1_int] * c2[ind2_int]) / (len(array) * len(array2))
 
 
+def chao1(counts):
+    """Estimate richness from sampled counts."""
+    
+    if len(counts) == 1:
+        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+    elif counts[1] == 0:
+        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+    
+    return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
+
+def var_chao1(counts):
+    """Variance estimator for Chao1 richness."""
+     
+    f1 = counts[0]
+    
+    if len(counts) == 1:
+        return np.nan
+    elif counts[1] == 0:
+        return np.nan
+    
+    f2 = counts[1]
+    ratio = f1 / f2
+    return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
+
+def chao2(counts, m):
+    """Estimate richness from incidence data"""
+  
+    q1 = counts[0]
+    q2 = counts[1]
+  
+    if counts[1] == 0:
+        return np.sum(counts) + ((m-1)/m)*(q1*(q1-1))/2
+  
+    else:
+        return np.sum(counts) + ((m-1)/m)*(q1**2)/(2*q2)
+
+def var_chao2(counts, m):
+    """Variance estimator for Chao2 richness."""
+    
+    q1 = counts[0]
+    q2 = counts[1]
+    A = (m-1)/m
+    
+    if counts[1] == 0:
+        return (A*q1*(q1-1))/2 + (A**2*q1*(2*q1-1)**2)/4 - (A**2*q1**4)/(4*chao2(counts, m))
+  
+    else:
+        ratio = q1/q2
+        return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
+      
+  
 def pc_joint(df, on, df_2 = None):
     """Joint coincidence probability estimator
     
@@ -419,105 +470,5 @@ def overlap_coefficient(A, B):
     B = B.dropna()
     A = set(A)
     B = set(B)
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    
-=======
-<<<<<<< HEAD
->>>>>>> c8f829f (Clean up tcr info)
     return len(A.intersection(B)) / min(len(A), len(B))
-<<<<<<< HEAD
-=======
 
-def shannon_entropy(df, features, by=None, base=2.0):
-    """Compute Shannon entropies
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    features: list
-    by: string/list of strings
-    base: float
-
-    Returns
-    ----------: 
-    float
-    """
-    
-    if base is not None and base <= 0:
-        raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-        
-    if by is None:
-        probabilities = df[features].value_counts(normalize=True)
-        entropy  = -(probabilities*np.log(probabilities)).sum()
-    
-    else:
-        if type(by) == list and len(by) > 1:
-            by = by[0]
-            
-        marginal_probabilities = df[by].value_counts(normalize=True)
-        
-        if type(by) != list:
-            joint_probabilities = df[features+[by]].value_counts(normalize=True)
-        else:
-            joint_probabilities = df[features+by].value_counts(normalize=True)
-
-        entropy = -(joint_probabilities*np.log(joint_probabilities/marginal_probabilities)).sum()
-        
-    if base is not None:
-        entropy /= np.log(base) 
-        
-    return entropy 
-
-def renyi2_entropy(df, features, by=None, base=2.0):
-    """Compute Renyi-Simpson entropies
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    features: list
-    by: string/list of strings
-    base: float
-
-    Returns
-    ----------: 
-    float
-    """
-    
-    if base is not None and base <= 0:
-        raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-            
-    if not by:
-        entropy = -np.log(pc_joint(df, features))
-    else:
-        entropy = -np.log(pc_conditional(df, by, features))
-    
-    if base is not None:
-        entropy /= np.log(base) 
-    
-<<<<<<< HEAD
-    return entropy
-=======
-    return entropy
->>>>>>> 0fd7ecb (Add entropy into stats)
-<<<<<<< HEAD
->>>>>>> d026e48 (Add entropy into stats)
-=======
-=======
-    return len(A.intersection(B)) / min(len(A), len(B))
->>>>>>> 36111ba (Clean up tcr info)
->>>>>>> c8f829f (Clean up tcr info)
-=======
-    
-    return len(A.intersection(B)) / min(len(A), len(B))
->>>>>>> afbe15d (Update info functions)
-=======
-    return len(A.intersection(B)) / min(len(A), len(B))
->>>>>>> 1888ca8 (Clean up tcr info)
