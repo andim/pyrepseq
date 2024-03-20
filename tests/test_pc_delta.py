@@ -19,6 +19,11 @@ def test_with_one_arg(arg, expected):
     assert np.array_equal(results, expected)
 
 
+def test_with_one_arg_with_downsampling():
+    results = prs.pcDelta(["A", "A", "A"], bins=range(5), maxseqs=2)
+    assert np.array_equal(results, np.array([1,0,0,0]))
+
+
 def test_with_one_df(mock_data_df):
     results = prs.pcDelta(mock_data_df, bins=range(12))
     expected = np.array([1.0/3.0,0,0,0,0,0,0,0,0,0,2.0/3.0])

@@ -6,6 +6,7 @@ import logomaker as lm
 from pandas import DataFrame
 from warnings import warn
 
+
 def align_seqs(seqs):
     """Align multiple sequences using mafft-linsi with default parameters.
 
@@ -33,6 +34,7 @@ def align_seqs(seqs):
     child.stdin.close()
     return [str(seq.seq) for seq in seqs_aligned]
 
+
 def seqs_to_regex(seqs, align=True):
     """Turn a list of sequences into a regular expression.
 
@@ -55,6 +57,7 @@ def seqs_to_regex(seqs, align=True):
             regex += '?'
     return regex
     
+
 def seqs_to_consensus(seqs, align=True):
     """Turn a list of sequences into a consensus sequence.
 
@@ -76,6 +79,7 @@ def seqs_to_consensus(seqs, align=True):
         s += row.idxmax()
     return s
 
+
 def ensure_numpy(arr_like):
     module = type(arr_like).__module__
     if module == "pandas.core.series":
@@ -83,6 +87,7 @@ def ensure_numpy(arr_like):
     if module == "numpy":
         return arr_like
     return np.array(arr_like)
+
 
 def convert_tuple_to_dataframe_if_necessary(seqs):
     if not (isinstance(seqs, tuple) and len(seqs) == 2):
