@@ -372,6 +372,7 @@ def stdpc_joint(df, on):
 
 def stdpc_conditional(df, by, on, weight_uniformly=True):
     """Std.dev. estimator for conditional probability of coincidence
+        !!Still to be developed!!
     """
     
     if type(by) == list and len(by) == 1:
@@ -460,6 +461,7 @@ def overlap_coefficient(A, B):
     B = B.dropna()
     A = set(A)
     B = set(B)
+<<<<<<< HEAD
 <<<<<<< HEAD
     
 =======
@@ -553,3 +555,7 @@ def renyi2_entropy(df, features, by=None, base=2.0):
     return len(A.intersection(B)) / min(len(A), len(B))
 >>>>>>> 36111ba (Clean up tcr info)
 >>>>>>> c8f829f (Clean up tcr info)
+=======
+    
+    return len(A.intersection(B)) / min(len(A), len(B))
+>>>>>>> afbe15d (Update info functions)
