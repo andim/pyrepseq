@@ -9,6 +9,8 @@ from warnings import warn
 def align_seqs(seqs):
     """Align multiple sequences using mafft-linsi with default parameters.
 
+    Requires external dependency mafft-linsi to be installed.
+
     Parameters
     ----------
     seqs: iterable of strings
@@ -31,13 +33,15 @@ def align_seqs(seqs):
     child.stdin.close()
     return [str(seq.seq) for seq in seqs_aligned]
 
-def seqs_to_regex(seqs):
+def seqs_to_regex(seqs, align=True):
     """Turn a list of sequences into a regular expression.
 
     The regular expression matches sequences to what is effectively an independent site model.
     The model assumes equal frequencies for all observed residues/gaps.
     """
-    matrix = lm.alignment_to_matrix(align_seqs(seqs))
+    if align:
+        seqs = align_seqs(seqs)
+    matrix = lm.alignment_to_matrix(seqs)
     n = len(seqs)
     regex = ''
     for i, row in matrix.iterrows():
@@ -51,12 +55,18 @@ def seqs_to_regex(seqs):
             regex += '?'
     return regex
     
-def seqs_to_consensus(seqs):
+def seqs_to_consensus(seqs, align=True):
     """Turn a list of sequences into a consensus sequence.
 
     The consensus sequence consists of the most frequent amino acid at each site.
+
+    align: boolean
+        if False all sequences need to be of the same length
+        if True requires mafft-linsi to be installed
     """
-    matrix = lm.alignment_to_matrix(align_seqs(seqs))
+    if align:
+        seqs = align_seqs(seqs)
+    matrix = lm.alignment_to_matrix(seqs)
     n = len(seqs)
     s = ''
     for i, row in matrix.iterrows():
