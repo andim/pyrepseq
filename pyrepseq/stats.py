@@ -272,8 +272,6 @@ def pc_conditional(df, by, on, weight_uniformly=True):
         
     return np.sum(adjusted_group_weights*conditional_pcs)
 
-
-
 def stdpc(array):
     "Std.dev. estimator for Simpson's index"
     array = np.asarray(array)
