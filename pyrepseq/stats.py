@@ -161,15 +161,23 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
 def chao1(counts):
     """Estimate richness from sampled counts."""
     
-    if counts[1] == 0:
+    if len(counts) == 1:
         return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
-        
+    elif counts[1] == 0:
+        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+    
     return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
 
 def var_chao1(counts):
     """Variance estimator for Chao1 richness."""
      
     f1 = counts[0]
+    
+    if len(counts) == 1:
+        return np.nan
+    elif counts[1] == 0:
+        return np.nan
+    
     f2 = counts[1]
     ratio = f1 / f2
     return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
