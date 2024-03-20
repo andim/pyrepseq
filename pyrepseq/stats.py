@@ -240,24 +240,24 @@ def pc_conditional(df, by, on, weight_uniformly=True):
         column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
         then joint pc is computed on the concatenations of each specified column
     weight_uniformly: bool
-        treat each group created by conditioning equally or weight according to group size
+        treat each group created by conditioning equally if true or weight according to group size if false
     
     Returns
     ----------: 
     pandas DataFrame/float:
-        pc of df[on] computed over each group specified in by
+        pc of df[on] computed over each group specified in by and averaged with a non-conventional weighting factor
     """
     
     if type(by) == list and len(by) == 1:
         by = by[0]
         
-    #Mask df entries where pc will return nan
+    #Mask df entries where pc cannot be computed
     df = df.groupby(by).filter(lambda x: len(x) > 1)
     if len(df) < 2:
         return np.nan
         
     if type(on) == list:
-        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x,on))
+        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x, on))
 
     else:
         conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
@@ -272,69 +272,6 @@ def pc_conditional(df, by, on, weight_uniformly=True):
         
     return np.sum(adjusted_group_weights*conditional_pcs)
 
-
-
-    
-def pc_joint(df, on):
-    """Joint coincidence probability estimator
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    on: list of strings
-        columns on which to obtain a joint probability of coincidence
-
-    Returns
-    ----------
-    float:
-        pc computed on the concatenations of each specified column in on
-    
-    """
-
-    return pc(df[on].sum(1))
-
-def pc_conditional(df, by, on, take_mean = True):
-    """Conditional coincidence probability estimator
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    by: list
-        conditioning parameters used to group input data frame
-    on: string/list of strings
-        column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
-        then pc is computed on the concatenations of each specified column
-    take_mean: bool
-        specify wether to take the average once pc has been computed for each specified group
-
-    Returns
-    ----------: 
-    pandas DataFrame/float:
-        pc of df[on] computed over each group specified in by.
-        if take_mean=True then the average of these group by pcs is returned
-    """
-    
-    if type(by) == list and len(by) == 1:
-        by = by[0]
-        
-    if type(on) == list:
-        p_c = df.groupby(by).apply(lambda x: pc_joint(x,on))
-
-    else:
-        p_c = df.groupby(by).apply(lambda x: pc(x[on]))
-        
-    if take_mean:
-        
-        #Mask p values for which there was insufficient data to compute pc
-        mask = ~np.isnan(p_c)
-        counts =  df.groupby(by).size()[mask]
-        weights = counts/counts.sum()
-        mean_pc = np.sum(weights*p_c[mask]**0.5)**2
-
-        return mean_pc
-    
-    else:
-        return p_c
 
 
 def stdpc(array):
@@ -371,6 +308,7 @@ def stdpc_joint(df, on):
 
 def stdpc_conditional(df, by, on, weight_uniformly=True):
     """Std.dev. estimator for conditional probability of coincidence
+        !!Still to be developed!!
     """
     
     if type(by) == list and len(by) == 1:
@@ -459,86 +397,5 @@ def overlap_coefficient(A, B):
     B = B.dropna()
     A = set(A)
     B = set(B)
-<<<<<<< HEAD
+    
     return len(A.intersection(B)) / min(len(A), len(B))
-
-def shannon_entropy(df, features, by=None, base=2.0):
-    """Compute Shannon entropies
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    features: list
-    by: string/list of strings
-    base: float
-
-    Returns
-    ----------: 
-    float
-    """
-    
-    if base is not None and base <= 0:
-        raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-        
-    if by is None:
-        probabilities = df[features].value_counts(normalize=True)
-        entropy  = -(probabilities*np.log(probabilities)).sum()
-    
-    else:
-        if type(by) == list and len(by) > 1:
-            by = by[0]
-            
-        marginal_probabilities = df[by].value_counts(normalize=True)
-        
-        if type(by) != list:
-            joint_probabilities = df[features+[by]].value_counts(normalize=True)
-        else:
-            joint_probabilities = df[features+by].value_counts(normalize=True)
-
-        entropy = -(joint_probabilities*np.log(joint_probabilities/marginal_probabilities)).sum()
-        
-    if base is not None:
-        entropy /= np.log(base) 
-        
-    return entropy 
-
-def renyi2_entropy(df, features, by=None, base=2.0):
-    """Compute Renyi-Simpson entropies
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    features: list
-    by: string/list of strings
-    base: float
-
-    Returns
-    ----------: 
-    float
-    """
-    
-    if base is not None and base <= 0:
-        raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-            
-    if not by:
-        entropy = -np.log(pc_joint(df, features))
-    else:
-        entropy = -np.log(pc_conditional(df, by, features))
-    
-    if base is not None:
-        entropy /= np.log(base) 
-    
-<<<<<<< HEAD
-    return entropy
-=======
-    return entropy
->>>>>>> 0fd7ecb (Add entropy into stats)
-=======
-    return len(A.intersection(B)) / min(len(A), len(B))
->>>>>>> 36111ba (Clean up tcr info)
