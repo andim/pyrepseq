@@ -207,24 +207,24 @@ def pc_conditional(df, by, on, weight_uniformly=True):
         column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
         then joint pc is computed on the concatenations of each specified column
     weight_uniformly: bool
-        treat each group created by conditioning equally or weight according to group size
+        treat each group created by conditioning equally if true or weight according to group size if false
     
     Returns
     ----------: 
     pandas DataFrame/float:
-        pc of df[on] computed over each group specified in by
+        pc of df[on] computed over each group specified in by and averaged with a non-conventional weighting factor
     """
     
     if type(by) == list and len(by) == 1:
         by = by[0]
         
-    #Mask df entries where pc will return nan
+    #Mask df entries where pc cannot be computed
     df = df.groupby(by).filter(lambda x: len(x) > 1)
     if len(df) < 2:
         return np.nan
         
     if type(on) == list:
-        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x,on))
+        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x, on))
 
     else:
         conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
@@ -238,8 +238,6 @@ def pc_conditional(df, by, on, weight_uniformly=True):
     adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
         
     return np.sum(adjusted_group_weights*conditional_pcs)
-
-
 
 def stdpc(array):
     "Std.dev. estimator for Simpson's index"
@@ -275,6 +273,7 @@ def stdpc_joint(df, on):
 
 def stdpc_conditional(df, by, on, weight_uniformly=True):
     """Std.dev. estimator for conditional probability of coincidence
+        !!Still to be developed!!
     """
     
     if type(by) == list and len(by) == 1:
