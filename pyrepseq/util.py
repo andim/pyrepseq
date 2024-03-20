@@ -50,6 +50,21 @@ def seqs_to_regex(seqs):
         if gaps:
             regex += '?'
     return regex
+    
+def seqs_to_consensus(seqs):
+    """Turn a list of sequences into a consensus sequence.
+
+    The consensus sequence consists of the most frequent amino acid at each site.
+    """
+    matrix = lm.alignment_to_matrix(align_seqs(seqs))
+    n = len(seqs)
+    s = ''
+    for i, row in matrix.iterrows():
+        ngaps = n-row.sum()
+        if ngaps > n//2:
+            continue
+        s += row.idxmax()
+    return s
 
 def ensure_numpy(arr_like):
     module = type(arr_like).__module__
