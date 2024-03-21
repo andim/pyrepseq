@@ -106,7 +106,7 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
     return dm
 
 
-def downsample(seqs: Union[Iterable[str], DataFrame], maxseqs: Optional[int] = None):
+def downsample(seqs: Union[Iterable[str], DataFrame, None], maxseqs: Optional[int] = None):
     """
     Random downsampling of a list of sequences.
     Also works for standard pyrepseq TCR DataFrames (see :py:func:`pyrepseq.io.standardize_dataframe`).
@@ -125,7 +125,7 @@ def downsample(seqs: Union[Iterable[str], DataFrame], maxseqs: Optional[int] = N
     Random subset of maxseqs elements from the input collection.
     If maxseqs is None, returns the input collection without modification.
     """
-    if maxseqs is None:
+    if maxseqs is None or seqs is None:
         return seqs
 
     if len(seqs) <= maxseqs:
