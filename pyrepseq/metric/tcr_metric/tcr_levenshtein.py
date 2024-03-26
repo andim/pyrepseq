@@ -17,7 +17,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 from scipy.spatial import distance
 from tidytcells import tr
-from typing import Iterable, Optional, Tuple
+from typing import Literal, Tuple
 
 
 class ChainScope(Enum):
@@ -29,18 +29,6 @@ class ChainScope(Enum):
 class CdrScope(Enum):
     ALL = 1
     CDR3 = 2
-
-
-class EditTypeWeights:
-    def __init__(
-        self, insertion_weight: int, deletion_weight: int, substitution_weight: int
-    ) -> None:
-        self.insertion_weight = insertion_weight
-        self.deletion_weight = deletion_weight
-        self.substitution_weight = substitution_weight
-
-    def to_tuple(self) -> Tuple[int]:
-        return (self.insertion_weight, self.deletion_weight, self.substitution_weight)
 
 
 class ChainWeights:
@@ -57,7 +45,6 @@ class CdrWeights:
 
 
 class TcrLevenshtein(TcrMetric):
-    _edit_type_weights: EditTypeWeights
     _chain_weights: ChainWeights
     _cdr_weights: CdrWeights
 
@@ -82,9 +69,13 @@ class TcrLevenshtein(TcrMetric):
         cdr2_weight: int = 1,
         cdr3_weight: int = 1,
     ) -> None:
-        self._edit_type_weights = EditTypeWeights(
-            insertion_weight, deletion_weight, substitution_weight
-        )
+        if insertion_weight == 1 and deletion_weight == 1 and substitution_weight == 1:
+            self._scorer = Levenshtein.distance
+        else:
+            self._scorer = lambda *args, **kwargs: Levenshtein.distance(
+                *args, **kwargs, weights=(insertion_weight, deletion_weight, substitution_weight)
+            )
+
         self._chain_weights = ChainWeights(alpha_weight, beta_weight)
         self._cdr_weights = CdrWeights(cdr1_weight, cdr2_weight, cdr3_weight)
 
@@ -112,19 +103,18 @@ class TcrLevenshtein(TcrMetric):
 
     def _get_cdrs_from_v_genes(self, v_genes: Series) -> DataFrame:
         df = DataFrame(columns=["CDR1X", "CDR2X"])
-        df.CDR1X = v_genes.map(self._get_cdr1_from_v_gene_if_possible)
-        df.CDR2X = v_genes.map(self._get_cdr2_from_v_gene_if_possible)
+        df.CDR1X = v_genes.map(lambda v: self._get_cdr1_from_v_gene_if_possible(v, "CDR1-IMGT"))
+        df.CDR2X = v_genes.map(lambda v: self._get_cdr1_from_v_gene_if_possible(v, "CDR2-IMGT"))
         return df
 
-    def _get_cdr1_from_v_gene_if_possible(self, v_gene: Optional[str]) -> Optional[str]:
-        if not isinstance(v_gene, str):
-            return None
-        return tr.get_aa_sequence(v_gene)["CDR1-IMGT"]
+    @staticmethod
+    def _get_cdr1_from_v_gene_if_possible(v_gene: str, cdr_loop: Literal["CDR1-IMGT", "CDR2-IMGT"]) -> str:
+        v_gene_seq_data = tr.get_aa_sequence(v_gene)
 
-    def _get_cdr2_from_v_gene_if_possible(self, v_gene: Optional[str]) -> Optional[str]:
-        if not isinstance(v_gene, str):
-            return None
-        return tr.get_aa_sequence(v_gene)["CDR2-IMGT"]
+        if cdr_loop not in v_gene_seq_data:
+            return ""
+        
+        return v_gene_seq_data[cdr_loop]
 
     def _get_columns_to_compare(self) -> Tuple[str]:
         cdr_prefixes = ["CDR3"]
@@ -146,7 +136,7 @@ class TcrLevenshtein(TcrMetric):
     ) -> ndarray:
         anchors = anchors[column]
         comparisons = comparisons[column]
-        cdist = process.cdist(anchors, comparisons, scorer=self._levenshtein_scorer)
+        cdist = process.cdist(anchors, comparisons, scorer=self._scorer, workers=-1)
 
         if "A" in column:
             cdist *= self._chain_weights.alpha_weight
@@ -161,11 +151,6 @@ class TcrLevenshtein(TcrMetric):
             cdist *= self._cdr_weights.cdr3_weight
 
         return cdist
-
-    def _levenshtein_scorer(self, *args, **kwargs) -> int:
-        return Levenshtein.distance(
-            *args, **kwargs, weights=self._edit_type_weights.to_tuple()
-        )
 
     def calc_pdist_vector(self, instances: DataFrame) -> ndarray:
         super().calc_pdist_vector(instances)

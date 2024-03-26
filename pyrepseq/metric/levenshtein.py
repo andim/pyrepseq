@@ -39,15 +39,16 @@ class WeightedLevenshtein(Metric):
         deletion_weight: int = 1,
         substitution_weight: int = 1,
     ) -> None:
-        self._edit_type_weights = (insertion_weight, deletion_weight, substitution_weight)
+        if insertion_weight == 1 and deletion_weight == 1 and substitution_weight == 1:
+            self._scorer = RapidFuzzLevenshtein.distance
+        
+        else:
+            self._scorer = lambda *args, **kwargs: RapidFuzzLevenshtein.distance(
+                *args, **kwargs, weights=(insertion_weight, deletion_weight, substitution_weight)
+            )
 
     def calc_cdist_matrix(self, anchors: Iterable[str], comparisons: Iterable[str]) -> ndarray:
-        return process.cdist(anchors, comparisons, scorer=self._levenshtein_scorer)
-
-    def _levenshtein_scorer(self, *args, **kwargs) -> int:
-        return RapidFuzzLevenshtein.distance(
-            *args, **kwargs, weights=self._edit_type_weights
-        )
+        return process.cdist(anchors, comparisons, scorer=self._scorer, workers=-1)
 
     def calc_pdist_vector(self, instances: Iterable[str]) -> ndarray:
         pdist_matrix = self.calc_cdist_matrix(instances, instances)
