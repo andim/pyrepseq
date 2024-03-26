@@ -17,7 +17,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 from scipy.spatial import distance
 from tidytcells import tr
-from typing import Iterable, Optional, Tuple
+from typing import Literal, Tuple
 
 
 class ChainScope(Enum):
@@ -112,19 +112,18 @@ class TcrLevenshtein(TcrMetric):
 
     def _get_cdrs_from_v_genes(self, v_genes: Series) -> DataFrame:
         df = DataFrame(columns=["CDR1X", "CDR2X"])
-        df.CDR1X = v_genes.map(self._get_cdr1_from_v_gene_if_possible)
-        df.CDR2X = v_genes.map(self._get_cdr2_from_v_gene_if_possible)
+        df.CDR1X = v_genes.map(lambda v: self._get_cdr1_from_v_gene_if_possible(v, "CDR1-IMGT"))
+        df.CDR2X = v_genes.map(lambda v: self._get_cdr1_from_v_gene_if_possible(v, "CDR2-IMGT"))
         return df
 
-    def _get_cdr1_from_v_gene_if_possible(self, v_gene: Optional[str]) -> Optional[str]:
-        if not isinstance(v_gene, str):
-            return None
-        return tr.get_aa_sequence(v_gene)["CDR1-IMGT"]
+    @staticmethod
+    def _get_cdr1_from_v_gene_if_possible(v_gene: str, cdr_loop: Literal["CDR1-IMGT", "CDR2-IMGT"]) -> str:
+        v_gene_seq_data = tr.get_aa_sequence(v_gene)
 
-    def _get_cdr2_from_v_gene_if_possible(self, v_gene: Optional[str]) -> Optional[str]:
-        if not isinstance(v_gene, str):
-            return None
-        return tr.get_aa_sequence(v_gene)["CDR2-IMGT"]
+        if cdr_loop not in v_gene_seq_data:
+            return ""
+        
+        return v_gene_seq_data[cdr_loop]
 
     def _get_columns_to_compare(self) -> Tuple[str]:
         cdr_prefixes = ["CDR3"]
