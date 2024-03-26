@@ -31,18 +31,6 @@ class CdrScope(Enum):
     CDR3 = 2
 
 
-class EditTypeWeights:
-    def __init__(
-        self, insertion_weight: int, deletion_weight: int, substitution_weight: int
-    ) -> None:
-        self.insertion_weight = insertion_weight
-        self.deletion_weight = deletion_weight
-        self.substitution_weight = substitution_weight
-
-    def to_tuple(self) -> Tuple[int]:
-        return (self.insertion_weight, self.deletion_weight, self.substitution_weight)
-
-
 class ChainWeights:
     def __init__(self, alpha_weight: int, beta_weight: int) -> None:
         self.alpha_weight = alpha_weight
@@ -57,7 +45,6 @@ class CdrWeights:
 
 
 class TcrLevenshtein(TcrMetric):
-    _edit_type_weights: EditTypeWeights
     _chain_weights: ChainWeights
     _cdr_weights: CdrWeights
 
@@ -82,9 +69,13 @@ class TcrLevenshtein(TcrMetric):
         cdr2_weight: int = 1,
         cdr3_weight: int = 1,
     ) -> None:
-        self._edit_type_weights = EditTypeWeights(
-            insertion_weight, deletion_weight, substitution_weight
-        )
+        if insertion_weight == 1 and deletion_weight == 1 and substitution_weight == 1:
+            self._scorer = Levenshtein.distance
+        else:
+            self._scorer = lambda *args, **kwargs: Levenshtein.distance(
+                *args, **kwargs, weights=(insertion_weight, deletion_weight, substitution_weight)
+            )
+
         self._chain_weights = ChainWeights(alpha_weight, beta_weight)
         self._cdr_weights = CdrWeights(cdr1_weight, cdr2_weight, cdr3_weight)
 
@@ -145,7 +136,7 @@ class TcrLevenshtein(TcrMetric):
     ) -> ndarray:
         anchors = anchors[column]
         comparisons = comparisons[column]
-        cdist = process.cdist(anchors, comparisons, scorer=self._levenshtein_scorer)
+        cdist = process.cdist(anchors, comparisons, scorer=self._scorer, workers=-1)
 
         if "A" in column:
             cdist *= self._chain_weights.alpha_weight
@@ -160,11 +151,6 @@ class TcrLevenshtein(TcrMetric):
             cdist *= self._cdr_weights.cdr3_weight
 
         return cdist
-
-    def _levenshtein_scorer(self, *args, **kwargs) -> int:
-        return Levenshtein.distance(
-            *args, **kwargs, weights=self._edit_type_weights.to_tuple()
-        )
 
     def calc_pdist_vector(self, instances: DataFrame) -> ndarray:
         super().calc_pdist_vector(instances)
