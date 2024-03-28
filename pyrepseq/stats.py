@@ -160,6 +160,7 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
     return np.sum(c[ind1_int] * c2[ind2_int]) / (len(array) * len(array2))
 
 
+<<<<<<< HEAD
 def chao1(counts):
     """Estimate richness from sampled counts."""
     
@@ -211,6 +212,8 @@ def var_chao2(counts, m):
         return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
       
   
+=======
+>>>>>>> 6111455 (Rebase)
 def pc_joint(df, on, df_2 = None):
     """Joint coincidence probability estimator
     
@@ -413,7 +416,11 @@ def var_chao2(counts, m):
     else:
         ratio = q1/q2
         return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> 6111455 (Rebase)
 def jaccard_index(A, B):
     """
     Calculate the Jaccard index for two sets.
