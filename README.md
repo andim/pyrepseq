@@ -9,37 +9,64 @@ Pyrepseq is `scipy` & `seaborn` for studying adaptive immunity: modular implemen
 
 ## Documentation and examples
 
-You can find API documentation on [readthedocs](https://pyrepseq.readthedocs.io/en/latest/?badge=latest). You can also create a local copy of the API documentation by running `make html` in the docs folder.
+You can find API documentation on [readthedocs](https://pyrepseq.readthedocs.io/en/latest/?badge=latest).
+You can also create a local copy of the API documentation by running:
+
+```bash
+make html
+```
+
+in the docs folder.
 
 There are jupyter notebooks illustrating some of the functionality in the 'examples' folder.
-
 You can also find usage examples by looking at the code underlying our recent paper [Mayer Callan PNAS 2023](https://github.com/andim/paper_coincidences).
 
 ## Installation
 
 The quickest way to install Pyrepseq is via pip:
 
-`pip install pyrepseq[full]`
+```bash
+pip install pyrepseq[full]
+```
 
-This will install pyrepseq with all optional dependencies. You can also install the leading edge development version using:
+This will install pyrepseq with all optional dependencies.
+You can also install the leading edge development version using:
 
-`pip install git+https://github.com/andim/pyrepseq`
+```bash
+pip install git+https://github.com/andim/pyrepseq
+```
 
-As the TCRdist dependency on parasail is known to cause installation issues on Mac OSX, pyrepseq can also be installed without this dependency by running
+As the TCRdist dependency on parasail is known to cause installation issues on Mac OSX, pyrepseq can also be installed without this dependency by running:
 
-`pip install pyrepseq`
+```bash
+pip install pyrepseq
+```
 
-In this case some functionality will not be available. To allow installation to proceed on mac you might have to manually install build tools using `brew install autoconf automake libtool`
+In this case some functionality will not be available.
+To allow installation to proceed on mac you might have to manually install build tools using:
 
+```bash
+brew install autoconf automake libtool
+```
 
-Pyrepseq can also be installed from its [Github](https://github.com/andim/pyrepseq) source, by running `python setup.py install` in the main directory.
+Pyrepseq can also be installed from its [Github](https://github.com/andim/pyrepseq) source, by running:
+
+```bash
+python setup.py install
+```
+
+in the main directory.
 
 ## Support and contributing
 
-For bug reports and enhancement requests use the [Github issue tool](http://github.com/andim/pyrepseq/issues/new), or (even better!) open a [pull request](http://github.com/andim/pyrepseq/pulls) with relevant changes. If you have any questions don't hesitate to contact us by email (andimscience@gmail.com) or Twitter ([@andimscience](http://twitter.com/andimscience)).
+For bug reports and enhancement requests use the [Github issue tool](http://github.com/andim/pyrepseq/issues/new), or (even better!) open a [pull request](http://github.com/andim/pyrepseq/pulls) with relevant changes.
+If you have any questions don't hesitate to contact us by email (andimscience@gmail.com) or Twitter ([@andimscience](http://twitter.com/andimscience)).
 
-You can run the testsuite by running `pytest` in the top-level directory. Dependencies for generating testing and generating local versions of the documentation can be installed using:
+You can run the testsuite by running `pytest` in the top-level directory.
+Dependencies for generating testing and generating local versions of the documentation can be installed using:
 
-`pip install pyrepseq[dev]`
+```bash
+pip install pyrepseq[dev]
+```
 
 You are cordially invited to [contribute](https://github.com/andim/pyrepseq/blob/master/CONTRIBUTING.md) to the further development of pyrepseq!
