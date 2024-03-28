@@ -4,7 +4,9 @@ import pandas as pd
 from pandas import DataFrame
 import scipy.optimize
 import scipy.special
+from scipy.spatial.distance import squareform
 import warnings
+import itertools
 from pyrepseq.util import convert_tuple_to_dataframe_if_necessary, ensure_numpy
 from typing import Iterable, Optional, Union
 
@@ -158,59 +160,7 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
     return np.sum(c[ind1_int] * c2[ind2_int]) / (len(array) * len(array2))
 
 
-def chao1(counts):
-    """Estimate richness from sampled counts."""
-    
-    if len(counts) == 1:
-        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
-    elif counts[1] == 0:
-        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
-    
-    return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
-
-def var_chao1(counts):
-    """Variance estimator for Chao1 richness."""
-     
-    f1 = counts[0]
-    
-    if len(counts) == 1:
-        return np.nan
-    elif counts[1] == 0:
-        return np.nan
-    
-    f2 = counts[1]
-    ratio = f1 / f2
-    return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
-
-def chao2(counts, m):
-    """Estimate richness from incidence data"""
-  
-    q1 = counts[0]
-    q2 = counts[1]
-  
-    if counts[1] == 0:
-        return np.sum(counts) + ((m-1)/m)*(q1*(q1-1))/2
-  
-    else:
-        return np.sum(counts) + ((m-1)/m)*(q1**2)/(2*q2)
-
-def var_chao2(counts, m):
-    """Variance estimator for Chao2 richness."""
-    
-    q1 = counts[0]
-    q2 = counts[1]
-    A = (m-1)/m
-    
-    if counts[1] == 0:
-        return (A*q1*(q1-1))/2 + (A**2*q1*(2*q1-1)**2)/4 - (A**2*q1**4)/(4*chao2(counts, m))
-  
-    else:
-        ratio = q1/q2
-        return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
-      
-  
-
-def pc_joint(df, on):
+def pc_joint(df, on, df_2 = None):
     """Joint coincidence probability estimator
     
     Parameters
@@ -225,8 +175,34 @@ def pc_joint(df, on):
         pc computed on the concatenation of each specified column in on
     
     """
-
-    return pc(df[on].sum(1))
+    
+    if df_2 is None:
+        return pc(df[on].sum(1))
+    
+    else:
+        return pc(df[on].sum(1), df_2[on].sum(1))
+    
+def pc_grouped_cross(df, by, on):
+   
+    groups = sorted(list(df.groupby(by)))
+    data = []
+    index = []
+    for ((name1, d1)), (name2, d2) in itertools.combinations(groups, 2):
+        if type(on) == list:
+            pc_cross_group = pc_joint(d1, on, d2)
+        else:
+            pc_cross_group = pc(d1[on], d2[on])
+            
+        index.append([name1, name2])
+        data.append(pc_cross_group)      
+    data = np.array(data)
+    
+    names = [name for name, dfg in groups]
+    data_square = squareform(data)
+    np.fill_diagonal(
+        data_square, np.nan
+    )
+    return pd.DataFrame(data_square, index=names, columns=names)
 
 def pc_conditional(df, by, on, weight_uniformly=True):
     """Conditional coincidence probability estimator
@@ -278,7 +254,6 @@ def stdpc(array):
     _, n = np.unique(array, return_counts=True)
     return stdpc_n(n)
 
-
 def varpc_n(n):
     "Variance estimator for Simpson's index"
     N = np.sum(n)
@@ -291,7 +266,6 @@ def varpc_n(n):
         + 2 / (N * (N - 1)) * (1 + beta) * p2_hat
     )
     return var
-
 
 def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
@@ -339,6 +313,56 @@ def stdpc_conditional(df, by, on, weight_uniformly=True):
     return np.sqrt(mean_variance+variance_mean)
 
 
+def chao1(counts):
+    """Estimate richness from sampled counts."""
+    
+    if len(counts) == 1:
+        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+    elif counts[1] == 0:
+        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+    
+    return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
+
+def var_chao1(counts):
+    """Variance estimator for Chao1 richness."""
+     
+    f1 = counts[0]
+    
+    if len(counts) == 1:
+        return np.nan
+    elif counts[1] == 0:
+        return np.nan
+    
+    f2 = counts[1]
+    ratio = f1 / f2
+    return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
+
+def chao2(counts, m):
+    """Estimate richness from incidence data"""
+  
+    q1 = counts[0]
+    q2 = counts[1]
+  
+    if counts[1] == 0:
+        return np.sum(counts) + ((m-1)/m)*(q1*(q1-1))/2
+  
+    else:
+        return np.sum(counts) + ((m-1)/m)*(q1**2)/(2*q2)
+
+def var_chao2(counts, m):
+    """Variance estimator for Chao2 richness."""
+    
+    q1 = counts[0]
+    q2 = counts[1]
+    A = (m-1)/m
+    
+    if counts[1] == 0:
+        return (A*q1*(q1-1))/2 + (A**2*q1*(2*q1-1)**2)/4 - (A**2*q1**4)/(4*chao2(counts, m))
+  
+    else:
+        ratio = q1/q2
+        return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
+      
 def jaccard_index(A, B):
     """
     Calculate the Jaccard index for two sets.

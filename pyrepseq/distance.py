@@ -125,7 +125,8 @@ def downsample(seqs: Union[Iterable[str], DataFrame], maxseqs: Optional[int] = N
     Random subset of maxseqs elements from the input collection.
     If maxseqs is None, returns the input collection without modification.
     """
-    if maxseqs is None:
+        
+    if maxseqs is None or seqs is None:
         return seqs
 
     if len(seqs) <= maxseqs:
@@ -274,7 +275,7 @@ def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
     for ((name1, d1)), (name2, d2) in itertools.combinations(groups, 2):
         pcg = pcDelta(d1[seq_columns], d2[seq_columns], **kwargs)
         index.append([name1, name2])
-        data.append(pcg)
+        data.append(pcg)      
     data = np.array(data)
     if condensed:
         return pd.DataFrame(
