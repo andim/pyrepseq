@@ -10,6 +10,8 @@ import itertools
 from pyrepseq.util import convert_tuple_to_dataframe_if_necessary, ensure_numpy
 from typing import Iterable, Optional, Union
 
+import pydiver
+
 
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
     """Draw samples from a discrete power-law.
@@ -267,6 +269,7 @@ def varpc_n(n):
     )
     return var
 
+
 def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
     return varpc_n(n) ** 0.5
@@ -274,7 +277,6 @@ def stdpc_n(n):
 
 def stdpc_joint(df, on):
     "Std.dev. estimator for joint Simpson's index"
-
     return stdpc(df[on].sum(1))
 
 
@@ -318,6 +320,7 @@ def chao1(counts):
     
     if len(counts) == 1:
         return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
+    
     elif counts[1] == 0:
         return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
     
@@ -362,9 +365,7 @@ def var_chao2(counts, m):
     else:
         ratio = q1/q2
         return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
-      
-  
-    
+        
 def pc_grouped_cross(df, by, on):
    
     groups = sorted(list(df.groupby(by)))
@@ -562,7 +563,3 @@ def overlap_coefficient(A, B):
     B = set(B)
     
     return len(A.intersection(B)) / min(len(A), len(B))
-<<<<<<< HEAD
-
-=======
->>>>>>> 849111b4e32e1cd6cc54fd33aaf91e3411a4ad82
