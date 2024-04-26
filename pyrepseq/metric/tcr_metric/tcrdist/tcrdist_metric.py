@@ -94,7 +94,7 @@ class AlphaCdr3Tcrdist(AbstractTcrdist):
     [Requires optional tcrdist dependency.]
     """
 
-    name = "Alpha CDR3 tcrdist"
+    name = "Alpha CDR3 TCRdist"
     distance_bins = range(0, 80 + 1, 2)
     _chains_to_compare = [TcrChain.ALPHA]
     _tcrdist_type = TcrdistType.CDR3
@@ -107,7 +107,7 @@ class BetaCdr3Tcrdist(AbstractTcrdist):
     [Requires optional tcrdist dependency.]
     """
 
-    name = "Beta CDR3 tcrdist"
+    name = "Beta CDR3 TCRdist"
     distance_bins = range(0, 80 + 1, 2)
     _chains_to_compare = [TcrChain.BETA]
     _tcrdist_type = TcrdistType.CDR3
@@ -120,7 +120,7 @@ class Cdr3Tcrdist(AbstractTcrdist):
     [Requires optional tcrdist dependency.]
     """
 
-    name = "CDR3 tcrdist"
+    name = "CDR3 TCRdist"
     distance_bins = range(0, 160 + 1, 2)
     _chains_to_compare = [TcrChain.ALPHA, TcrChain.BETA]
     _tcrdist_type = TcrdistType.CDR3
@@ -133,7 +133,7 @@ class AlphaTcrdist(AbstractTcrdist):
     [Requires optional tcrdist dependency.]
     """
 
-    name = "Alpha tcrdist"
+    name = "Alpha TCRdist"
     distance_bins = range(0, 300 + 1, 5)
     _chains_to_compare = [TcrChain.ALPHA]
     _tcrdist_type = TcrdistType.FULL
@@ -146,7 +146,7 @@ class BetaTcrdist(AbstractTcrdist):
     [Requires optional tcrdist dependency.]
     """
 
-    name = "Beta tcrdist"
+    name = "Beta TCRdist"
     distance_bins = range(0, 300 + 1, 5)
     _chains_to_compare = [TcrChain.BETA]
     _tcrdist_type = TcrdistType.FULL
@@ -160,7 +160,7 @@ class Tcrdist(AbstractTcrdist):
     [Requires optional tcrdist dependency.]
     """
 
-    name = "tcrdist"
+    name = "TCRdist"
     distance_bins = range(0, 600 + 1, 5)
     _chains_to_compare = [TcrChain.ALPHA, TcrChain.BETA]
     _tcrdist_type = TcrdistType.FULL
