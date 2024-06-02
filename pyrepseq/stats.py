@@ -316,15 +316,19 @@ def stdpc_conditional(df, by, on, weight_uniformly=True):
 
 
 def chao1(counts):
-    """Estimate richness from sampled counts."""
+    """Estimate richness from sampled counts.
+
+    hatSchao1 = Sobs + f1^2/(2 f2)
+    """
     
-    if len(counts) == 1:
-        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
-    
-    elif counts[1] == 0:
-        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
-    
-    return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
+    f1 = counts[0]
+    Sobs = np.sum(counts)
+
+    if (len(counts) == 1) or (counts[1] == 0):
+        return Sobs + (f1*(f1-1))/2
+
+    f2 = counts[1]
+    return Sobs + f1**2/(2*f2)
 
 def var_chao1(counts):
     """Variance estimator for Chao1 richness."""
@@ -333,7 +337,7 @@ def var_chao1(counts):
     
     if len(counts) == 1:
         return np.nan
-    elif counts[1] == 0:
+    if counts[1] == 0:
         return np.nan
     
     f2 = counts[1]
