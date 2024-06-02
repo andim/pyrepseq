@@ -171,7 +171,7 @@ def var_chao1(counts):
      
     f1 = counts[0]
     if (len(counts)==1) or (counts[1] == 0):
-        return np.inf
+        return np.nan
     f2 = counts[1]
     ratio = f1 / f2
     return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
