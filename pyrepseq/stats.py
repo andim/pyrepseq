@@ -4,10 +4,11 @@ import pandas as pd
 from pandas import DataFrame
 import scipy.optimize
 import scipy.special
+from scipy.spatial.distance import squareform
 import warnings
+import itertools
 from pyrepseq.util import convert_tuple_to_dataframe_if_necessary, ensure_numpy
 from typing import Iterable, Optional, Union
-
 
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
     """Draw samples from a discrete power-law.
@@ -157,54 +158,7 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
     )
     return np.sum(c[ind1_int] * c2[ind2_int]) / (len(array) * len(array2))
 
-
-def chao1(counts):
-    """Estimate richness from sampled counts."""
-    
-    if (len(counts)==1) or (counts[1] == 0):
-        return np.sum(counts) + (counts[0]* (counts[0] - 1)) / 2
-        
-    return np.sum(counts) + counts[0] ** 2 / (2 * counts[1])
-
-def var_chao1(counts):
-    """Variance estimator for Chao1 richness."""
-     
-    f1 = counts[0]
-    if (len(counts)==1) or (counts[1] == 0):
-        return np.nan
-    f2 = counts[1]
-    ratio = f1 / f2
-    return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
-
-def chao2(counts, m):
-    """Estimate richness from incidence data"""
-  
-    q1 = counts[0]
-    q2 = counts[1]
-  
-    if counts[1] == 0:
-        return np.sum(counts) + ((m-1)/m)*(q1*(q1-1))/2
-  
-    else:
-        return np.sum(counts) + ((m-1)/m)*(q1**2)/(2*q2)
-
-def var_chao2(counts, m):
-    """Variance estimator for Chao2 richness."""
-    
-    q1 = counts[0]
-    q2 = counts[1]
-    A = (m-1)/m
-    
-    if counts[1] == 0:
-        return (A*q1*(q1-1))/2 + (A**2*q1*(2*q1-1)**2)/4 - (A**2*q1**4)/(4*chao2(counts, m))
-  
-    else:
-        ratio = q1/q2
-        return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
-      
-  
-
-def pc_joint(df, on):
+def pc_joint(df, on, df_2=None, gap_token='_'):
     """Joint coincidence probability estimator
     
     Parameters
@@ -212,70 +166,101 @@ def pc_joint(df, on):
     df : pandas DataFrame
     on: list of strings
         columns on which to obtain a joint probability of coincidence
+    df_2: None or pd.DataFrame
+        second DataFrame for cross-coincidence calculations
+    gap_token: string
+        character to be added for feature concatenization
 
     Returns
     ----------
     float:
-        pc computed on the concatenations of each specified column in on
+        pc computed on the concatenation of each specified column in on
     
     """
+    
+    if df_2 is None:
+        return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
+    return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1), df_2[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
+    
+def pc_grouped_cross(df, by, on):
+    """Cross-group coincidence probability estimator
 
-    return pc(df[on].sum(1))
+    Parameters
+    ----------
+    df : pandas DataFrame
+    by : mapping, function, label, or list of labels
+      see pd.DataFrame.groupby
+    on: list of strings
+        columns on which to obtain a joint probability of coincidence
 
-def pc_conditional(df, by, on, take_mean=True, weight_uniformly=False):
+    Returns
+    ----------
+    pd.DataFrame:
+        pc computed on the concatenation of each specified column in on
+    
+    """
+    groups = sorted(list(df.groupby(by)))
+    data = []
+    index = []
+    for ((name1, d1)), (name2, d2) in itertools.combinations(groups, 2):
+        if type(on) == list:
+            pc_cross_group = pc_joint(d1, on, d2)
+        else:
+            pc_cross_group = pc(d1[on], d2[on])
+            
+        index.append([name1, name2])
+        data.append(pc_cross_group)      
+    data = np.array(data)
+    
+    names = [name for name, dfg in groups]
+    data_square = squareform(data)
+    np.fill_diagonal(
+        data_square, np.nan
+    )
+    return pd.DataFrame(data_square, index=names, columns=names)
+
+def pc_conditional(df, by, on, group_weights=None):
     """Conditional coincidence probability estimator
     
     Parameters
     ----------
     df : pandas DataFrame
     by: list
-        conditioning parameters used to group input data frame
+        conditioning parameters used to group input dataframe
     on: string/list of strings
         column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
-        then pc is computed on the concatenations of each specified column
-    take_mean: bool
-        specify wether to take the average once pc has been computed for each specified group
-
+        then joint pc is computed on the concatenations of each specified column
+    group_weights: array-like
+        weight groups non-uniformly according to square of these values
+    
     Returns
     ----------: 
     pandas DataFrame/float:
-        pc of df[on] computed over each group specified in by.
-        if take_mean=True then the average of these group by pcs is returned
+        pc of df[on] averaged over groups 
     """
     
     if type(by) == list and len(by) == 1:
         by = by[0]
         
-    #Mask df entries where pc will return nan
+    #Mask df entries where pc cannot be computed
     df = df.groupby(by).filter(lambda x: len(x) > 1)
     if len(df) < 2:
         return np.nan
         
     if type(on) == list:
-        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x,on))
+        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x, on))
 
     else:
         conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
         
-    if take_mean:
-        if not weight_uniformly:
-            return np.mean(conditional_pcs)
-
-        group_weights =  df[by].value_counts(normalize=True)
-        adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
-        
-        return np.sum(adjusted_group_weights*conditional_pcs)
-    
+    if group_weights is None:
+        group_weights = np.ones(len(df[by].value_counts()))
     else:
-        return conditional_pcs
-
-
-def stdpc(array):
-    "Std.dev. estimator for Simpson's index"
-    array = np.asarray(array)
-    _, n = np.unique(array, return_counts=True)
-    return stdpc_n(n)
-
+        group_weights = np.asarray(group_weights)
+    
+    adjusted_group_weights = (group_weights**2)/np.sum(group_weights**2)
+        
+    return np.sum(adjusted_group_weights*conditional_pcs)
 
 def varpc_n(n):
     "Variance estimator for Simpson's index"
@@ -293,9 +278,83 @@ def varpc_n(n):
 
 def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
-    return varpc_n(n) ** 0.5
+    
+    return varpc_n(n)** 0.5
+
+def stdpc(array):
+    "Std.dev. estimator for Simpson's index"
+    array = np.asarray(array)
+    _, n = np.unique(array, return_counts=True)
+    return stdpc_n(n)
 
 
+def stdpc_joint(df, on, gap_token = '_'):
+    "Std.dev. estimator for joint Simpson's index"
+
+    return stdpc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
+
+def chao1(counts):
+    """Estimate richness from sampled counts.
+
+    hatSchao1 = Sobs + f1^2/(2 f2)
+    """
+    
+    f1 = counts[0]
+    Sobs = np.sum(counts)
+
+    if (len(counts) == 1) or (counts[1] == 0):
+        return Sobs + (f1*(f1-1))/2
+
+    f2 = counts[1]
+    return Sobs + f1**2/(2*f2)
+
+def var_chao1(counts):
+    """Variance estimator for Chao1 richness."""
+     
+    f1 = counts[0]
+    
+    if len(counts) == 1:
+        return np.nan
+    if counts[1] == 0:
+        return np.nan
+    
+    f2 = counts[1]
+    ratio = f1 / f2
+    return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
+
+def chao2(counts, m):
+    """Estimate richness from incidence data
+
+    counts: incidence count vector
+    m: number of replicates
+    """
+  
+    q1 = counts[0]
+    Sobs = np.sum(counts)
+
+    if (len(counts) == 1) or (counts[1] == 0):
+        return np.nan
+
+    q2 = counts[1]
+    return Sobs + q1**2/(2*q2) 
+
+def var_chao2(counts, m):
+    """Variance estimator for Chao2 richness.
+
+    counts: incidence count vector
+    m: number of replicates
+    """
+    
+    q1 = counts[0]
+    Sobs = np.sum(counts)
+
+    if (len(counts) == 1) or (counts[1] == 0):
+        return np.nan
+    
+    ratio = q1/q2
+    return q2*(0.5*ratio**2+ratio**3+0.25*ratio**4)
+        
+        
 def jaccard_index(A, B):
     """
     Calculate the Jaccard index for two sets.
@@ -352,78 +411,7 @@ def overlap_coefficient(A, B):
     B = B.dropna()
     A = set(A)
     B = set(B)
+    if len(A) == 0 or len(B) == 0:
+        return np.nan
+    
     return len(A.intersection(B)) / min(len(A), len(B))
-
-def shannon_entropy(df, features, by=None, base=2.0):
-    """Compute Shannon entropies
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    features: list
-    by: string/list of strings
-    base: float
-
-    Returns
-    ----------: 
-    float
-    """
-    
-    if base is not None and base <= 0:
-        raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-        
-    if by is None:
-        probabilities = df[features].value_counts(normalize=True)
-        entropy  = -(probabilities*np.log(probabilities)).sum()
-    
-    else:
-        if type(by) == list and len(by) > 1:
-            by = by[0]
-            
-        marginal_probabilities = df[by].value_counts(normalize=True)
-        
-        if type(by) != list:
-            joint_probabilities = df[features+[by]].value_counts(normalize=True)
-        else:
-            joint_probabilities = df[features+by].value_counts(normalize=True)
-
-        entropy = -(joint_probabilities*np.log(joint_probabilities/marginal_probabilities)).sum()
-        
-    if base is not None:
-        entropy /= np.log(base) 
-        
-    return entropy 
-
-def renyi2_entropy(df, features, by=None, base=2.0):
-    """Compute Renyi-Simpson entropies
-    
-    Parameters
-    ----------
-    df : pandas DataFrame
-    features: list
-    by: string/list of strings
-    base: float
-
-    Returns
-    ----------: 
-    float
-    """
-    
-    if base is not None and base <= 0:
-        raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-            
-    if not by:
-        entropy = -np.log(pc_joint(df, features))
-    else:
-        entropy = -np.log(pc_conditional(df, by, features))
-    
-    if base is not None:
-        entropy /= np.log(base) 
-    
-    return entropy

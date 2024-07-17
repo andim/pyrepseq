@@ -2,8 +2,6 @@ build/
 *.egg-info/
 /.venv
 __pycache__
-<<<<<<< HEAD
 .DS_Store
-=======
 /.ropeproject
->>>>>>> main
+

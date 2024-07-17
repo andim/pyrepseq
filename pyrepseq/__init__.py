@@ -4,6 +4,8 @@ from .stats import *
 from .nn import *
 from .util import *
 from .clustering import *
+from .entropy import *
 from . import plotting 
 from . import metric
+from . import plotting 
 from .version import __version__

@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import pyrepseq as prs
 from pytest import mark
 
@@ -51,3 +52,23 @@ def test_with_two_dfs(mock_data_df):
     result = prs.pc(mock_data_df, mock_data_df)
     expected = 1 / len(mock_data_df)
     assert result == expected
+
+df_numeric = pd.DataFrame(columns=['A', 'B'], data=[[1, 1],
+                                                [1, 1],
+                                                [1, 2]])
+df_string = pd.DataFrame(columns=['A', 'B'], data=[['1', '1'],
+                                            ['1', '1'],
+                                            ['1', '2']])
+@mark.parametrize("df", [df_numeric, df_string])
+def test_pc_joint(df):
+    assert prs.pc_joint(df, on=['A', 'B']) == 1/3.
+
+@mark.parametrize("df", [df_numeric, df_string])
+def test_pc_conditional(df):
+    assert prs.pc_conditional(df, by='A', on='B') == 1/3.
+    assert prs.pc_conditional(df, by='B', on='A') == 1.0
+
+@mark.parametrize("df", [df_numeric, df_string])
+def test_renyi2(df):
+    assert prs.renyi2_entropy(df, features=['A', 'B']) == -np.log2(1/3.)
+    assert prs.renyi2_entropy(df, features='A', by='B') == 0

@@ -539,7 +539,7 @@ class HandlerTupleOffset(mpl.legend_handler.HandlerTuple):
 
 
 def density_scatter(
-    x, y, ax=None, discrete=False, sort=True, bins=20, trans=None, **kwargs
+    x, y, ax=None, discrete=False, sort=True, bins=20, trans=None, cbar=False, **kwargs
 ):
     """
     Scatter plot with color indicating point density estimated by local binning.
@@ -587,5 +587,7 @@ def density_scatter(
         idx = z.argsort()
         x, y, z = x[idx], y[idx], z[idx]
 
-    ax.scatter(x, y, c=z, **kwargs)
+    sc = ax.scatter(x, y, c=z, **kwargs)
+    if cbar:
+        plt.colorbar(sc, ax=ax, label='Density')
     return ax

@@ -125,6 +125,7 @@ def downsample(seqs: Union[Iterable[str], DataFrame, None], maxseqs: Optional[in
     Random subset of maxseqs elements from the input collection.
     If maxseqs is None, returns the input collection without modification.
     """
+        
     if maxseqs is None or seqs is None:
         return seqs
 
