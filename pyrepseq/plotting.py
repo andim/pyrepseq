@@ -18,6 +18,8 @@ def rankfrequency(
     ax=None,
     normalize_x=True,
     normalize_y=False,
+    transform_x=None,
+    transform_y=None,
     log_x=True,
     log_y=True,
     scalex=1.0,
@@ -37,6 +39,10 @@ def rankfrequency(
         whether to normalize counts to relative frequencies
     normalize_y: bool, default:False
         whether to normalize ranks to cumulative probabilities
+    transform_x: function, default:None
+        transform to apply to x-values before plotting
+    transform_y: function, default:None
+        transform to apply to y-values before plotting
 
     Returns
     -------
@@ -55,9 +61,14 @@ def rankfrequency(
         norm = sorted_data.size
     else:
         norm = 1
+    if transform_x is None:
+        transform_x = lambda x: x
+    if transform_y is None:
+        transform_y = lambda x: x
+    
     ret = ax.step(
-        sorted_data[::-1] * scalex,
-        scaley * np.arange(sorted_data.size) / norm,
+        transform_x(sorted_data[::-1] * scalex),
+        transform_y(scaley * np.arange(sorted_data.size) / norm),
         **kwargs,
     )
     if log_x:
