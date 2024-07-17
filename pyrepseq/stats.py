@@ -414,4 +414,4 @@ def overlap_coefficient(A, B):
     if len(A) == 0 or len(B) == 0:
         return np.nan
     
-    return len(A.intersection(B)) #/ min(len(A), len(B))
+    return len(A.intersection(B)) / min(len(A), len(B))
