@@ -10,8 +10,6 @@ import itertools
 from pyrepseq.util import convert_tuple_to_dataframe_if_necessary, ensure_numpy
 from typing import Iterable, Optional, Union
 
-import pydiver
-
 def powerlaw_sample(size=1, xmin=1.0, alpha=2.0):
     """Draw samples from a discrete power-law.
 
@@ -160,8 +158,7 @@ def pc(array: Iterable, array2: Optional[Iterable] = None):
     )
     return np.sum(c[ind1_int] * c2[ind2_int]) / (len(array) * len(array2))
 
-
-def pc_joint(df, on, df_2 = None, gap_token = '_'):
+def pc_joint(df, on, df_2=None, gap_token='_'):
     """Joint coincidence probability estimator
     
     Parameters
@@ -179,12 +176,29 @@ def pc_joint(df, on, df_2 = None, gap_token = '_'):
     
     if df_2 is None:
         return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
+    return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1), df_2[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
     
-    else:
-        return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1), df_2[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
-    
+
+def test():
+    return 1
+
 def pc_grouped_cross(df, by, on):
-   
+    """Cross-group coincidence probability estimator
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+    by : mapping, function, label, or list of labels
+      see pd.DataFrame.groupby
+    on: list of strings
+        columns on which to obtain a joint probability of coincidence
+
+    Returns
+    ----------
+    pd.DataFrame:
+        pc computed on the concatenation of each specified column in on
+    
+    """
     groups = sorted(list(df.groupby(by)))
     data = []
     index = []
@@ -205,7 +219,7 @@ def pc_grouped_cross(df, by, on):
     )
     return pd.DataFrame(data_square, index=names, columns=names)
 
-def pc_conditional(df, by, on, weight_uniformly=True):
+def pc_conditional(df, by, on, group_weights=None):
     """Conditional coincidence probability estimator
     
     Parameters
@@ -216,13 +230,13 @@ def pc_conditional(df, by, on, weight_uniformly=True):
     on: string/list of strings
         column or columns to compute probability of coincidence or joint probability of coincidence on. If type(on) == list 
         then joint pc is computed on the concatenations of each specified column
-    weight_uniformly: bool
-        treat each group created by conditioning equally if true or weight according to group size if false
+    group_weights: array-like
+        weight groups non-uniformly according to square of these values
     
     Returns
     ----------: 
     pandas DataFrame/float:
-        pc of df[on] computed over each group specified in by and averaged with a non-conventional weighting factor
+        pc of df[on] averaged over groups 
     """
     
     if type(by) == list and len(by) == 1:
@@ -239,13 +253,12 @@ def pc_conditional(df, by, on, weight_uniformly=True):
     else:
         conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
         
-    if weight_uniformly:
+    if group_weights is None:
         group_weights = np.ones(len(df[by].value_counts()))
-               
-    else: 
-        group_weights =  df[by].value_counts(normalize=True)
+    else:
+        group_weights = np.asarray(group_weights)
     
-    adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
+    adjusted_group_weights = (group_weights**2)/np.sum(group_weights**2)
         
     return np.sum(adjusted_group_weights*conditional_pcs)
 
@@ -263,58 +276,22 @@ def varpc_n(n):
     return var
 
 
-def stdpc_n(n, poisson_bound=False):
+def stdpc_n(n):
     "Std.dev. estimator for Simpson's index"
     
-    return pydiver.varpc(n, poisson_bound=poisson_bound)** 0.5
+    return varpc_n(n)** 0.5
 
-def stdpc(array, poisson_bound=False):
+def stdpc(array):
     "Std.dev. estimator for Simpson's index"
     array = np.asarray(array)
     _, n = np.unique(array, return_counts=True)
-    return stdpc_n(n, poisson_bound=poisson_bound)
+    return stdpc_n(n)
 
 
-def stdpc_joint(df, on, poisson_bound=False, gap_token = '_'):
+def stdpc_joint(df, on, gap_token = '_'):
     "Std.dev. estimator for joint Simpson's index"
 
-    return stdpc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1), poisson_bound=poisson_bound)
-
-
-def stdpc_conditional(df, by, on, weight_uniformly=True):
-    """Std.dev. estimator for conditional probability of coincidence
-        !!Still to be developed!!
-    """
-    
-    if type(by) == list and len(by) == 1:
-        by = by[0]
-        
-    #Mask df entries where pc will return nan
-    df = df.groupby(by).filter(lambda x: len(x) > 1)
-    if len(df) < 2:
-        return np.nan
-        
-    if type(on) == list:
-        conditional_pcs = df.groupby(by).apply(lambda x: pc_joint(x, on))
-        conditional_stdpcs = df.groupby(by).apply(lambda x: stdpc_joint(x, on))
-
-    else:
-        conditional_pcs = df.groupby(by).apply(lambda x: pc(x[on]))
-        conditional_stdpcs = df.groupby(by).apply(lambda x: stdpc(x[on]))
-        
-    if weight_uniformly:
-        group_weights = np.ones(len(df[by].value_counts()))
-               
-    else: 
-        group_weights =  df[by].value_counts(normalize=True)
-    
-    adjusted_group_weights = (group_weights**2)/sum(group_weights**2)
-   
-    mean_variance = np.sum(adjusted_group_weights*conditional_stdpcs**2)
-    variance_mean = np.sum(adjusted_group_weights*conditional_pcs**2) - pc_conditional(df, by, on, weight_uniformly)**2
-            
-    return np.sqrt(mean_variance+variance_mean)
-
+    return stdpc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
 
 def chao1(counts):
     """Estimate richness from sampled counts.
@@ -346,30 +323,36 @@ def var_chao1(counts):
     return f2 * ((ratio / 4) ** 4 + ratio**3 + (ratio / 2) ** 2)
 
 def chao2(counts, m):
-    """Estimate richness from incidence data"""
+    """Estimate richness from incidence data
+
+    counts: incidence count vector
+    m: number of replicates
+    """
   
     q1 = counts[0]
+    Sobs = np.sum(counts)
+
+    if (len(counts) == 1) or (counts[1] == 0):
+        return np.nan
+
     q2 = counts[1]
-  
-    if counts[1] == 0:
-        return np.sum(counts) + ((m-1)/m)*(q1*(q1-1))/2
-  
-    else:
-        return np.sum(counts) + ((m-1)/m)*(q1**2)/(2*q2)
+    return Sobs + q1**2/(2*q2) 
 
 def var_chao2(counts, m):
-    """Variance estimator for Chao2 richness."""
+    """Variance estimator for Chao2 richness.
+
+    counts: incidence count vector
+    m: number of replicates
+    """
     
     q1 = counts[0]
-    q2 = counts[1]
-    A = (m-1)/m
+    Sobs = np.sum(counts)
+
+    if (len(counts) == 1) or (counts[1] == 0):
+        return np.nan
     
-    if counts[1] == 0:
-        return (A*q1*(q1-1))/2 + (A**2*q1*(2*q1-1)**2)/4 - (A**2*q1**4)/(4*chao2(counts, m))
-  
-    else:
-        ratio = q1/q2
-        return q2*(A/2*ratio**2+A**2*ratio**3+1/4*A**2*ratio**4)
+    ratio = q1/q2
+    return q2*(0.5*ratio**2+ratio**3+0.25*ratio**4)
         
         
 def jaccard_index(A, B):
