@@ -166,6 +166,10 @@ def pc_joint(df, on, df_2=None, gap_token='_'):
     df : pandas DataFrame
     on: list of strings
         columns on which to obtain a joint probability of coincidence
+    df_2: None or pd.DataFrame
+        second DataFrame for cross-coincidence calculations
+    gap_token: string
+        character to be added for feature concatenization
 
     Returns
     ----------
@@ -178,10 +182,6 @@ def pc_joint(df, on, df_2=None, gap_token='_'):
         return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
     return pc(df[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1), df_2[on].apply(lambda x: gap_token.join(x.astype(str)), axis=1))
     
-
-def test():
-    return 1
-
 def pc_grouped_cross(df, by, on):
     """Cross-group coincidence probability estimator
 

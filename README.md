@@ -29,7 +29,7 @@ The quickest way to install Pyrepseq is via pip:
 pip install pyrepseq[full]
 ```
 
-This will install pyrepseq with all optional dependencies.
+This will install pyrepseq with all optional dependencies. Depending on whether dependencies are already installed this might take a few minutes.
 You can also install the leading edge development version using:
 
 ```bash
