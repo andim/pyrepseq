@@ -275,7 +275,7 @@ def pcDelta_grouped_cross(df, by, seq_columns, condensed=False, **kwargs):
     for ((name1, d1)), (name2, d2) in itertools.combinations(groups, 2):
         pcg = pcDelta(d1[seq_columns], d2[seq_columns], **kwargs)
         index.append([name1, name2])
-        data.append(pcg)      
+        data.append(pcg)
     data = np.array(data)
     if condensed:
         return pd.DataFrame(

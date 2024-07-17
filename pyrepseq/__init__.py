@@ -7,6 +7,5 @@ from .clustering import *
 from .entropy import *
 from . import plotting 
 from . import metric
-from .entropy import *
 from . import plotting 
 from .version import __version__
