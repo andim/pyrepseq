@@ -20,12 +20,14 @@ def renyi2_entropy(df, features, by=None, base=2.0, **kwargs):
         
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-            
+        
     if not by:
-        entropy = -np.log(pc_joint(df, features))
+        if type(features) != list:
+            entropy = -np.log(pc(df[features]))
+            
+        else:
+            entropy = -np.log(pc_joint(df, features))
+        
     else:
         entropy = -np.log(pc_conditional(df, by, features, **kwargs))
     
@@ -38,14 +40,16 @@ def stdrenyi2_entropy(df, features, by=None, base=2.0, **kwargs):
     
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
-    
-    if type(features) != list:
-        features = [features]
-            
+          
     if not by:
-        stdentropy = stdpc_joint(df, features, **kwargs)/pc_joint(df, features, **kwargs)
-        
+        if type(features) != list:
+            stdentropy = stdpc(df[features])/pc(df[features])
+            
+        else:
+            stdentropy = stdpc_joint(df, features, **kwargs)/pc_joint(df, features)
+    
     else:
+        print("!Feature not implemented!")
         stdentropy = stdpc_conditional(df, by, features, **kwargs)/pc_conditional(df, by, features, **kwargs)
     
     if base is not None:
