@@ -7,7 +7,7 @@ from pandas import DataFrame
 from warnings import warn
 
 
-def align_seqs(seqs):
+def align_seqs(seqs, debug=False):
     """Align multiple sequences using mafft-linsi with default parameters.
 
     Requires external dependency mafft-linsi to be installed.
@@ -15,6 +15,8 @@ def align_seqs(seqs):
     Parameters
     ----------
     seqs: iterable of strings
+    debug: Boolean
+        if True, prints mafft-linsi output
 
     Returns
     -------
@@ -25,9 +27,14 @@ def align_seqs(seqs):
     for i, seq in enumerate(seqs):
         seq_str += f"> seq {i}\n"
         seq_str += f"{seq}\n"
-    child = subprocess.Popen(
-        ["mafft-linsi", "--quiet", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
-    )
+    if debug:
+        child = subprocess.Popen(
+            ["mafft-linsi", "--amino", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
+    else:
+        child = subprocess.Popen(
+            ["mafft-linsi", '--quiet', "--amino", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
     child.stdin.write(seq_str.encode())
     child_out = child.communicate()[0].decode("utf8")
     seqs_aligned = list(SeqIO.parse(StringIO(child_out), "fasta"))
