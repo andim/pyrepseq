@@ -160,3 +160,10 @@ def test_bulk(algorithm):
 
     fuzzy_version = algorithm(test_input, max_edits=2, n_cpu=4)
     assert set_equal(fallback_cache, fuzzy_version)
+
+def test_symdel_progress():
+    test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
+    test_input2 = ["CDDD", "CAAK"]
+    test_output = [(1,0,1), (1,2,1), (0,3,1),(1,4,0)]
+    assert set_equal(symdel(test_input1, max_edits=1,
+                               seqs2=test_input2, progress=True), test_output)
