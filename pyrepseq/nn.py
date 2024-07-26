@@ -1,14 +1,13 @@
 from scipy.spatial import KDTree
 import numpy as np
 import pandas as pd
-import tqdm
+import tqdm.auto
 from rapidfuzz.distance.Levenshtein import distance as levenshtein
 from rapidfuzz.distance.Hamming import distance as hamming
 from scipy.sparse import coo_matrix
 from rapidfuzz.process import extract
 from multiprocessing import Pool
 
-import tqdm.auto
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
 from .util import ensure_numpy
