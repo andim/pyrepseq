@@ -48,6 +48,7 @@ REQUIRES = [
     "logomaker",
     "biopython",
     "tidytcells~=2.0",
+    "tqdm",
 ]
 
 DEV_DEPENDENCIES = [

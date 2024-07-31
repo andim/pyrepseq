@@ -1,11 +1,13 @@
 from scipy.spatial import KDTree
 import numpy as np
 import pandas as pd
+import tqdm.auto
 from rapidfuzz.distance.Levenshtein import distance as levenshtein
 from rapidfuzz.distance.Hamming import distance as hamming
 from scipy.sparse import coo_matrix
 from rapidfuzz.process import extract
 from multiprocessing import Pool
+
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
 from .util import ensure_numpy
@@ -358,7 +360,7 @@ def _hamming_replacement(seq_a, seq_b):
 
 
 def _symdel_lookup(index, seqs, max_edits, max_returns,
-                    custom_distance, max_custom_dist, seqs2, single_seqs_mode):
+                    custom_distance, max_custom_dist, seqs2, single_seqs_mode, progress):
     ans = []
     threshold = max_custom_dist
     if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
@@ -369,7 +371,12 @@ def _symdel_lookup(index, seqs, max_edits, max_returns,
     elif custom_distance is None:
         custom_distance = levenshtein
 
-    for i, seq in enumerate(seqs2):
+    if progress:
+        seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
+    else:
+        seqs2_loop = enumerate(seqs2)
+
+    for i, seq in seqs2_loop:
         j_indices, count = set(), 0
         for comb in _comb_gen(seq, max_edits):
             if comb not in index:
@@ -395,9 +402,9 @@ def _symdel_lookup(index, seqs, max_edits, max_returns,
 
 def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
              custom_distance=None, max_custom_distance=float('inf'),
-             output_type='triplets', seqs2=None):
+             output_type='triplets', seqs2=None, progress=False):
     """
-    List all neighboring CDR3B sequences efficiently within the given distance.
+    List all neighboring sequences efficiently within the given distance.
     This is an improved version over the hash-based.
 
     If seqs2 is not provided, every sequences are compared against every other sequences resulting in N(seqs)**2 combinations.
@@ -421,6 +428,8 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
         format of returns, can be "triplets", "coo_matrix", or "ndarray"
     seq2 : iterable of strings or None
         another list of CDR3B sequences to compare against
+    progress : bool
+        show progress bar
 
     Returns
     -------
@@ -445,7 +454,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     seqs2_patch = seqs if single_seqs_mode else seqs2
     index = _generate_index(seqs, max_edits)
     triplets = _symdel_lookup(index, seqs, max_edits, max_returns,
-                               custom_distance, max_custom_distance, seqs2_patch, single_seqs_mode)
+                               custom_distance, max_custom_distance, seqs2_patch, single_seqs_mode, progress)
     return _make_output(triplets, output_type, seqs, seqs2)
 
 
