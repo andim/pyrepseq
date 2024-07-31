@@ -511,7 +511,8 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
 
     Parameters
     ----------
-    chain: 'alpha' or 'beta'
+    chain: 'alpha', 'beta', or 'both'
+        if both finds candidate neighbors using the beta chain, but filter on paired sequence at the end
     max_edits : only return neighbors up to <= this edit distance
     edit_on_trimmed : boolean
         apply TCRdist trimming on sequences before calculating edit distance
@@ -525,6 +526,13 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
     sparse matrix in (i, j, dist) format
 
     """
+    
+    if chain == 'both':
+        chain = 'beta'
+        both = True
+    else: 
+        both = False
+
     chain_letter = chain[0].upper()
 
     # to reproduce standard TCRdist we multiply the CDR3 distance with three
@@ -556,6 +564,22 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
     tcrdist_cdr3 = pwseqdist.apply_pairwise_sparse(metric=pwseqdist.metrics.nb_vector_tcrdist,
                                 seqs=np.asarray(df[f'CDR3{chain_letter}']), pairs=edges,
                                 **tcrdist_kwargs_this)
+
+    if both:
+        chain = 'alpha'
+        chain_letter = chain[0].upper()
+        folder = os.path.dirname(__file__)
+        path = os.path.join(folder, "data", f"vdists_{chain}.csv")
+        vdists = pd.read_csv(path, index_col=0)
+        tcrdist_v += _lookup(vdists,
+                            df[f'TR{chain_letter}V'].iloc[edges[:, 0]],
+                            df[f'TR{chain_letter}V'].iloc[edges[:, 1]])
+
+        tcrdist_cdr3 += pwseqdist.apply_pairwise_sparse(metric=pwseqdist.metrics.nb_vector_tcrdist,
+                                seqs=np.asarray(df[f'CDR3{chain_letter}']), pairs=edges,
+                                **tcrdist_kwargs_this)
+
+
     tcrdist = tcrdist_v + tcrdist_cdr3
     neighbors_arr[:, 2] = tcrdist
 
