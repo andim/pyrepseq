@@ -117,7 +117,7 @@ def kdtree(
 
     Parameters
     ----------
-    strings : iterable of strings
+    seqs : iterable of strings
         list of CDR3B sequences
     max_edits : int
         maximum edit distance defining the neighbors
@@ -279,7 +279,7 @@ def hash_based(
 
     Parameters
     ----------
-    strings : iterable of strings
+    seqs : iterable of strings
         list of CDR3B sequences
     max_edits : int
         maximum edit distance defining the neighbors
@@ -412,7 +412,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
 
     Parameters
     ----------
-    strings : iterable of strings
+    seqs : iterable of strings
         list of CDR3B sequences
     max_edits : int
         maximum edit distance defining the neighbors
@@ -474,7 +474,7 @@ def nearest_neighbor(seqs, max_edits=1, max_returns=None, n_cpu=1,
 
     Parameters
     ----------
-    strings : iterable of strings
+    seqs : iterable of strings
         list of CDR3B sequences
     max_edits : int
         maximum edit distance defining the neighbors
