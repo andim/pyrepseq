@@ -1,5 +1,5 @@
 import pytest
-from pyrepseq.nn import hash_based, kdtree, symdel, nearest_neighbor_tcrdist
+from pyrepseq.nn import hash_based, kdtree, symdel, nearest_neighbor_tcrdist, symdel_manual_lookup
 from itertools import product
 from Levenshtein import distance
 import numpy as np
@@ -92,6 +92,15 @@ def test_custom_distance(algorithm):
     assert set_equal(algorithm(test_input, max_edits=1, max_returns=1,
                                custom_distance=distance,
                                max_custom_distance=0), test_output)
+
+
+def test_symdel_manual_lookup():
+    test_input = ["CAAA", "CDDD", "CADA", "CAAK"]
+    test_output = [(0, 2, 1), (0, 3, 1), (2, 0, 1), (3, 0, 1)]
+
+    index = symdel(test_input, max_edits=1, output_type="hashmap")
+    result = symdel_manual_lookup(index, test_input, max_edits=1)
+    assert set_equal(result, test_output)
 
 
 def test_tcrdist():

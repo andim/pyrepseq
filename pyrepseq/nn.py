@@ -359,8 +359,42 @@ def _hamming_replacement(seq_a, seq_b):
     return hamming(seq_a, seq_b)
 
 
-def _symdel_lookup(index, seqs, max_edits, max_returns,
-                    custom_distance, max_custom_dist, seqs2, single_seqs_mode, progress):
+def symdel_manual_lookup(index, seqs, max_edits=1, max_returns=None,
+                        custom_distance=None, max_custom_dist=float('inf'),
+                        output_type='triplets', seqs2=None, progress=False):
+    """
+    Manually query the Symdel hashmap index
+
+    Parameters
+    ----------
+    index: multi-value hashmap
+        value returned by symdel(..., output_type="hashmap")
+    seqs : iterable of strings
+        list of CDR3B sequences
+    max_edits : int
+        maximum edit distance defining the neighbors
+    max_returns : int or None
+        maximum neighbor size
+    custom_distance : Function(str1, str2) or "hamming"
+        custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
+    max_custom_distance : float
+        maximum distance to include in the result, ignored if custom distance is not supplied
+    output_type: string
+        format of returns, can be "triplets", "coo_matrix", or "ndarray"
+    seq2 : iterable of strings or None
+        another list of CDR3B sequences to compare against
+    progress : bool
+        show progress bar
+
+    Returns
+    -------
+    neighbors : array of 3D-tuples, sparse matrix, or dense matrix
+        neigbors along with their edit distances according to the given output_type
+        if "triplets" returns are [(x_index, y_index, edit_distance)]
+        if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
+        if "ndarray" returns numpy's 2d array representing dense matrix
+    """
+
     ans = []
     threshold = max_custom_dist
     if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
@@ -371,10 +405,13 @@ def _symdel_lookup(index, seqs, max_edits, max_returns,
     elif custom_distance is None:
         custom_distance = levenshtein
 
+    single_seqs_mode = seqs2 is None
+    seqs2_patch = seqs if single_seqs_mode else seqs2
+
     if progress:
-        seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
+        seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2_patch), total=len(seqs2_patch))
     else:
-        seqs2_loop = enumerate(seqs2)
+        seqs2_loop = enumerate(seqs2_patch)
 
     for i, seq in seqs2_loop:
         j_indices, count = set(), 0
@@ -388,7 +425,7 @@ def _symdel_lookup(index, seqs, max_edits, max_returns,
             if i == j_index and single_seqs_mode:
                 continue
             try:
-                dist = custom_distance(seqs2[i], seqs[j_index])
+                dist = custom_distance(seqs2_patch[i], seqs[j_index])
                 if dist > threshold:
                     continue
                 if count >= max_returns:
@@ -397,7 +434,8 @@ def _symdel_lookup(index, seqs, max_edits, max_returns,
                 count += 1
             except:
                 continue
-    return ans
+
+    return _make_output(ans, output_type, seqs, seqs2)
 
 
 def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
@@ -425,7 +463,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     max_custom_distance : float
         maximum distance to include in the result, ignored if custom distance is not supplied
     output_type: string
-        format of returns, can be "triplets", "coo_matrix", or "ndarray"
+        format of returns, can be "triplets", "coo_matrix", "ndarray", or "hashmap"
     seq2 : iterable of strings or None
         another list of CDR3B sequences to compare against
     progress : bool
@@ -438,6 +476,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "triplets" returns are [(x_index, y_index, edit_distance)]
         if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
         if "ndarray" returns numpy's 2d array representing dense matrix
+        if "hashmap", return the hashmap database (which is faster for multiple queries) instead of neighbors. See "symdel_manual_lookup" function for more detail.
     """
 
     _check_common_input(
@@ -448,14 +487,15 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
         custom_distance,
         max_custom_distance,
         output_type,
-        seqs2
+        seqs2,
+        allow_hashmap=True
     )
-    single_seqs_mode = seqs2 is None
-    seqs2_patch = seqs if single_seqs_mode else seqs2
     index = _generate_index(seqs, max_edits)
-    triplets = _symdel_lookup(index, seqs, max_edits, max_returns,
-                               custom_distance, max_custom_distance, seqs2_patch, single_seqs_mode, progress)
-    return _make_output(triplets, output_type, seqs, seqs2)
+    if output_type == 'hashmap':
+        return index
+
+    return symdel_manual_lookup(index, seqs, max_edits, max_returns, custom_distance,
+                                max_custom_distance, output_type, seqs2, progress)
 
 
 # ===================================
@@ -604,7 +644,8 @@ def _flatten_array(nested_array):
 
 
 def _check_common_input(
-    seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist, output_type, seqs2=None
+    seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist, output_type, seqs2=None,
+    allow_hashmap=False
 ):
     assert len(seqs) > 0, "length must be greater than 0"
     try:
@@ -634,11 +675,19 @@ def _check_common_input(
     assert (
         type(max_cust_dist) in (int, float) and max_cust_dist >= 0
     ), "max_custom_distance must be a non-negative number"
-    assert output_type in {
-        "coo_matrix",
-        "triplets",
-        "ndarray",
-    }, "output must be either coo_matrix, triplets, or ndarray"
+    if allow_hashmap:
+        assert output_type in {
+            "coo_matrix",
+            "triplets",
+            "ndarray",
+            "hashmap"
+        }, "output must be either coo_matrix, triplets, ndarray, or hashmap"
+    else:
+        assert output_type in {
+            "coo_matrix",
+            "triplets",
+            "ndarray",
+        }, "output must be either coo_matrix, triplets, or ndarray"
     try:
         for seq in seqs2:
             assert type(seq) in {
