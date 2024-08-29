@@ -83,13 +83,13 @@ def test_custom_distance(algorithm):
 
 
 def test_symdel_lookup():
-    test_input = ["CAAA", "CDDD", "CADA", "CAAK"]
-    test_output = [(0, 2, 1), (0, 3, 1), (2, 0, 1), (3, 0, 1)]
+    test_reference = ["CAAA", "CDDD", "CADA", "CAAK"]
+    test_query = ["CAAF", "CCCC"]
+    test_output = [(0, 0, 1), (0, 3, 1)]
 
-    symdel_dict = generate_symdel_dict(test_input, max_edits=1)
-    result = symdel_lookup(symdel_dict, test_input, max_edits=1)
+    symdel_dict = generate_symdel_dict(test_reference, max_edits=1)
+    result = symdel_lookup(symdel_dict, seqs=test_reference, seqs2=test_query, max_edits=1)
     assert set_equal(result, test_output)
-
 
 def test_tcrdist():
     df = pd.DataFrame(columns=['CDR3B','TRBV'], data=

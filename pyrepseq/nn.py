@@ -378,9 +378,9 @@ def _hamming_replacement(seq_a, seq_b):
     return hamming(seq_a, seq_b)
 
 
-def symdel_lookup(symdel_dict, seqs, max_edits=1, max_returns=None,
-                  custom_distance=None, max_custom_dist=float('inf'),
-                  output_type='triplets', seqs2=None, progress=False):
+def symdel_lookup(symdel_dict, seqs, seqs2, max_edits=1,
+                  custom_distance=None, max_custom_distance=float('inf'),
+                  output_type='triplets', progress=False):
     """
     Manually query the Symdel hashmap index
 
@@ -389,19 +389,17 @@ def symdel_lookup(symdel_dict, seqs, max_edits=1, max_returns=None,
     symdel_dict: dict
         as returned by `generate_symdel_dict`
     seqs : iterable of strings
-        list of sequences
+        list of sequences associated with the symdel dict
+    seq2 : iterable of strings or None
+        list of query sequences
     max_edits : int
         maximum edit distance defining the neighbors
-    max_returns : int or None
-        ignored
     custom_distance : Function(str1, str2) or "hamming"
         custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
     max_custom_distance : float
         maximum distance to include in the result, ignored if custom distance is not supplied
     output_type: string
         format of returns, can be "triplets", "coo_matrix", or "ndarray"
-    seq2 : iterable of strings or None
-        another list of CDR3B sequences to compare against
     progress : bool
         show progress bar
 
@@ -415,39 +413,28 @@ def symdel_lookup(symdel_dict, seqs, max_edits=1, max_returns=None,
     """
 
     ans = []
-    threshold = max_custom_dist
-    if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
+    threshold = max_custom_distance
+    if custom_distance in (None, 'hamming') or max_custom_distance == float('inf'):
         threshold = max_edits
     if custom_distance == 'hamming':
         custom_distance = _hamming_replacement
     elif custom_distance is None:
         custom_distance = levenshtein
 
-    if seqs2 is None:
-        for key, values in symdel_dict.items():
-            if len(values) == 1:
+    if progress:
+        seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
+    else:
+        seqs2_loop = enumerate(seqs2)
+
+    for i, seq in seqs2_loop:
+        for comb in _comb_gen(seq, max_edits):
+            if comb not in symdel_dict:
                 continue
-            for i, j in combinations(values, 2):
-                dist = custom_distance(seqs[i], seqs[j])
+            for j in symdel_dict[comb]:
+                dist = custom_distance(seqs2[i], seqs[j])
                 if dist > threshold:
                     continue
                 ans.append((i, j, dist))
-                ans.append((j, i, dist))
-    else:
-        if progress:
-            seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
-        else:
-            seqs2_loop = enumerate(seqs2)
-
-        for i, seq in seqs2_loop:
-            for comb in _comb_gen(seq, max_edits):
-                if comb not in symdel_dict:
-                    continue
-                for j in symdel_dict[comb]:
-                    dist = custom_distance(seqs2[i], seqs[j])
-                    if dist > threshold:
-                        continue
-                    ans.append((i, j, dist))
 
     return _make_output(ans, output_type, seqs, seqs2)
 
@@ -469,7 +456,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     max_edits : int
         maximum edit distance defining the neighbors
     max_returns : int or None
-        maximum neighbor size
+        ignored
     n_cpu : int
         ignored
     custom_distance : Function(str1, str2) or "hamming"
@@ -504,8 +491,33 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     )
     symdel_dict = generate_symdel_dict(seqs, max_edits)
 
-    return symdel_lookup(symdel_dict, seqs, max_edits, max_returns, custom_distance,
-                                max_custom_distance, output_type, seqs2, progress)
+    if seqs2 is None:
+        ans = []
+        threshold = max_custom_distance
+        if custom_distance in (None, 'hamming') or max_custom_distance == float('inf'):
+            threshold = max_edits
+        if custom_distance == 'hamming':
+            custom_distance = _hamming_replacement
+        elif custom_distance is None:
+            custom_distance = levenshtein
+
+
+        for key, values in symdel_dict.items():
+            if len(values) == 1:
+                continue
+            for i, j in combinations(values, 2):
+                dist = custom_distance(seqs[i], seqs[j])
+                if dist > threshold:
+                    continue
+                ans.append((i, j, dist))
+                ans.append((j, i, dist))
+        return _make_output(ans, output_type, seqs, seqs2)
+
+    return symdel_lookup(symdel_dict, seqs, seqs2, max_edits,
+                         custom_distance=custom_distance,
+                         max_custom_distance=max_custom_distance,
+                         output_type=output_type,
+                         progress=progress)
 
 
 # ===================================
