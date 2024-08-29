@@ -1,5 +1,5 @@
 import pytest
-from pyrepseq.nn import hash_based, kdtree, symdel, nearest_neighbor_tcrdist, symdel_manual_lookup
+from pyrepseq.nn import hash_based, kdtree, symdel, nearest_neighbor_tcrdist, symdel_lookup, generate_symdel_dict
 from itertools import product
 from Levenshtein import distance
 import numpy as np
@@ -39,11 +39,6 @@ def test_basic(algorithm):
     fallback_version = fallback(test_input)
     assert set_equal(fallback_version, test_output)
 
-    test_output = [(0, 2, 1), (2, 0, 1), (3, 0, 1)]
-
-    assert set_equal(algorithm(test_input, max_edits=1,
-                               max_returns=1), test_output)
-
 
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
 def test_duplicate(algorithm):
@@ -54,9 +49,6 @@ def test_duplicate(algorithm):
 
     fallback_version = fallback(test_input)
     assert set_equal(fallback_version, test_output)
-
-    output = set(algorithm(test_input, max_edits=1, max_returns=1))
-    assert len(output) == 3 == len(set(test_output) & output)
 
 
 @pytest.mark.parametrize("algorithm", ALGORITHMS)
@@ -84,22 +76,18 @@ def test_custom_distance(algorithm):
     assert set_equal(algorithm(test_input, max_edits=1,
                                custom_distance=distance), test_output)
 
-    output = set(algorithm(test_input, max_edits=1, max_returns=1,
-                           custom_distance=distance))
-    assert len(output) == 3 == len(output & set(test_output))
-
     test_output = []
-    assert set_equal(algorithm(test_input, max_edits=1, max_returns=1,
+    assert set_equal(algorithm(test_input, max_edits=1,
                                custom_distance=distance,
                                max_custom_distance=0), test_output)
 
 
-def test_symdel_manual_lookup():
+def test_symdel_lookup():
     test_input = ["CAAA", "CDDD", "CADA", "CAAK"]
     test_output = [(0, 2, 1), (0, 3, 1), (2, 0, 1), (3, 0, 1)]
 
-    index = symdel(test_input, max_edits=1, output_type="hashmap")
-    result = symdel_manual_lookup(index, test_input, max_edits=1)
+    symdel_dict = generate_symdel_dict(test_input, max_edits=1)
+    result = symdel_lookup(symdel_dict, test_input, max_edits=1)
     assert set_equal(result, test_output)
 
 

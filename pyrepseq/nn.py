@@ -329,6 +329,9 @@ def hash_based(
 
 
 def _comb_gen(seq, max_edits):
+    """
+    Generate all deletion variants up to a maximum number of deletions.
+    """
     _len, ans = len(seq), set([seq])
     for edit in range(1, max_edits+1):
         for indexes in combinations(range(_len), edit):
@@ -341,40 +344,56 @@ def _comb_gen(seq, max_edits):
     return ans
 
 
-def _generate_index(seqs, max_edits):
-    ans = {}
+def generate_symdel_dict(seqs, max_edits):
+    """
+    Generate a deletion variant dictionary.
+
+    The dictionary has deletion variants as keys, and list of sequence indices as values
+
+    Parameters
+    ----------
+    seqs : iterable of strings
+        list of sequences
+    max_edits : int
+        maximum deletion distance
+
+    Returns
+    -------
+    symdel_dict : dict
+        Deletion variant dictionary
+    """
+    symdel_dict = {}
     for i, seq in enumerate(seqs):
         for comb in _comb_gen(seq, max_edits):
-            if comb in ans:
-                ans[comb].append(i)
+            if comb in symdel_dict:
+                symdel_dict[comb].append(i)
             else:
-                ans[comb] = [i]
-    return ans
+                symdel_dict[comb] = [i]
+    return symdel_dict
 
 
 def _hamming_replacement(seq_a, seq_b):
-    # the older versions of the library did not throw error, so we force it
     if len(seq_a) != len(seq_b):
-        raise ValueError()
+        return np.inf
     return hamming(seq_a, seq_b)
 
 
-def symdel_manual_lookup(index, seqs, max_edits=1, max_returns=None,
-                        custom_distance=None, max_custom_dist=float('inf'),
-                        output_type='triplets', seqs2=None, progress=False):
+def symdel_lookup(symdel_dict, seqs, max_edits=1, max_returns=None,
+                  custom_distance=None, max_custom_dist=float('inf'),
+                  output_type='triplets', seqs2=None, progress=False):
     """
     Manually query the Symdel hashmap index
 
     Parameters
     ----------
-    index: multi-value hashmap
-        value returned by symdel(..., output_type="hashmap")
+    symdel_dict: dict
+        as returned by `generate_symdel_dict`
     seqs : iterable of strings
-        list of CDR3B sequences
+        list of sequences
     max_edits : int
         maximum edit distance defining the neighbors
     max_returns : int or None
-        maximum neighbor size
+        ignored
     custom_distance : Function(str1, str2) or "hamming"
         custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
     max_custom_distance : float
@@ -399,48 +418,43 @@ def symdel_manual_lookup(index, seqs, max_edits=1, max_returns=None,
     threshold = max_custom_dist
     if custom_distance in (None, 'hamming') or max_custom_dist == float('inf'):
         threshold = max_edits
-    max_returns = max_returns if max_returns is not None else float('inf')
     if custom_distance == 'hamming':
         custom_distance = _hamming_replacement
     elif custom_distance is None:
         custom_distance = levenshtein
 
-    single_seqs_mode = seqs2 is None
-    seqs2_patch = seqs if single_seqs_mode else seqs2
-
-    if progress:
-        seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2_patch), total=len(seqs2_patch))
-    else:
-        seqs2_loop = enumerate(seqs2_patch)
-
-    for i, seq in seqs2_loop:
-        j_indices, count = set(), 0
-        for comb in _comb_gen(seq, max_edits):
-            if comb not in index:
+    if seqs2 is None:
+        for key, values in symdel_dict.items():
+            if len(values) == 1:
                 continue
-            for j_index in index[comb]:
-                j_indices.add(j_index)
-
-        for j_index in j_indices:
-            if i == j_index and single_seqs_mode:
-                continue
-            try:
-                dist = custom_distance(seqs2_patch[i], seqs[j_index])
+            for i, j in combinations(values, 2):
+                dist = custom_distance(seqs[i], seqs[j])
                 if dist > threshold:
                     continue
-                if count >= max_returns:
-                    break
-                ans.append((i, j_index, dist))
-                count += 1
-            except:
-                continue
+                ans.append((i, j, dist))
+                ans.append((j, i, dist))
+    else:
+        if progress:
+            seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
+        else:
+            seqs2_loop = enumerate(seqs2)
+
+        for i, seq in seqs2_loop:
+            for comb in _comb_gen(seq, max_edits):
+                if comb not in symdel_dict:
+                    continue
+                for j in symdel_dict[comb]:
+                    dist = custom_distance(seqs2[i], seqs[j])
+                    if dist > threshold:
+                        continue
+                    ans.append((i, j, dist))
 
     return _make_output(ans, output_type, seqs, seqs2)
 
 
 def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
-             custom_distance=None, max_custom_distance=float('inf'),
-             output_type='triplets', seqs2=None, progress=False):
+           custom_distance=None, max_custom_distance=float('inf'),
+           output_type='triplets', seqs2=None, progress=False):
     """
     List all neighboring sequences efficiently within the given distance.
     This is an improved version over the hash-based.
@@ -451,7 +465,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     Parameters
     ----------
     seqs : iterable of strings
-        list of CDR3B sequences
+        list of sequences
     max_edits : int
         maximum edit distance defining the neighbors
     max_returns : int or None
@@ -463,9 +477,9 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     max_custom_distance : float
         maximum distance to include in the result, ignored if custom distance is not supplied
     output_type: string
-        format of returns, can be "triplets", "coo_matrix", "ndarray", or "hashmap"
+        format of returns, can be "triplets", "coo_matrix", "ndarray"
     seq2 : iterable of strings or None
-        another list of CDR3B sequences to compare against
+        another list of sequences to compare against
     progress : bool
         show progress bar
 
@@ -476,7 +490,6 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
         if "triplets" returns are [(x_index, y_index, edit_distance)]
         if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
         if "ndarray" returns numpy's 2d array representing dense matrix
-        if "hashmap", return the hashmap database (which is faster for multiple queries) instead of neighbors. See "symdel_manual_lookup" function for more detail.
     """
 
     _check_common_input(
@@ -487,14 +500,11 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
         custom_distance,
         max_custom_distance,
         output_type,
-        seqs2,
-        allow_hashmap=True
+        seqs2
     )
-    index = _generate_index(seqs, max_edits)
-    if output_type == 'hashmap':
-        return index
+    symdel_dict = generate_symdel_dict(seqs, max_edits)
 
-    return symdel_manual_lookup(index, seqs, max_edits, max_returns, custom_distance,
+    return symdel_lookup(symdel_dict, seqs, max_edits, max_returns, custom_distance,
                                 max_custom_distance, output_type, seqs2, progress)
 
 
@@ -644,9 +654,7 @@ def _flatten_array(nested_array):
 
 
 def _check_common_input(
-    seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist, output_type, seqs2=None,
-    allow_hashmap=False
-):
+    seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist, output_type, seqs2=None):
     assert len(seqs) > 0, "length must be greater than 0"
     try:
         for seq in seqs:
@@ -675,19 +683,11 @@ def _check_common_input(
     assert (
         type(max_cust_dist) in (int, float) and max_cust_dist >= 0
     ), "max_custom_distance must be a non-negative number"
-    if allow_hashmap:
-        assert output_type in {
-            "coo_matrix",
-            "triplets",
-            "ndarray",
-            "hashmap"
-        }, "output must be either coo_matrix, triplets, ndarray, or hashmap"
-    else:
-        assert output_type in {
-            "coo_matrix",
-            "triplets",
-            "ndarray",
-        }, "output must be either coo_matrix, triplets, or ndarray"
+    assert output_type in {
+        "coo_matrix",
+        "triplets",
+        "ndarray",
+    }, "output must be either coo_matrix, triplets, or ndarray"
     try:
         for seq in seqs2:
             assert type(seq) in {
