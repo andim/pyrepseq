@@ -413,14 +413,17 @@ class SymdelDB:
             seqs2_loop = enumerate(seqs2)
 
         for i, seq in seqs2_loop:
+            j_indices = set()
             for comb in _comb_gen(seq, self.max_edits):
                 if comb not in self.variant_dict:
                     continue
                 for j in self.variant_dict[comb]:
-                    dist = custom_distance(seqs2[i], self.seqs[j])
-                    if dist > threshold:
-                        continue
-                    ans.append((i, j, dist))
+                    j_indices.add(j)
+            for j in j_indices:
+                dist = custom_distance(seqs2[i], self.seqs[j])
+                if dist > threshold:
+                    continue
+                ans.append((i, j, dist))
 
         return _make_output(ans, output_type, self.seqs, seqs2)
 
@@ -503,6 +506,8 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
                     continue
                 ans.append((i, j, dist))
                 ans.append((j, i, dist))
+        # drop duplicates
+        ans = list(set(ans))
         return _make_output(ans, output_type, seqs, seqs2)
 
     return symdeldb.lookup(seqs2, custom_distance=custom_distance,
