@@ -344,7 +344,7 @@ def _comb_gen(seq, max_edits):
     return ans
 
 
-def generate_symdel_dict(seqs, max_edits):
+class SymdelDB:
     """
     Generate a deletion variant dictionary.
 
@@ -356,87 +356,79 @@ def generate_symdel_dict(seqs, max_edits):
         list of sequences
     max_edits : int
         maximum deletion distance
-
-    Returns
-    -------
-    symdel_dict : dict
-        Deletion variant dictionary
     """
-    symdel_dict = {}
-    for i, seq in enumerate(seqs):
-        for comb in _comb_gen(seq, max_edits):
-            if comb in symdel_dict:
-                symdel_dict[comb].append(i)
-            else:
-                symdel_dict[comb] = [i]
-    return symdel_dict
+
+
+    def __init__(self, seqs, max_edits):
+        self.seqs = seqs
+        self.max_edits = max_edits
+        self.variant_dict = {}
+        for i, seq in enumerate(seqs):
+            for comb in _comb_gen(seq, max_edits):
+                if comb in self.variant_dict:
+                    self.variant_dict[comb].append(i)
+                else:
+                    self.variant_dict[comb] = [i]
+
+    def lookup(self, seqs2, 
+               custom_distance=None, max_custom_distance=float('inf'),
+               output_type='triplets', progress=False):
+        """
+        Query the database 
+
+        Parameters
+        ----------
+        seq2 : iterable of strings or None
+            list of query sequences
+        custom_distance : Function(str1, str2) or "hamming"
+            custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
+        max_custom_distance : float
+            maximum distance to include in the result, ignored if custom distance is not supplied
+        output_type: string
+            format of returns, can be "triplets", "coo_matrix", or "ndarray"
+        progress : bool
+            show progress bar
+
+        Returns
+        -------
+        neighbors : array of 3D-tuples, sparse matrix, or dense matrix
+            neigbors along with their edit distances according to the given output_type
+            if "triplets" returns are [(x_index, y_index, edit_distance)]
+            if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
+            if "ndarray" returns numpy's 2d array representing dense matrix
+        """
+
+        ans = []
+        threshold = max_custom_distance
+        if custom_distance in (None, 'hamming') or max_custom_distance == float('inf'):
+            threshold = self.max_edits
+        if custom_distance == 'hamming':
+            custom_distance = _hamming_replacement
+        elif custom_distance is None:
+            custom_distance = levenshtein
+
+        if progress:
+            seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
+        else:
+            seqs2_loop = enumerate(seqs2)
+
+        for i, seq in seqs2_loop:
+            for comb in _comb_gen(seq, self.max_edits):
+                if comb not in self.variant_dict:
+                    continue
+                for j in self.variant_dict[comb]:
+                    dist = custom_distance(seqs2[i], self.seqs[j])
+                    if dist > threshold:
+                        continue
+                    ans.append((i, j, dist))
+
+        return _make_output(ans, output_type, self.seqs, seqs2)
 
 
 def _hamming_replacement(seq_a, seq_b):
     if len(seq_a) != len(seq_b):
         return np.inf
     return hamming(seq_a, seq_b)
-
-
-def symdel_lookup(symdel_dict, seqs, seqs2, max_edits=1,
-                  custom_distance=None, max_custom_distance=float('inf'),
-                  output_type='triplets', progress=False):
-    """
-    Manually query the Symdel hashmap index
-
-    Parameters
-    ----------
-    symdel_dict: dict
-        as returned by `generate_symdel_dict`
-    seqs : iterable of strings
-        list of sequences associated with the symdel dict
-    seq2 : iterable of strings or None
-        list of query sequences
-    max_edits : int
-        maximum edit distance defining the neighbors
-    custom_distance : Function(str1, str2) or "hamming"
-        custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
-    max_custom_distance : float
-        maximum distance to include in the result, ignored if custom distance is not supplied
-    output_type: string
-        format of returns, can be "triplets", "coo_matrix", or "ndarray"
-    progress : bool
-        show progress bar
-
-    Returns
-    -------
-    neighbors : array of 3D-tuples, sparse matrix, or dense matrix
-        neigbors along with their edit distances according to the given output_type
-        if "triplets" returns are [(x_index, y_index, edit_distance)]
-        if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
-        if "ndarray" returns numpy's 2d array representing dense matrix
-    """
-
-    ans = []
-    threshold = max_custom_distance
-    if custom_distance in (None, 'hamming') or max_custom_distance == float('inf'):
-        threshold = max_edits
-    if custom_distance == 'hamming':
-        custom_distance = _hamming_replacement
-    elif custom_distance is None:
-        custom_distance = levenshtein
-
-    if progress:
-        seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
-    else:
-        seqs2_loop = enumerate(seqs2)
-
-    for i, seq in seqs2_loop:
-        for comb in _comb_gen(seq, max_edits):
-            if comb not in symdel_dict:
-                continue
-            for j in symdel_dict[comb]:
-                dist = custom_distance(seqs2[i], seqs[j])
-                if dist > threshold:
-                    continue
-                ans.append((i, j, dist))
-
-    return _make_output(ans, output_type, seqs, seqs2)
 
 
 def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
@@ -489,7 +481,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
         output_type,
         seqs2
     )
-    symdel_dict = generate_symdel_dict(seqs, max_edits)
+    symdeldb = SymdelDB(seqs, max_edits)
 
     if seqs2 is None:
         ans = []
@@ -502,7 +494,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
             custom_distance = levenshtein
 
 
-        for key, values in symdel_dict.items():
+        for key, values in symdeldb.variant_dict.items():
             if len(values) == 1:
                 continue
             for i, j in combinations(values, 2):
@@ -513,8 +505,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
                 ans.append((j, i, dist))
         return _make_output(ans, output_type, seqs, seqs2)
 
-    return symdel_lookup(symdel_dict, seqs, seqs2, max_edits,
-                         custom_distance=custom_distance,
+    return symdeldb.lookup(seqs2, custom_distance=custom_distance,
                          max_custom_distance=max_custom_distance,
                          output_type=output_type,
                          progress=progress)
