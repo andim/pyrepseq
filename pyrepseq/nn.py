@@ -220,48 +220,85 @@ def _generate_neighbors(query, max_edits, is_hamming):
                     ans[new_seq] = edit_distance
     return ans
 
+class LookupDB:
+    """
+    Lookup string variants in a dictionary.
 
-def _build_index(seqs):
-    ans = {}
-    for index, seq in enumerate(seqs):
-        if seq not in ans:
-            ans[seq] = []
-        ans[seq].append(index)
-    return ans
+    The dictionary has sequences as keys, and list of sequence indices as values.
 
-
-def _single_lookup(args):
-    index, max_edits, limit, custom_distance, max_cust_dist = _params
-    ans, (x_index, seq), is_hamming = [], args, custom_distance == "hamming"
-    neighbors = _generate_neighbors(seq, max_edits, is_hamming)
-
-    for possible_edit, edit_distance in neighbors.items():
-        if possible_edit in index and edit_distance <= max_edits:
-            for y_index in index[possible_edit]:
-                if x_index == y_index:
-                    continue
-                if custom_distance in (None, "hamming"):
-                    ans.append((x_index, y_index, edit_distance))
-                else:
-                    dist = custom_distance(seq, possible_edit)
-                    if dist <= max_cust_dist:
-                        ans.append((x_index, y_index, dist))
-    return ans if limit is None else ans[0:limit]
+    Parameters
+    ----------
+    seqs : iterable of strings
+        list of sequences
+    """
 
 
-def lookup(index, seqs, max_edits, max_returns, n_cpu, custom_distance, max_cust_dist):
-    global _params
-    _params = (index, max_edits, max_returns, custom_distance, max_cust_dist)
+    def __init__(self, seqs):
+        self.seqs = seqs
+        self.seq_dict = {}
+        for index, seq in enumerate(seqs):
+            if seq not in self.seq_dict:
+                self.seq_dict[seq] = []
+            self.seq_dict[seq].append(index)
 
-    _loop = enumerate(seqs)
-    if n_cpu == 1:
-        result = map(_single_lookup, _loop)
-    else:
-        with Pool(n_cpu) as p:
-            chunk = int(len(seqs) / n_cpu)
-            result = p.map(_single_lookup, _loop, chunksize=chunk)
-    return _flatten_array(result)
+    def lookup(self, seqs2, max_edits=1, pdist_mode=False,
+               custom_distance=None, max_custom_distance=float('inf'),
+               output_type='triplets', progress=False):
+        """
+        Query the database 
 
+        Parameters
+        ----------
+        seq2 : iterable of strings or None
+            list of query sequences
+        max_edits: int
+            maximum number of edits
+        pdist_mode: Boolean
+            if True, assume seqs2=seqs and filter diagonal
+        custom_distance : Function(str1, str2) or "hamming"
+            custom distance metric
+        max_custom_distance : float
+            maximum distance to include in the result, ignored if custom distance is not supplied
+        output_type: string
+            format of returns, can be "triplets", "coo_matrix", or "ndarray"
+        progress : bool
+            show progress bar
+
+        Returns
+        -------
+        neighbors : array of 3D-tuples, sparse matrix, or dense matrix
+            neigbors along with their edit distances according to the given output_type
+            if "triplets" returns are [(x_index, y_index, edit_distance)]
+            if "coo_matrix" returns are scipy's sparse matrix where C[i,j] = distance(X_i, X_j) or 0 if not neighbor
+            if "ndarray" returns numpy's 2d array representing dense matrix
+        """
+
+        ans = []
+        is_hamming = custom_distance == 'hamming'
+        if is_hamming:
+            custom_distance = _hamming_replacement
+        elif custom_distance is None:
+            custom_distance = levenshtein
+
+        if progress:
+            seqs2_loop = tqdm.auto.tqdm(enumerate(seqs2), total=len(seqs2))
+        else:
+            seqs2_loop = enumerate(seqs2)
+
+        for x_index, seq in seqs2_loop:
+            neighbors = _generate_neighbors(seq, max_edits, is_hamming)
+            for possible_edit, edit_distance in neighbors.items():
+                   if possible_edit in self.seq_dict:
+                       for y_index in self.seq_dict[possible_edit]:
+                           if x_index == y_index:
+                               continue
+                           if custom_distance in (None, "hamming"):
+                               ans.append((x_index, y_index, edit_distance))
+                           else:
+                               dist = custom_distance(seq, possible_edit)
+                               if dist <= max_custom_distance:
+                                   ans.append((x_index, y_index, dist))
+        return _make_output(ans, output_type, self.seqs, seqs2)
 
 def hash_based(
     seqs,
@@ -271,7 +308,7 @@ def hash_based(
     custom_distance=None,
     max_custom_distance=float("inf"),
     output_type="triplets",
-):
+    progress=False):
     """
     List all neighboring CDR3B sequences efficiently for small edit distances.
     The idea is to list all possible sequences within a given distance and lookup the dictionary if it exists.
@@ -284,15 +321,17 @@ def hash_based(
     max_edits : int
         maximum edit distance defining the neighbors
     max_returns : int or None
-        maximum neighbor size
+        not implemented
     n_cpu : int
-        number of CPU cores running in parallel
+        not implemented
     custom_distance : Function(str1, str2) or "hamming"
-        custom distance function to use, must statisfy 4 properties of distance (https://en.wikipedia.org/wiki/Distance#Mathematical_formalization)
+        custom distance metric
     max_custom_distance : float
         maximum distance to include in the result, ignored if custom distance is not supplied
     output_type: string
         format of returns, can be "triplets", "coo_matrix", or "ndarray"
+    progress : bool
+        show progress bar
 
     Returns
     -------
@@ -315,13 +354,13 @@ def hash_based(
     )
     seqs = ensure_numpy(seqs)
 
-    # algorithm
-    index = _build_index(seqs)
-    triplets = lookup(
-        index, seqs, max_edits, max_returns, n_cpu, custom_distance, max_custom_distance
-    )
-    return _make_output(triplets, output_type, seqs)
+    lookupdb = LookupDB(seqs)
 
+    return lookupdb.lookup(seqs, max_edits=max_edits, pdist_mode=True,
+                         custom_distance=custom_distance,
+                         max_custom_distance=max_custom_distance,
+                         output_type=output_type,
+                         progress=progress)
 
 # ===================================
 # symdel
