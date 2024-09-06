@@ -526,7 +526,7 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
     symdeldb = SymdelDB(seqs, max_edits)
 
     if seqs2 is None:
-        ans = []
+        ans = set()
         threshold = max_custom_distance
         if custom_distance in (None, 'hamming') or max_custom_distance == float('inf'):
             threshold = max_edits
@@ -543,10 +543,8 @@ def symdel(seqs, max_edits=1, max_returns=None, n_cpu=1,
                 dist = custom_distance(seqs[i], seqs[j])
                 if dist > threshold:
                     continue
-                ans.append((i, j, dist))
-                ans.append((j, i, dist))
-        # drop duplicates
-        ans = list(set(ans))
+                ans.add((i, j, dist))
+                ans.add((j, i, dist))
         return _make_output(ans, output_type, seqs, seqs2)
 
     return symdeldb.lookup(seqs2, custom_distance=custom_distance,
@@ -747,6 +745,8 @@ def _check_common_input(
 
 def _make_output(triplets, output_type, seqs, seqs2=None):
     if output_type == "triplets":
+        if type(triplets) != list:
+            return list(triplets)
         return triplets
 
     row, col, data = [], [], []
