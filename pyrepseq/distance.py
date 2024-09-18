@@ -20,11 +20,6 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
     Pairwise distances between collection of strings.
     (`scipy.spatial.distance.pdist` equivalent for strings)
 
-    .. deprecated:: 1.4
-        :py:func:`pyrepseq.pdist` is now deprecated in favour of the ``Metric`` object system (see :py:class:`pyrepseq.metric.Metric`).
-        ``Metric`` objects implement the ``calc_pdist_vector`` method which will perform the pdist computation.
-        :py:func:`pyrepseq.pdist` will be removed in version 2.0.
-
     Parameters
     ----------
     strings : iterable of strings
@@ -45,7 +40,6 @@ def pdist(strings, metric=None, dtype=np.uint8, **kwargs):
         ``m * i + j - ((i + 2) * (i + 1)) // 2``.
 
     """
-    warn("pyrepseq.pdist is now deprecated in favour of pyrepseq.metric.Levenshtein.calc_pdist_vector and will be removed in version 2.0.")
     
     if metric is None:
         metric = levenshtein_distance
@@ -65,10 +59,6 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
     Compute distance between each pair of the two collections of strings.
     (`scipy.spatial.distance.cdist` equivalent for strings)
 
-    .. deprecated:: 1.4
-        :py:func:`pyrepseq.cdist` is now deprecated in favour of the ``Metric`` object system (see :py:class:`pyrepseq.metric.Metric`).
-        ``Metric`` objects implement the ``calc_cdist_matrix`` method which will perform the cdist computation.
-        :py:func:`pyrepseq.cdist` will be removed in version 2.0.
 
     Parameters
     ----------
@@ -90,7 +80,6 @@ def cdist(stringsA, stringsB, metric=None, dtype=np.uint8, **kwargs):
         ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
         :math:`ij` th entry.
     """
-    warn("pyrepseq.cdist is now deprecated in favour of pyrepseq.metric.Levenshtein.calc_cdist_matrix and will be removed in version 2.0.")
 
     if metric is None:
         metric = levenshtein_distance
