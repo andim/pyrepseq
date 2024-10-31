@@ -10,6 +10,19 @@ from typing import Dict, Literal
 class TcrdistInterface:
     _all_genes = repertoire_db.RefGeneSet("alphabeta_gammadelta_db.tsv").all_genes
 
+    def __init__(self, substitution_matrix='default'):
+        """
+        substitution_matrix: str
+            amino acid substitution matrix to use, must be in 'default' or 'pyo'
+
+        """
+        if substitution_matrix == 'default':
+            self.submatrix = pw.matrices.tcr_nb_distance_matrix
+        elif substitution_matrix == 'pyo':
+            self.submatrix = pd.read_csv('substitution_matrix.csv')
+        else:
+            raise NotImplementedError('substitution matrix must be in [default, pyo]')
+
     def calc_alpha_cdist_matrices(
         self, anchor_tcrs: DataFrame, comparison_tcrs: DataFrame
     ) -> Dict[str, ndarray]:
@@ -162,7 +175,7 @@ class TcrdistInterface:
         kargs = {
             f"cdr3_{chain_code}_aa": {
                 "use_numba": True,
-                "distance_matrix": pw.matrices.tcr_nb_distance_matrix,
+                "distance_matrix": self.submatrix,
                 "dist_weight": 1,
                 "gap_penalty": 4,
                 "ntrim": 3,
@@ -171,7 +184,7 @@ class TcrdistInterface:
             },
             f"pmhc_{chain_code}_aa": {
                 "use_numba": True,
-                "distance_matrix": pw.matrices.tcr_nb_distance_matrix,
+                "distance_matrix": self.submatrix,
                 "dist_weight": 1,
                 "gap_penalty": 4,
                 "ntrim": 0,
@@ -180,7 +193,7 @@ class TcrdistInterface:
             },
             f"cdr2_{chain_code}_aa": {
                 "use_numba": True,
-                "distance_matrix": pw.matrices.tcr_nb_distance_matrix,
+                "distance_matrix": self.submatrix,
                 "dist_weight": 1,
                 "gap_penalty": 4,
                 "ntrim": 0,
@@ -189,7 +202,7 @@ class TcrdistInterface:
             },
             f"cdr1_{chain_code}_aa": {
                 "use_numba": True,
-                "distance_matrix": pw.matrices.tcr_nb_distance_matrix,
+                "distance_matrix": self.submatrix,
                 "dist_weight": 1,
                 "gap_penalty": 4,
                 "ntrim": 0,
