@@ -128,8 +128,14 @@ def downsample(seqs: Union[Iterable[str], DataFrame, None], maxseqs: Optional[in
 
 
 def pcDelta(
-    seqs: Iterable, seqs2: Optional[Iterable] = None, metric: Metric = None, bins: Union[int, Iterable] = None, normalize: bool = True, pseudocount: float = 0.0, maxseqs: Optional[int] = None
-):
+    seqs: Iterable, 
+    seqs2: Optional[Iterable] = None,
+    metric: Metric = None,
+    bins: Union[int, Iterable] = None,
+    normalize: bool = True,
+    pseudocount: float = 0.0,
+    maxseqs: Optional[int] = None
+    ):
     r"""
     Calculates binned near-coincidence probabilities :math:`p_C(\Delta)` among input sequences.
 
@@ -166,8 +172,11 @@ def pcDelta(
     np.ndarray
         (normalized) histogram of sequence distances
     """
-    if bins == 0:
-        return pc(seqs, seqs2)
+    try:
+        if bins == 0:
+            return pc(seqs, seqs2)
+    except ValueError:
+        pass
    
     seqs = convert_tuple_to_dataframe_if_necessary(seqs)
     seqs2 = convert_tuple_to_dataframe_if_necessary(seqs2)
@@ -230,7 +239,10 @@ def pcDelta_grouped(df, by, seq_columns, **kwargs):
 
     def pcDelta_within_group(dfg):
         index = kwargs.get("bins")
-        index = [index] if isinstance(index, int) else index
+        if isinstance(index, int):
+            index = [index]
+        if not index is None:
+            index = index[:-1]
         return pd.Series(pcDelta(dfg[seq_columns], **kwargs), name="Delta", index=index)
 
     return df.groupby(by).apply(pcDelta_within_group)
