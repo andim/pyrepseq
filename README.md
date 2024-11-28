@@ -2,6 +2,9 @@
 [![Latest release](https://img.shields.io/pypi/v/pyrepseq.svg)](https://pypi.python.org/pypi/pyrepseq)
 [![Build Status](https://app.travis-ci.com/andim/pyrepseq.svg?branch=main)](https://app.travis-ci.com/andim/pyrepseq)
 [![Documentation Status](https://readthedocs.org/projects/pyrepseq/badge/?version=latest)](https://pyrepseq.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://zenodo.org/badge/355959013.svg)](https://doi.org/10.5281/zenodo.14237373)
+
+
 
 # Pyrepseq: the immune repertoire analysis toolkit
 
