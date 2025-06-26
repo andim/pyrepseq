@@ -314,4 +314,4 @@ def multimerge(dfs, on, suffixes=None, **kwargs):
             ),
             dfs,
         )
-    return reduce(lambda left, right: pd.merge(left, right, on, **merge_kwargs), dfs)
+    return reduce(lambda left, right: pd.merge(left, right, on=on, **merge_kwargs), dfs)

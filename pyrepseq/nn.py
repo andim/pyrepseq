@@ -8,6 +8,7 @@ from scipy.sparse import coo_matrix
 from rapidfuzz.process import extract
 from multiprocessing import Pool
 
+
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
 from .util import ensure_numpy
@@ -19,6 +20,10 @@ try:
     import pwseqdist
 except ImportError:
     warnings.warn('optional dependency pwseqdist not installed (tcrdist neighbor search not supported)', ImportWarning)
+try:
+    import sceptr
+except ImportError:
+    warnings.warn('optional dependency sceptr not installed (sceptr neighbor search not supported)', ImportWarning)
 
 
 
@@ -688,6 +693,55 @@ def nearest_neighbor_tcrdist(df, chain='beta', max_edits=2, edit_on_trimmed=True
     neighbors_arr[:, 2] = tcrdist
 
     return neighbors_arr[neighbors_arr[:, 2]<=max_tcrdist]
+
+
+def calculate_sceptrdist_sparse(edges, tcr_data_array):
+    """
+    Efficiently calculate sparse pairwise distances between vector representations of TCRs.
+    """
+    # Allocate an array to store distances
+    sceptrdist = np.empty(len(edges), dtype=np.float32)
+    # Loop over edges and calculate distances
+    for i in range(len(edges)):
+        tcr1_idx, tcr2_idx = edges[i]
+        # Extract TCR vectors from tcr_data_array (NumPy 2D array)
+        tcr1_vector = tcr_data_array[tcr1_idx]
+        tcr2_vector = tcr_data_array[tcr2_idx]
+        # Compute the Euclidean distance
+        dist = np.sqrt(np.sum((tcr1_vector-tcr2_vector)**2))
+        # Store the distance in the result array
+        sceptrdist[i] = dist
+    return sceptrdist
+
+
+def nearest_neighbor_sceptrdist(df, chain='beta', max_edits=2, max_sceptrdist=1.0, **kwargs):
+    """
+    List all neighboring TCR sequences efficiently within a given edit and SCEPTR radius.
+
+    [Requires optional dependency sceptr]
+
+    Parameters
+    ----------
+    chain: 'alpha', 'beta'
+        chain to use for edit distance prefiltering
+    max_edits : only return neighbors up to <= this edit distance
+    max_sceptrdist : only return neighbor up to <= this TCR distance
+    **kwargs : passed on to nearest_neighbor function
+
+    Returns
+    --------
+    sparse matrix in (i, j, dist) format
+
+    """
+    chain_letter = chain[0].upper()
+    seqs = list(df[f'CDR3{chain_letter}'])
+    neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
+    neighbors_arr = np.array(neighbors, dtype=object)
+    edges = neighbors_arr[:, :2]
+    tcr_data_array = sceptr.calc_vector_representations(df)
+    sceptrdist = calculate_sceptrdist_sparse(edges, tcr_data_array)
+    neighbors_arr[:, 2] = sceptrdist
+    return neighbors_arr[neighbors_arr[:, 2]<=max_sceptrdist]
 
 # ===================================
 # util
