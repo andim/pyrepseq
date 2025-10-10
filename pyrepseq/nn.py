@@ -470,10 +470,10 @@ class SymdelDB:
         -------
         neighbors : array of 3D-tuples, sparse matrix, or dense matrix
             Neigbors along with their edit distances according to the given
-            output_type. If "triplets" returns are [(x_index, y_index,
+            output_type. If "triplets" returns are [(seqs_index, seqs2_index,
             edit_distance)]. If "coo_matrix" returns are scipy's sparse matrix
-            where C[i,j] = distance(X_i, X_j) or 0 if not neighbor. If "ndarray"
-            returns numpy's 2d array representing dense matrix.
+            where C[i,j] = distance(seqs[i], seqs2[j]) or 0 if not neighbor. If
+            "ndarray" returns numpy's 2d array representing dense matrix.
         """
 
         ans = []
