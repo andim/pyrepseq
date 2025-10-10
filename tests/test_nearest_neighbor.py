@@ -160,7 +160,7 @@ def test_two_sequence():
 def test_seq2():
     test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
     test_input2 = ["CDDD", "CAAK"]
-    test_output = [(1, 0, 1), (1, 2, 1), (0, 3, 1), (1, 4, 0)]
+    test_output = [(0, 1, 1), (2, 1, 1), (3, 0, 1), (4, 1, 0)]
     assert set_equal(symdel(test_input1, max_edits=1, seqs2=test_input2), test_output)
 
 
@@ -197,7 +197,7 @@ def test_bulk(algorithm):
 def test_symdel_progress():
     test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
     test_input2 = ["CDDD", "CAAK"]
-    test_output = [(1, 0, 1), (1, 2, 1), (0, 3, 1), (1, 4, 0)]
+    test_output = [(0, 1, 1), (2, 1, 1), (3, 0, 1), (4, 1, 0)]
     assert set_equal(
         symdel(test_input1, max_edits=1, seqs2=test_input2, progress=True), test_output
     )
