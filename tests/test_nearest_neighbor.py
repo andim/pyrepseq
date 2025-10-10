@@ -120,6 +120,26 @@ def test_tcrdist():
     np.array_equal(results, np.array([[1, 2, 0], [2, 1, 0]]))
 
 
+def test_tcrdist_cross():
+    df = pd.DataFrame(
+        columns=["CDR3B", "TRBV"],
+        data=[
+            ["CASSGETGQPQHF", "TRBV6-1*01"],
+            ["CSATGYNEQFF", "TRBV20-1*01"],
+        ],
+    )
+    df2 = pd.DataFrame(
+        columns=["CDR3B", "TRBV"],
+        data=[
+            ["CAWSF", "TRBV30*01"],
+            ["CSATGYNEQFF", "TRBV20-1*01"],
+            ["CASSGETGQPQHF", "TRBV6-1*01"],
+        ],
+    )
+    results = nearest_neighbor_tcrdist(df, max_edits=2, max_tcrdist=0, df2=df2)
+    np.array_equal(results, np.array([[0, 2, 0]]))
+
+
 # symdel is the only algorithm supporting 2-seq mode
 def test_two_sequence():
     seq1 = ["CAAA", "CDDD", "CADA", "CAAK"]
@@ -140,7 +160,7 @@ def test_two_sequence():
 def test_seq2():
     test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
     test_input2 = ["CDDD", "CAAK"]
-    test_output = [(0, 1, 1), (2, 1, 1), (3, 0, 1), (4, 1, 0)]
+    test_output = [(1, 0, 1), (1, 2, 1), (0, 3, 1), (1, 4, 0)]
     assert set_equal(symdel(test_input1, max_edits=1, seqs2=test_input2), test_output)
 
 
@@ -177,7 +197,7 @@ def test_bulk(algorithm):
 def test_symdel_progress():
     test_input1 = ["CAAA", "CADA", "CAAA", "CDKD", "CAAK"]
     test_input2 = ["CDDD", "CAAK"]
-    test_output = [(0, 1, 1), (2, 1, 1), (3, 0, 1), (4, 1, 0)]
+    test_output = [(1, 0, 1), (1, 2, 1), (0, 3, 1), (1, 4, 0)]
     assert set_equal(
         symdel(test_input1, max_edits=1, seqs2=test_input2, progress=True), test_output
     )

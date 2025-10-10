@@ -746,14 +746,14 @@ def nearest_neighbor_tcrdist(
         ctrim = tcrdist_kwargs_this["ctrim"]
         seqs = list(df[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
         if df2 is not None:
-            seqs2 = list(df2[f"CDRf{chain_letter}"].str[ntrim:-ctrim])
+            seqs2 = list(df2[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
         else:
             seqs2 = None
         neighbors = nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
     else:
         seqs = list(df[f"CDR3{chain_letter}"])
         if df2 is not None:
-            seqs2 = list(df2[f"CDRf{chain_letter}"])
+            seqs2 = list(df2[f"CDR3{chain_letter}"])
         else:
             seqs2 = None
         neighbors = nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
