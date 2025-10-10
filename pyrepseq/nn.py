@@ -689,6 +689,7 @@ def nearest_neighbor_tcrdist(
     edit_on_trimmed=True,
     max_tcrdist=20,
     tcrdist_kwargs={},
+    df2=None,
     **kwargs,
 ):
     """
@@ -699,13 +700,19 @@ def nearest_neighbor_tcrdist(
     Parameters
     ----------
     chain: 'alpha', 'beta', or 'both'
-        if both finds candidate neighbors using the beta chain, but filter on paired sequence at the end
+        if both finds candidate neighbors using the beta chain, but filter on
+        paired sequence at the end
+
     max_edits : only return neighbors up to <= this edit distance
+
     edit_on_trimmed : boolean
         apply TCRdist trimming on sequences before calculating edit distance
+
     max_tcrdist : only return neighbor up to <= this TCR distance
+
     tcrdist_kwargs: dict
         customized parameters for TCRdist calculation
+
     **kwargs : passed on to nearest_neighbor function
 
     Returns
@@ -738,12 +745,20 @@ def nearest_neighbor_tcrdist(
         ntrim = tcrdist_kwargs_this["ntrim"]
         ctrim = tcrdist_kwargs_this["ctrim"]
         seqs = list(df[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
-        neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
+        if df2 is not None:
+            seqs2 = list(df2[f"CDRf{chain_letter}"].str[ntrim:-ctrim])
+        else:
+            seqs2 = None
+        neighbors = nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
     else:
-        neighbors = nearest_neighbor(
-            list(df[f"CDR3{chain_letter}"]), max_edits=max_edits, **kwargs
-        )
+        seqs = list(df[f"CDR3{chain_letter}"])
+        if df2 is not None:
+            seqs2 = list(df2[f"CDRf{chain_letter}"])
+        else:
+            seqs2 = None
+        neighbors = nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
 
+    df2 = df if df2 is None else df2
     folder = os.path.dirname(__file__)
     path = os.path.join(folder, "data", f"vdists_{chain}.csv")
     vdists = pd.read_csv(path, index_col=0)
@@ -753,15 +768,21 @@ def nearest_neighbor_tcrdist(
     tcrdist_v = _lookup(
         vdists,
         df[f"TR{chain_letter}V"].iloc[edges[:, 0]],
-        df[f"TR{chain_letter}V"].iloc[edges[:, 1]],
+        df2[f"TR{chain_letter}V"].iloc[edges[:, 1]],
     )
 
-    tcrdist_cdr3 = pwseqdist.apply_pairwise_sparse(
-        metric=pwseqdist.metrics.nb_vector_tcrdist,
-        seqs=np.asarray(df[f"CDR3{chain_letter}"]),
-        pairs=edges,
-        **tcrdist_kwargs_this,
-    )
+    def pairwise_sparse_cross(df, df2, pairs, chain_letter):
+        adjusted_pairs = pairs.copy()
+        adjusted_pairs[:, 1] += len(df)
+        all_cdr3s = pd.concat([df[f"CDR3{chain_letter}"], df2[f"CDR3{chain_letter}"]])
+        return pwseqdist.apply_pairwise_sparse(
+            metric=pwseqdist.metrics.nb_vector_tcrdist,
+            seqs=all_cdr3s,
+            pairs=adjusted_pairs,
+            **tcrdist_kwargs_this,
+        )
+
+    tcrdist_cdr3 = pairwise_sparse_cross(df, df2, edges, chain_letter)
 
     if both:
         chain = "alpha"
@@ -772,15 +793,10 @@ def nearest_neighbor_tcrdist(
         tcrdist_v += _lookup(
             vdists,
             df[f"TR{chain_letter}V"].iloc[edges[:, 0]],
-            df[f"TR{chain_letter}V"].iloc[edges[:, 1]],
+            df2[f"TR{chain_letter}V"].iloc[edges[:, 1]],
         )
 
-        tcrdist_cdr3 += pwseqdist.apply_pairwise_sparse(
-            metric=pwseqdist.metrics.nb_vector_tcrdist,
-            seqs=np.asarray(df[f"CDR3{chain_letter}"]),
-            pairs=edges,
-            **tcrdist_kwargs_this,
-        )
+        tcrdist_cdr3 += pairwise_sparse_cross(df, df2, edges, chain_letter)
 
     tcrdist = tcrdist_v + tcrdist_cdr3
     neighbors_arr[:, 2] = tcrdist
