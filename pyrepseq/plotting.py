@@ -268,6 +268,7 @@ def similarity_clustermap(
     norm=None,
     bounds=np.arange(0, 7, 1),
     linkage_kws=dict(method="average", optimal_ordering=True),
+    show_clusters=True,
     cluster_kws=dict(t=6, criterion="distance"),
     cbar_kws=dict(label="Sequence Distance", format="%d", orientation="horizontal"),
     meta_columns=None,
@@ -284,6 +285,7 @@ def similarity_clustermap(
     norm: `matplotlib.colors.Normalize` subclass for turning distances into colors
     bounds: bounds used for colormap `matplotlib.colors.BoundaryNorm` (only used if norm = None)
     linkage_kws: keyword arguments for linkage algorithm
+    show_clusters: display clusters as annotation column (default: True)
     cluster_kws: keyword arguments for clustering algorithm
     cbar_kws: keyword arguments for colorbar
     meta_columns: list-like
@@ -329,9 +331,7 @@ def similarity_clustermap(
         # plot tick in the middle of the discretized colormap
         cbar_kws.update(dict(ticks=bounds[:-1] + 0.5))
 
-    cluster_colors = pd.Series(meta_to_colors[0](cluster, min_count=2), name="Cluster")
     if not meta_columns is None:
-        colors_list = [cluster_colors]
         if type(meta_columns) is dict:
             meta_colors = [
                 pd.Series(mapper(df[col]), name=meta_columns[col])
@@ -342,10 +342,19 @@ def similarity_clustermap(
                 pd.Series(mapper(df[col]), name=col)
                 for col, mapper in zip(meta_columns, meta_to_colors[1:])
             ]
-        colors_list.extend(meta_colors)
-        colors = pd.concat(colors_list, axis=1)
+    if show_clusters:
+        cluster_colors = pd.Series(meta_to_colors[0](cluster, min_count=2), name="Cluster")
+        if not meta_columns is None:
+            colors_list = [cluster_colors]
+            colors_list.extend(meta_colors)
+            colors = pd.concat(colors_list, axis=1)
+        else:
+            colors = [cluster_colors]
     else:
-        colors = cluster_colors
+        if not meta_columns is None:
+            colors = pd.concat(meta_colors, axis=1)
+        else:
+            colors = None
 
     # default clustermap kws
     clustermap_kws = dict(
