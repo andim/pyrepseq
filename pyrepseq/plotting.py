@@ -11,6 +11,7 @@ import logomaker as lm
 from pyrepseq.distance import *
 from pyrepseq.util import *
 from pyrepseq.metric import Levenshtein
+from pyrepseq.io import aminoacids
 
 
 def rankfrequency(
@@ -442,8 +443,8 @@ def seqlogos(seqs, ax=None, **kwargs):
     ----------
     seqs: iterable of strings
         sequences to be displayed
-    ax: matplotlib.axes
-        if None create new figure
+    ax : matplotlib.axes.Axes, optional
+        The axes to plot on. If None, a new figure and axes will be created.
     **kwargs: dict
         passed on to logomaker.Logo
 
@@ -467,6 +468,54 @@ def seqlogos(seqs, ax=None, **kwargs):
         fig.tight_layout()
     return ax, counts_mat
 
+def information_logo(seqs, seqs_null, ax=None, pseudocount=0.01, **kwargs):
+    """ Plot an information logo for the sequences in `seqs`, using `seqs_null` as background distribution.
+
+    Parameters
+    ----------
+    seqs : iterable of str
+        Sequences to be displayed.
+    seqs_null : iterable of str
+        The background distribution sequences.
+    ax : matplotlib.axes.Axes, optional
+        The axes to plot on. If None, a new figure and axes will be created.
+    **kwargs: dict
+        passed on to logomaker.Logo
+
+    """
+
+    count_seqs = lm.alignment_to_matrix(list(seqs), to_type='counts')
+
+    count_null = lm.alignment_to_matrix(list(seqs_null), to_type='counts')
+
+    def make_complete_count_matrix(count_matrix):
+        for c in aminoacids:
+            if c not in count_matrix.columns:
+                count_matrix[c] = 0
+        return count_matrix.sort_index(axis=1)
+
+    count_seqs = make_complete_count_matrix(count_seqs)
+    count_null = make_complete_count_matrix(count_null)
+
+    prob_seqs = lm.transform_matrix(count_seqs, from_type='counts',
+                                           to_type='probability', pseudocount=pseudocount)
+    prob_null = lm.transform_matrix(count_null, from_type='counts',
+                                           to_type='probability', pseudocount=pseudocount)
+
+    info_meta = lm.transform_matrix(prob_seqs, from_type='probability', to_type='information',
+                               background=prob_null,
+                               pseudocount=0.0)
+    info_meta.index = range(1, len(info_meta) + 1)
+
+    lm_kwargs = dict(color_scheme="chemistry", show_spines=False, baseline_width=0.0)
+    lm_kwargs.update(kwargs)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(0.5 * info_meta.shape[0], 2.0))
+    lm.Logo(info_meta, ax=ax, **lm_kwargs)
+    ax.spines["bottom"].set_visible(False)
+    ax.set_xticks(info_meta.index)
+    return ax
 
 def seqlogos_vj(df, cdr3_column, v_column, j_column, axes=None, **kwargs):
     """
