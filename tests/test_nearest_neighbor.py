@@ -1,5 +1,6 @@
 import pytest
 from pyrepseq.nn import hash_based, kdtree, symdel, nearest_neighbor_tcrdist, SymdelDB
+from pyrepseq.metric.tcr_metric import AlphaTcrdist, BetaTcrdist
 from itertools import product
 from Levenshtein import distance
 import numpy as np
@@ -105,39 +106,96 @@ def test_symdel_lookup():
     assert set_equal(result, test_output)
 
 
-def test_tcrdist():
+class TestTcrdist:
     df = pd.DataFrame(
-        columns=["CDR3B", "TRBV"],
+        columns=["TRAV", "CDR3A", "TRBV", "CDR3B"],
         data=[
-            ["CASSGETGQPQHF", "TRBV6-1*01"],
-            ["CASSTQGIHEQYF", "TRBV9*01"],
-            ["CASSTQGIHEQYF", "TRBV9*01"],
-            ["CAWSF", "TRBV30*01"],
-            ["CSATGYNEQFF", "TRBV20-1*01"],
+            [
+                "TRAV12-2*01",
+                "CAGPSGGSYIPTF",
+                "TRBV9*01",
+                "CASSVDDTGLSYEQYF",
+            ],
+            [
+                "TRAV12-2*01",
+                "CASPSGGSYIPTF",
+                "TRBV9*01",
+                "CASSGDDTGLSYEQYF",
+            ],
+            [
+                "TRAV21*01",
+                "CAALDSNYQLIW",
+                "TRBV11-2*01",
+                "CASSLGGETQYF",
+            ],
         ],
     )
-    results = nearest_neighbor_tcrdist(df, max_edits=2, max_tcrdist=0)
-    np.array_equal(results, np.array([[1, 2, 0], [2, 1, 0]]))
+    alpha_pdist = AlphaTcrdist().calc_pdist_vector(df)[0]
+    beta_pdist = BetaTcrdist().calc_pdist_vector(df)[0]
 
+    def test_tcrdist(self):
+        results = nearest_neighbor_tcrdist(
+            self.df, max_edits=2, max_tcrdist=0, chain="alpha"
+        )
+        np.array_equal(
+            results, np.array([[0, 1, self.alpha_pdist], [1, 0, self.alpha_pdist]])
+        )
 
-def test_tcrdist_cross():
-    df = pd.DataFrame(
-        columns=["CDR3B", "TRBV"],
-        data=[
-            ["CASSGETGQPQHF", "TRBV6-1*01"],
-            ["CSATGYNEQFF", "TRBV20-1*01"],
-        ],
-    )
+        results = nearest_neighbor_tcrdist(
+            self.df, max_edits=2, max_tcrdist=0, chain="beta"
+        )
+        np.array_equal(
+            results, np.array([[0, 1, self.beta_pdist], [1, 0, self.beta_pdist]])
+        )
+
+        results = nearest_neighbor_tcrdist(
+            self.df, max_edits=2, max_tcrdist=0, chain="both"
+        )
+        np.array_equal(
+            results,
+            np.array(
+                [
+                    [0, 1, self.alpha_pdist + self.beta_pdist],
+                    [1, 0, self.alpha_pdist + self.beta_pdist],
+                ]
+            ),
+        )
+
     df2 = pd.DataFrame(
-        columns=["CDR3B", "TRBV"],
+        columns=["TRAV", "CDR3A", "TRBV", "CDR3B"],
         data=[
-            ["CAWSF", "TRBV30*01"],
-            ["CSATGYNEQFF", "TRBV20-1*01"],
-            ["CASSGETGQPQHF", "TRBV6-1*01"],
+            [
+                "TRAV21*01",
+                "CASLDSNYQLIW",
+                "TRBV11-2*01",
+                "CASSTGGETQYF",
+            ],
+            [
+                "TRAV1-2*01",
+                "CAGPSGGYNKLIF",
+                "TRBV30*01",
+                "CAWSVPLNTEAFF",
+            ],
         ],
     )
-    results = nearest_neighbor_tcrdist(df, max_edits=2, max_tcrdist=0, df2=df2)
-    np.array_equal(results, np.array([[0, 2, 0]]))
+    alpha_cdist = AlphaTcrdist().calc_cdist_matrix(df, df2)[2, 0]
+    beta_cdist = BetaTcrdist().calc_cdist_matrix(df, df2)[2, 0]
+
+    def test_tcrdist_cross(self):
+        results = nearest_neighbor_tcrdist(
+            self.df, max_edits=2, max_tcrdist=0, df2=self.df2, chain="alpha"
+        )
+        np.array_equal(results, np.array([[2, 0, self.alpha_cdist]]))
+
+        results = nearest_neighbor_tcrdist(
+            self.df, max_edits=2, max_tcrdist=0, df2=self.df2, chain="beta"
+        )
+        np.array_equal(results, np.array([[2, 0, self.beta_cdist]]))
+
+        results = nearest_neighbor_tcrdist(
+            self.df, max_edits=2, max_tcrdist=0, df2=self.df2, chain="both"
+        )
+        np.array_equal(results, np.array([[2, 0, self.alpha_cdist + self.beta_cdist]]))
 
 
 # symdel is the only algorithm supporting 2-seq mode

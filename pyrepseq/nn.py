@@ -1,5 +1,4 @@
 from typing import Literal, List, Tuple
-from numpy.typing import NDArray
 from scipy.spatial import KDTree
 import numpy as np
 import pandas as pd
@@ -10,6 +9,7 @@ from scipy.sparse import coo_matrix
 from rapidfuzz.process import extract
 from multiprocessing import Pool
 import logging
+from pathlib import Path
 
 
 from .distance import levenshtein_neighbors, hamming_neighbors
@@ -782,15 +782,14 @@ def nearest_neighbor_tcrdist(
             **tcrdist_kwargs_this,
         )
 
-    folder = os.path.dirname(__file__)
-    path = os.path.join(folder, "data", f"vdists_{chain}.csv")
-    vdists = pd.read_csv(path, index_col=0)
-
     if chain in ("alpha", "beta"):
         chain_letter = chain[0].upper()
         triplets = get_symdel_neighbors(chain_letter)
         triplets_arr = np.array(triplets)
         pair_candidates = triplets_arr[:, :2]
+
+        vdists_path = Path(__file__).resolve().parent / "data" / f"vdists_{chain}.csv"
+        vdists = pd.read_csv(vdists_path, index_col=0)
 
         if df2 is not None:
             tcrdist = _lookup(
@@ -818,15 +817,20 @@ def nearest_neighbor_tcrdist(
         triplets_arr = np.array(triplets)
         pair_candidates = triplets_arr[:, :2]
 
+        vdists_a_path = Path(__file__).resolve().parent / "data" / f"vdists_alpha.csv"
+        vdists_b_path = Path(__file__).resolve().parent / "data" / f"vdists_beta.csv"
+        vdists_a = pd.read_csv(vdists_a_path, index_col=0)
+        vdists_b = pd.read_csv(vdists_b_path, index_col=0)
+
         if df2 is not None:
             tcrdist = (
                 _lookup(
-                    vdists,
+                    vdists_a,
                     df[f"TRAV"].iloc[pair_candidates[:, 0]],
                     df2[f"TRAV"].iloc[pair_candidates[:, 1]],
                 )
                 + _lookup(
-                    vdists,
+                    vdists_b,
                     df[f"TRBV"].iloc[pair_candidates[:, 0]],
                     df2[f"TRBV"].iloc[pair_candidates[:, 1]],
                 )
@@ -836,12 +840,12 @@ def nearest_neighbor_tcrdist(
         else:
             tcrdist = (
                 _lookup(
-                    vdists,
+                    vdists_a,
                     df[f"TRAV"].iloc[pair_candidates[:, 0]],
                     df[f"TRAV"].iloc[pair_candidates[:, 1]],
                 )
                 + _lookup(
-                    vdists,
+                    vdists_b,
                     df[f"TRBV"].iloc[pair_candidates[:, 0]],
                     df[f"TRBV"].iloc[pair_candidates[:, 1]],
                 )
