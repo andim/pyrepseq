@@ -1,3 +1,5 @@
+from typing import Literal, List, Tuple
+from numpy.typing import NDArray
 from scipy.spatial import KDTree
 import numpy as np
 import pandas as pd
@@ -7,6 +9,7 @@ from rapidfuzz.distance.Hamming import distance as hamming
 from scipy.sparse import coo_matrix
 from rapidfuzz.process import extract
 from multiprocessing import Pool
+import logging
 
 
 from .distance import levenshtein_neighbors, hamming_neighbors
@@ -31,6 +34,9 @@ except ImportError:
         "optional dependency sceptr not installed (sceptr neighbor search not supported)",
         ImportWarning,
     )
+
+
+logger = logging.getLogger(__file__)
 
 
 # ===================================
@@ -693,7 +699,8 @@ def nearest_neighbor_tcrdist(
     **kwargs,
 ):
     """
-    List all neighboring TCR sequences efficiently within a given edit and TCRdist radius.
+    List all neighboring TCR sequences efficiently within a given edit and
+    TCRdist radius.
 
     [Requires optional dependency pwseqdist]
 
@@ -720,15 +727,6 @@ def nearest_neighbor_tcrdist(
     sparse matrix in (i, j, dist) format
 
     """
-
-    if chain == "both":
-        chain = "beta"
-        both = True
-    else:
-        both = False
-
-    chain_letter = chain[0].upper()
-
     # to reproduce standard TCRdist we multiply the CDR3 distance with three
     # we also need to multiply the gap penalty by this factor
     tcrdist_kwargs_this = dict(
@@ -741,35 +739,37 @@ def nearest_neighbor_tcrdist(
     )
     tcrdist_kwargs_this.update(tcrdist_kwargs)
 
-    if edit_on_trimmed:
-        ntrim = tcrdist_kwargs_this["ntrim"]
-        ctrim = tcrdist_kwargs_this["ctrim"]
-        seqs = list(df[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
-        if df2 is not None:
-            seqs2 = list(df2[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
-        else:
-            seqs2 = None
-        neighbors = nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
-    else:
-        seqs = list(df[f"CDR3{chain_letter}"])
-        if df2 is not None:
-            seqs2 = list(df2[f"CDR3{chain_letter}"])
-        else:
-            seqs2 = None
-        neighbors = nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+    if "output_type" in kwargs and kwargs["output_type"] != "triplets":
+        logger.warning('output_type must be set to "triplets" for this function')
+        kwargs["output_type"] = "triplets"
 
-    df2 = df if df2 is None else df2
-    folder = os.path.dirname(__file__)
-    path = os.path.join(folder, "data", f"vdists_{chain}.csv")
-    vdists = pd.read_csv(path, index_col=0)
+    def get_symdel_neighbors(
+        chain_letter: Literal["A", "B"],
+    ) -> List[Tuple[int, int, int]]:
+        if edit_on_trimmed:
+            ntrim = tcrdist_kwargs_this["ntrim"]
+            ctrim = tcrdist_kwargs_this["ctrim"]
+            seqs = list(df[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
+            if df2 is not None:
+                seqs2 = list(df2[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
+            else:
+                seqs2 = None
+            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+        else:
+            seqs = list(df[f"CDR3{chain_letter}"])
+            if df2 is not None:
+                seqs2 = list(df2[f"CDR3{chain_letter}"])
+            else:
+                seqs2 = None
+            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
 
-    neighbors_arr = np.array(neighbors)
-    edges = neighbors_arr[:, :2]
-    tcrdist_v = _lookup(
-        vdists,
-        df[f"TR{chain_letter}V"].iloc[edges[:, 0]],
-        df2[f"TR{chain_letter}V"].iloc[edges[:, 1]],
-    )
+    def pairwise_sparse_within(df, pairs, chain_letter):
+        return pwseqdist.apply_pairwise_sparse(
+            metric=pwseqdist.metrics.nb_vector_tcrdist,
+            seqs=df[f"CDR3{chain_letter}"],
+            pairs=pairs,
+            **tcrdist_kwargs_this,
+        )
 
     def pairwise_sparse_cross(df, df2, pairs, chain_letter):
         adjusted_pairs = pairs.copy()
@@ -782,26 +782,76 @@ def nearest_neighbor_tcrdist(
             **tcrdist_kwargs_this,
         )
 
-    tcrdist_cdr3 = pairwise_sparse_cross(df, df2, edges, chain_letter)
+    folder = os.path.dirname(__file__)
+    path = os.path.join(folder, "data", f"vdists_{chain}.csv")
+    vdists = pd.read_csv(path, index_col=0)
 
-    if both:
-        chain = "alpha"
+    if chain in ("alpha", "beta"):
         chain_letter = chain[0].upper()
-        folder = os.path.dirname(__file__)
-        path = os.path.join(folder, "data", f"vdists_{chain}.csv")
-        vdists = pd.read_csv(path, index_col=0)
-        tcrdist_v += _lookup(
-            vdists,
-            df[f"TR{chain_letter}V"].iloc[edges[:, 0]],
-            df2[f"TR{chain_letter}V"].iloc[edges[:, 1]],
+        triplets = get_symdel_neighbors(chain_letter)
+        triplets_arr = np.array(triplets)
+        pair_candidates = triplets_arr[:, :2]
+
+        if df2 is not None:
+            tcrdist = _lookup(
+                vdists,
+                df[f"TR{chain_letter}V"].iloc[pair_candidates[:, 0]],
+                df2[f"TR{chain_letter}V"].iloc[pair_candidates[:, 1]],
+            ) + pairwise_sparse_cross(df, df2, pair_candidates, chain_letter)
+        else:
+            tcrdist = _lookup(
+                vdists,
+                df[f"TR{chain_letter}V"].iloc[pair_candidates[:, 0]],
+                df[f"TR{chain_letter}V"].iloc[pair_candidates[:, 1]],
+            ) + pairwise_sparse_within(df, pair_candidates, chain_letter)
+    else:  # chain == "both"
+        triplet_candidates_a = set(
+            [triplet[:2] for triplet in get_symdel_neighbors("A")]
         )
+        triplet_candidates_b = set(
+            [triplet[:2] for triplet in get_symdel_neighbors("B")]
+        )
+        triplets = [
+            pair + (0,)
+            for pair in triplet_candidates_a.intersection(triplet_candidates_b)
+        ]
+        triplets_arr = np.array(triplets)
+        pair_candidates = triplets_arr[:, :2]
 
-        tcrdist_cdr3 += pairwise_sparse_cross(df, df2, edges, chain_letter)
+        if df2 is not None:
+            tcrdist = (
+                _lookup(
+                    vdists,
+                    df[f"TRAV"].iloc[pair_candidates[:, 0]],
+                    df2[f"TRAV"].iloc[pair_candidates[:, 1]],
+                )
+                + _lookup(
+                    vdists,
+                    df[f"TRBV"].iloc[pair_candidates[:, 0]],
+                    df2[f"TRBV"].iloc[pair_candidates[:, 1]],
+                )
+                + pairwise_sparse_cross(df, df2, pair_candidates, "A")
+                + pairwise_sparse_cross(df, df2, pair_candidates, "B")
+            )
+        else:
+            tcrdist = (
+                _lookup(
+                    vdists,
+                    df[f"TRAV"].iloc[pair_candidates[:, 0]],
+                    df[f"TRAV"].iloc[pair_candidates[:, 1]],
+                )
+                + _lookup(
+                    vdists,
+                    df[f"TRBV"].iloc[pair_candidates[:, 0]],
+                    df[f"TRBV"].iloc[pair_candidates[:, 1]],
+                )
+                + pairwise_sparse_within(df, pair_candidates, "A")
+                + pairwise_sparse_within(df, pair_candidates, "B")
+            )
 
-    tcrdist = tcrdist_v + tcrdist_cdr3
-    neighbors_arr[:, 2] = tcrdist
+    triplets_arr[:, 2] = tcrdist
 
-    return neighbors_arr[neighbors_arr[:, 2] <= max_tcrdist]
+    return triplets_arr[triplets_arr[:, 2] <= max_tcrdist]
 
 
 def calculate_sceptrdist_sparse(edges, tcr_data_array):
