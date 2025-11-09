@@ -680,22 +680,40 @@ def nearest_neighbor(
     )
 
 
-def _lookup(df, row_labels, col_labels):
+def _vdists_lookup(df: pd.DataFrame, row_labels, col_labels):
+    # Add "*01" to the end of a V gene symbol if no allele specifier present
+    # row_labels = row_labels.str.replace(r"^(.*?)(?!\*01)$", r"\1\*01", regex=True)
+    # col_labels = col_labels.str.replace(r"^(.*?)(?!\*01)$", r"\1\*01", regex=True)
+
     values = df.values
+
     ridx = df.index.get_indexer(row_labels)
     cidx = df.columns.get_indexer(col_labels)
+
+    if (ridx == -1).any():
+        first_offending_idx = (ridx == -1).argmax()
+        raise ValueError(
+            f"{row_labels.iloc[first_offending_idx]} is not recognized as a valid V gene"
+        )
+
+    if (cidx == -1).any():
+        first_offending_idx = (cidx == -1).argmax()
+        raise ValueError(
+            f"{col_labels.iloc[first_offending_idx]} is not recognized as a valid V gene"
+        )
+
     flat_index = ridx * len(df.columns) + cidx
     return values.flat[flat_index]
 
 
 def nearest_neighbor_tcrdist(
-    df,
+    df: pd.DataFrame,
     chain="beta",
     max_edits=2,
     edit_on_trimmed=True,
     max_tcrdist=20,
     tcrdist_kwargs={},
-    df2=None,
+    df2: pd.DataFrame = None,
     **kwargs,
 ):
     """
@@ -792,13 +810,13 @@ def nearest_neighbor_tcrdist(
         vdists = pd.read_csv(vdists_path, index_col=0)
 
         if df2 is not None:
-            tcrdist = _lookup(
+            tcrdist = _vdists_lookup(
                 vdists,
                 df[f"TR{chain_letter}V"].iloc[pair_candidates[:, 0]],
                 df2[f"TR{chain_letter}V"].iloc[pair_candidates[:, 1]],
             ) + pairwise_sparse_cross(df, df2, pair_candidates, chain_letter)
         else:
-            tcrdist = _lookup(
+            tcrdist = _vdists_lookup(
                 vdists,
                 df[f"TR{chain_letter}V"].iloc[pair_candidates[:, 0]],
                 df[f"TR{chain_letter}V"].iloc[pair_candidates[:, 1]],
@@ -824,12 +842,12 @@ def nearest_neighbor_tcrdist(
 
         if df2 is not None:
             tcrdist = (
-                _lookup(
+                _vdists_lookup(
                     vdists_a,
                     df[f"TRAV"].iloc[pair_candidates[:, 0]],
                     df2[f"TRAV"].iloc[pair_candidates[:, 1]],
                 )
-                + _lookup(
+                + _vdists_lookup(
                     vdists_b,
                     df[f"TRBV"].iloc[pair_candidates[:, 0]],
                     df2[f"TRBV"].iloc[pair_candidates[:, 1]],
@@ -839,12 +857,12 @@ def nearest_neighbor_tcrdist(
             )
         else:
             tcrdist = (
-                _lookup(
+                _vdists_lookup(
                     vdists_a,
                     df[f"TRAV"].iloc[pair_candidates[:, 0]],
                     df[f"TRAV"].iloc[pair_candidates[:, 1]],
                 )
-                + _lookup(
+                + _vdists_lookup(
                     vdists_b,
                     df[f"TRBV"].iloc[pair_candidates[:, 0]],
                     df[f"TRBV"].iloc[pair_candidates[:, 1]],
