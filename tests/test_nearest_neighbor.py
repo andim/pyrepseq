@@ -111,13 +111,13 @@ class TestTcrdist:
         columns=["TRAV", "CDR3A", "TRBV", "CDR3B"],
         data=[
             [
-                "TRAV25*01",
+                "TRAV25",
                 "CAGPSGGSYIPTF",
                 "TRBV9*01",
                 "CASSVDDTGLSYEQYF",
             ],
             [
-                "TRAV38-2/DV8*01",
+                "TRAV38-2/DV8",
                 "CAGPSGSSYIPTF",
                 "TRBV9*01",
                 "CASSGDDTGLSYEQYF",
