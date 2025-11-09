@@ -91,13 +91,12 @@ class TestStandardizeDataFrame:
 
         assert result.equals(self.df_old)
 
-    def test_suppress_warnings(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            result = standardize_dataframe(
-                df=self.df_old,
-                col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
-                suppress_warnings=True,
-            )
+    def test_suppress_warnings(self, caplog):
+        result = standardize_dataframe(
+            df=self.df_old,
+            col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
+            suppress_warnings=True,
+        )
 
         assert result.equals(self.df_standardized)
+        assert len(caplog.records) == 0
