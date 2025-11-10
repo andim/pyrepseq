@@ -77,27 +77,26 @@ class TestStandardizeDataFrame:
         ],
     )
 
-    def test_standardize_df(self):
-        with pytest.warns(UserWarning, match="Failed to standardize"):
-            result = standardize_dataframe(
-                df=self.df_old,
-                col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
-            )
+    def test_standardize_df(self, caplog):
+        result = standardize_dataframe(
+            df=self.df_old,
+            col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
+        )
 
         assert result.equals(self.df_standardized)
+        assert "Failed to standardize" in caplog.text
 
     def test_no_standardization(self):
         result = standardize_dataframe(df=self.df_old)
 
         assert result.equals(self.df_old)
 
-    def test_suppress_warnings(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            result = standardize_dataframe(
-                df=self.df_old,
-                col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
-                suppress_warnings=True,
-            )
+    def test_suppress_warnings(self, caplog):
+        result = standardize_dataframe(
+            df=self.df_old,
+            col_mapper={i: self.df_standardized.columns[i] for i in range(10)},
+            suppress_warnings=True,
+        )
 
         assert result.equals(self.df_standardized)
+        assert len(caplog.records) == 0
