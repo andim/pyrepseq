@@ -123,7 +123,7 @@ class TestTcrdist:
                 "CASSGDDTGLSYEQYF",
             ],
             [
-                "TRAV21*01",
+                "TRAV21*02",
                 "CAALDSNYQLIW",
                 "TRBV11-2*01",
                 "CASSLGGETQYF",
