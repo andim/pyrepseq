@@ -706,6 +706,12 @@ def nearest_neighbor_tcrdist(
 
     Parameters
     ----------
+    df : pandas DataFrame
+        A pandas DataFrame in the pyrepseq format. If `df2` is not set, then
+        the function computes the nearest neighbor TCRs within this set. If
+        `df2` is set, then the function computes the nearest neighbors across
+        this and `df2`.
+
     chain: 'alpha', 'beta', or 'both'
         if both finds candidate neighbors using the beta chain, but filter on
         paired sequence at the end
@@ -719,6 +725,9 @@ def nearest_neighbor_tcrdist(
 
     tcrdist_kwargs: dict
         customized parameters for TCRdist calculation
+
+    df2 : pandas DataFrame
+        A pandas DataFrame in the pyrepseq format.
 
     **kwargs : passed on to nearest_neighbor function
 
