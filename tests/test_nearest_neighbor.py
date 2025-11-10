@@ -111,19 +111,19 @@ class TestTcrdist:
         columns=["TRAV", "CDR3A", "TRBV", "CDR3B"],
         data=[
             [
-                "TRAV12-2*01",
+                "TRAV25",
                 "CAGPSGGSYIPTF",
                 "TRBV9*01",
                 "CASSVDDTGLSYEQYF",
             ],
             [
-                "TRAV12-2*01",
+                "TRAV38-2/DV8",
                 "CAGPSGSSYIPTF",
                 "TRBV9*01",
                 "CASSGDDTGLSYEQYF",
             ],
             [
-                "TRAV21*01",
+                "TRAV21*02",
                 "CAALDSNYQLIW",
                 "TRBV11-2*01",
                 "CASSLGGETQYF",
@@ -135,7 +135,7 @@ class TestTcrdist:
 
     def test_tcrdist(self):
         results = nearest_neighbor_tcrdist(
-            self.df, max_edits=2, max_tcrdist=30, chain="alpha"
+            self.df, max_edits=2, max_tcrdist=100, chain="alpha"
         )
         assert np.array_equal(
             results, np.array([[1, 0, self.alpha_pdist], [0, 1, self.alpha_pdist]])
@@ -149,7 +149,7 @@ class TestTcrdist:
         )
 
         results = nearest_neighbor_tcrdist(
-            self.df, max_edits=2, max_tcrdist=30, chain="both"
+            self.df, max_edits=2, max_tcrdist=100, chain="both"
         )
         assert np.array_equal(
             results,
