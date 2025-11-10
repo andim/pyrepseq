@@ -682,8 +682,8 @@ def nearest_neighbor(
 
 def _vdists_lookup(df: pd.DataFrame, row_labels, col_labels):
     # Add "*01" to the end of a V gene symbol if no allele specifier present
-    row_labels = row_labels.str.replace(r"^([-/\w]+?)(?!\*01)$", r"\1*01", regex=True)
-    col_labels = col_labels.str.replace(r"^([-/\w]+?)(?!\*01)$", r"\1*01", regex=True)
+    row_labels = row_labels.str.replace(r"^([-/\w]+?)$", r"\1*01", regex=True)
+    col_labels = col_labels.str.replace(r"^([-/\w]+?)$", r"\1*01", regex=True)
 
     values = df.values
 
