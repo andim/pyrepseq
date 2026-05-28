@@ -1,4 +1,5 @@
 from typing import Literal, List, Tuple
+from pyparsing import col
 from scipy.spatial import KDTree
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from rapidfuzz.process import extract
 from multiprocessing import Pool
 import logging
 from pathlib import Path
-
+import symscan
 
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
@@ -805,14 +806,32 @@ def nearest_neighbor_tcrdist(
                 seqs2 = list(df2[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
             else:
                 seqs2 = None
-            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+            
+            #return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+            
+
+            row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
+            row_full  = np.concatenate([row, col])
+            col_full  = np.concatenate([col, row])
+            dist_full = np.concatenate([dists, dists])
+
+            return np.column_stack([row_full, col_full, dist_full])
         else:
             seqs = list(df[f"CDR3{chain_letter}"])
             if df2 is not None:
                 seqs2 = list(df2[f"CDR3{chain_letter}"])
             else:
                 seqs2 = None
-            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+
+            #return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+           
+
+            row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
+            row_full  = np.concatenate([row, col])
+            col_full  = np.concatenate([col, row])
+            dist_full = np.concatenate([dists, dists])
+            
+            return np.column_stack([row_full, col_full, dist_full])
 
     def pairwise_sparse_within(df, pairs, chain_letter):
         return pwseqdist.apply_pairwise_sparse(
@@ -951,7 +970,12 @@ def nearest_neighbor_sceptrdist(
     """
     chain_letter = chain[0].upper()
     seqs = list(df[f"CDR3{chain_letter}"])
-    neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
+    row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
+    row_full  = np.concatenate([row, col])
+    col_full  = np.concatenate([col, row])
+    dist_full = np.concatenate([dists, dists])
+    neighbors = np.column_stack([row_full, col_full, dist_full])
+    #neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
     neighbors_arr = np.array(neighbors, dtype=object)
     edges = neighbors_arr[:, :2]
     tcr_data_array = sceptr.calc_vector_representations(df)
