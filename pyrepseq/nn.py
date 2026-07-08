@@ -10,7 +10,7 @@ from rapidfuzz.process import extract
 from multiprocessing import Pool
 import logging
 from pathlib import Path
-
+import tidytcells as tt 
 
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
@@ -680,6 +680,27 @@ def nearest_neighbor(
     )
 
 
+
+def _assume_first_functional_allele(genename: str) -> int:
+    alleles = tt.tr.query(
+        contains_pattern=genename, precision="allele", functionality="F"
+    )
+    if len(alleles) == 0:
+        raise ValueError(f"Gene {genename} has no functional alleles")
+    allele_nums = [int(symbol.split("*")[1]) for symbol in alleles]
+    return sorted(allele_nums)[0]
+
+
+def _impute_allele(gene_symbol: str) -> str:
+    if "*" in gene_symbol:
+        return gene_symbol
+
+    try:
+        first_functional = _assume_first_functional_allele(gene_symbol)
+        return f"{gene_symbol}*{first_functional:02d}"
+    except ValueError:
+        return gene_symbol
+    
 def _vdists_lookup(dist_reference: pd.DataFrame, lhs: pd.Series, rhs: pd.Series):
     """
     Parameters
@@ -703,9 +724,9 @@ def _vdists_lookup(dist_reference: pd.DataFrame, lhs: pd.Series, rhs: pd.Series)
         lhs[i] or rhs[i] are unrecogized V gene names not found in
         precomputed_dists, then dists[i] == 999999.
     """
-    # Add "*01" to the end of a V gene symbol if no allele specifier present
-    lhs_imputed = lhs.str.replace(r"^([-/\w]+?)$", r"\1*01", regex=True)
-    rhs_imputed = rhs.str.replace(r"^([-/\w]+?)$", r"\1*01", regex=True)
+    # Add the first functional allele to the end of a V gene symbol if no allele specifier present
+    lhs_imputed = lhs.map(_impute_allele)
+    rhs_imputed = rhs.map(_impute_allele)
 
     values = dist_reference.values
 
