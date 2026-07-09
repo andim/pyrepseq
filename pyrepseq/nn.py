@@ -12,6 +12,16 @@ import logging
 from pathlib import Path
 import tidytcells as tt 
 
+try:
+    import symscan as symscan
+except ImportError:
+    warnings.warn(
+        "optional dependency symscan not installed (neighbor search might be slower)",
+        ImportWarning,
+    )
+    symscan = None
+
+
 from .distance import levenshtein_neighbors, hamming_neighbors
 from itertools import combinations, chain
 from .util import ensure_numpy
@@ -826,14 +836,30 @@ def nearest_neighbor_tcrdist(
                 seqs2 = list(df2[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
             else:
                 seqs2 = None
-            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+           
+            if symscan is None:
+                return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+            else: 
+                row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
+                row_full  = np.concatenate([row, col])
+                col_full  = np.concatenate([col, row])
+                dist_full = np.concatenate([dists, dists])
+                return np.column_stack([row_full, col_full, dist_full])
         else:
             seqs = list(df[f"CDR3{chain_letter}"])
             if df2 is not None:
                 seqs2 = list(df2[f"CDR3{chain_letter}"])
             else:
                 seqs2 = None
-            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+
+            if symscan is None:
+                return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+            else:
+                row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
+                row_full  = np.concatenate([row, col])
+                col_full  = np.concatenate([col, row])
+                dist_full = np.concatenate([dists, dists])
+                return np.column_stack([row_full, col_full, dist_full])
 
     def pairwise_sparse_within(df, pairs, chain_letter):
         return pwseqdist.apply_pairwise_sparse(
@@ -972,7 +998,14 @@ def nearest_neighbor_sceptrdist(
     """
     chain_letter = chain[0].upper()
     seqs = list(df[f"CDR3{chain_letter}"])
-    neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
+    if symscan is None:
+        neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
+    else:
+        row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
+        row_full  = np.concatenate([row, col])
+        col_full  = np.concatenate([col, row])
+        dist_full = np.concatenate([dists, dists])
+        neighbors = np.column_stack([row_full, col_full, dist_full])
     neighbors_arr = np.array(neighbors, dtype=object)
     edges = neighbors_arr[:, :2]
     tcr_data_array = sceptr.calc_vector_representations(df)
