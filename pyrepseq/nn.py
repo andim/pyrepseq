@@ -12,6 +12,14 @@ import logging
 from pathlib import Path
 import tidytcells as tt 
 
+from .distance import levenshtein_neighbors, hamming_neighbors
+from itertools import combinations, chain
+from .util import ensure_numpy
+from .io import aminoacids
+import os
+
+import warnings
+
 try:
     import symscan as symscan
 except ImportError:
@@ -20,15 +28,6 @@ except ImportError:
         ImportWarning,
     )
     symscan = None
-
-
-from .distance import levenshtein_neighbors, hamming_neighbors
-from itertools import combinations, chain
-from .util import ensure_numpy
-from .io import aminoacids
-import os
-
-import warnings
 
 try:
     import pwseqdist
