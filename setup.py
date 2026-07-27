@@ -62,6 +62,7 @@ DEV_DEPENDENCIES = [
 FULL_DEPENDENCIES = [
     "tcrdist3",
     "pwseqdist"
+    "sceptr"
         ]
 
 opts = dict(
