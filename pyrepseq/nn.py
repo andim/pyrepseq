@@ -765,6 +765,7 @@ def nearest_neighbor_tcrdist(
     chain="beta",
     max_edits=2,
     edit_on_trimmed=True,
+    use_symscan=True,
     max_tcrdist=20,
     tcrdist_kwargs={},
     df2: pd.DataFrame = None,
@@ -793,7 +794,11 @@ def nearest_neighbor_tcrdist(
     edit_on_trimmed : boolean
         apply TCRdist trimming on sequences before calculating edit distance
 
+    use_symscan: boolean
+        use python bindings to symscan if available
+
     max_tcrdist : only return neighbor up to <= this TCR distance
+
 
     tcrdist_kwargs: dict
         customized parameters for TCRdist calculation
@@ -835,15 +840,6 @@ def nearest_neighbor_tcrdist(
                 seqs2 = list(df2[f"CDR3{chain_letter}"].str[ntrim:-ctrim])
             else:
                 seqs2 = None
-           
-            if symscan is None:
-                return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
-            else: 
-                row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
-                row_full  = np.concatenate([row, col])
-                col_full  = np.concatenate([col, row])
-                dist_full = np.concatenate([dists, dists])
-                return np.column_stack([row_full, col_full, dist_full])
         else:
             seqs = list(df[f"CDR3{chain_letter}"])
             if df2 is not None:
@@ -851,14 +847,18 @@ def nearest_neighbor_tcrdist(
             else:
                 seqs2 = None
 
-            if symscan is None:
-                return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
-            else:
+        if symscan is None or (not use_symscan):
+            return nearest_neighbor(seqs, max_edits=max_edits, seqs2=seqs2, **kwargs)
+        else:
+            if seqs2 is None:
                 row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
-                row_full  = np.concatenate([row, col])
-                col_full  = np.concatenate([col, row])
+                row_full  = np.concatenate([col, row])
+                col_full  = np.concatenate([row, col])
                 dist_full = np.concatenate([dists, dists])
-                return np.column_stack([row_full, col_full, dist_full])
+                return list(zip(row_full, col_full, dist_full))
+            else:
+                row, col, dists = symscan.get_neighbors_across(seqs, seqs2, max_distance=max_edits)
+                return list(zip(row, col, dists))
 
     def pairwise_sparse_within(df, pairs, chain_letter):
         return pwseqdist.apply_pairwise_sparse(
@@ -975,7 +975,9 @@ def calculate_sceptrdist_sparse(edges, tcr_data_array):
 
 
 def nearest_neighbor_sceptrdist(
-    df, chain="beta", max_edits=2, max_sceptrdist=1.0, **kwargs
+    df, chain="beta", max_edits=2, max_sceptrdist=1.0,
+    use_symscan=True,
+    **kwargs
 ):
     """
     List all neighboring TCR sequences efficiently within a given edit and SCEPTR radius.
@@ -988,6 +990,10 @@ def nearest_neighbor_sceptrdist(
         chain to use for edit distance prefiltering
     max_edits : only return neighbors up to <= this edit distance
     max_sceptrdist : only return neighbor up to <= this TCR distance
+
+    use_symscan: boolean
+        use python bindings to symscan if available
+
     **kwargs : passed on to nearest_neighbor function
 
     Returns
@@ -997,12 +1003,12 @@ def nearest_neighbor_sceptrdist(
     """
     chain_letter = chain[0].upper()
     seqs = list(df[f"CDR3{chain_letter}"])
-    if symscan is None:
+    if symscan is None or (not use_symscan):
         neighbors = nearest_neighbor(seqs, max_edits=max_edits, **kwargs)
     else:
         row, col, dists = symscan.get_neighbors_within(seqs, max_distance=max_edits)
-        row_full  = np.concatenate([row, col])
-        col_full  = np.concatenate([col, row])
+        row_full  = np.concatenate([col, row])
+        col_full  = np.concatenate([row, col])
         dist_full = np.concatenate([dists, dists])
         neighbors = np.column_stack([row_full, col_full, dist_full])
     neighbors_arr = np.array(neighbors, dtype=object)
