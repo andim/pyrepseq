@@ -535,6 +535,7 @@ def symdel(
     custom_distance=None,
     max_custom_distance=float("inf"),
     output_type="triplets",
+    output_symmetric=True,
     seqs2=None,
     progress=False,
 ):
@@ -569,6 +570,9 @@ def symdel(
 
     output_type: string
         format of returns, can be "triplets", "coo_matrix", "ndarray"
+
+    output_symmetric : bool
+        return symmetric output (i, j, d) and (j, i, d) even when only seqs provided
 
     seq2 : iterable of strings or None
         another list of sequences to compare against
@@ -616,7 +620,7 @@ def symdel(
                 if dist > threshold:
                     continue
                 ans.add((i, j, dist))
-                ans.add((j, i, dist))
+                #ans.add((j, i, dist))
         return _make_output(ans, output_type, seqs, seqs2)
 
     return symdeldb.lookup(
