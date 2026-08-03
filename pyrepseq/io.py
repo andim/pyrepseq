@@ -203,11 +203,11 @@ def standardize_dataframe(
                         lambda x: None
                         if pd.isna(x)
                         else tt.tr.standardize(
-                            gene=x,
+                            symbol=x,
                             species=species,
                             enforce_functional=tcr_enforce_functional,
                             precision=tcr_precision,
-                            suppress_warnings=suppress_warnings,
+                            log_failures=not suppress_warnings,
                         )
                     )
 
@@ -218,9 +218,9 @@ def standardize_dataframe(
                 if pd.isna(row[cdr3])
                 else tt.junction.standardize(
                     seq=row[cdr3],
-                    j_symbol=None if pd.isna(row[f'TR{chain}J']) else row[f'TR{chain}J'],
-                    strict=strict_cdr3_standardization,
-                    suppress_warnings=suppress_warnings,
+                    j_symbol=None if (not 'TR{chain}J' in row) or pd.isna(row[f'TR{chain}J']) else row[f'TR{chain}J'],
+                    fix_missing_conserved=strict_cdr3_standardization,
+                    log_failures=not suppress_warnings,
                 ),
                 axis=1,
             )
@@ -231,10 +231,10 @@ def standardize_dataframe(
                     lambda x: None
                     if pd.isna(x)
                     else tt.mh.standardize(
-                        gene=x,
+                        symbol=x,
                         species=species,
                         precision=mhc_precision,
-                        suppress_warnings=suppress_warnings,
+                        log_failures=not suppress_warnings,
                     )
                 )
 
@@ -243,7 +243,8 @@ def standardize_dataframe(
                 lambda x: None
                 if pd.isna(x)
                 else tt.aa.standardize(
-                    seq=x, on_fail="keep", suppress_warnings=suppress_warnings
+                    seq=x, on_fail="keep",
+                    log_failures=not suppress_warnings
                 )
             )
 
