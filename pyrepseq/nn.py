@@ -620,7 +620,8 @@ def symdel(
                 if dist > threshold:
                     continue
                 ans.add((i, j, dist))
-                #ans.add((j, i, dist))
+                if output_symmetric:
+                    ans.add((j, i, dist))
         return _make_output(ans, output_type, seqs, seqs2)
 
     return symdeldb.lookup(
