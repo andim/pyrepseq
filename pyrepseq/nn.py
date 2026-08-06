@@ -413,7 +413,15 @@ def _comb_gen(seq, max_edits):
     Generate all deletion variants up to a maximum number of deletions.
     """
     _len, ans = len(seq), set([seq])
-    for edit in range(1, max_edits + 1):
+    if max_edits >= 1:
+        ans.update(seq[:i] + seq[i + 1 :] for i in range(_len))
+    if max_edits >= 2:
+        ans.update(
+            seq[:i] + seq[i + 1 : j] + seq[j + 1 :]
+            for i in range(_len)
+            for j in range(i + 1, _len)
+        )
+    for edit in range(3, max_edits + 1):
         for indexes in combinations(range(_len), edit):
             new_seq, offset = [], 0
             for index in indexes:
