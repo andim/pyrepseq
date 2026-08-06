@@ -47,11 +47,11 @@ def test_weighting(weights, expected, mock_data_df: DataFrame):
 
 def test_trav_40_is_handled(mock_data_df):
     metric = tcr_metric.CdrLevenshtein()
-    anchor_tcrs = mock_data_df.iloc[0:2]
-    comparison_tcrs = mock_data_df.iloc[0:3]
-    comparison_tcrs.loc[0,"TRAV"] = "TRAV40*01"
+    anchor_tcrs = mock_data_df.iloc[0:2].copy()
+    comparison_tcrs = mock_data_df.iloc[0:3].copy()
+    comparison_tcrs.loc[0, "TRAV"] = "TRAV40*01"
 
     result = metric.calc_cdist_matrix(anchor_tcrs, comparison_tcrs)
-    expected = np.array([[0, 21, 20], [21, 0, 29]])
+    expected = np.array([[11, 10, 19], [21, 0, 29]])
 
     assert np.array_equal(result, expected)
