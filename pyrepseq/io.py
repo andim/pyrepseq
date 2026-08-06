@@ -218,8 +218,8 @@ def standardize_dataframe(
                 if pd.isna(row[cdr3])
                 else tt.junction.standardize(
                     seq=row[cdr3],
-                    j_symbol=None if (not 'TR{chain}J' in row) or pd.isna(row[f'TR{chain}J']) else row[f'TR{chain}J'],
-                    fix_missing_conserved=strict_cdr3_standardization,
+                    j_symbol=None if (f'TR{chain}J' not in row) or pd.isna(row[f'TR{chain}J']) else row[f'TR{chain}J'],
+                    fix_missing_conserved=not strict_cdr3_standardization,
                     log_failures=not suppress_warnings,
                 ),
                 axis=1,
